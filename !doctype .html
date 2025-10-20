@@ -1,91 +1,371 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>LIST｜成長志向タスクアプリ</title>
-<style>
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";margin:0;background:#f7f7f8;color:#111}
-header{position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;z-index:10}
-.bar{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:12px 16px}
-.tabs{display:flex;gap:8px}
-.tab{padding:8px 12px;border-radius:999px;border:1px solid #ddd;background:#fff;cursor:pointer}
-.tab.active{background:#111;color:#fff;border-color:#111}
-.section{padding:12px 16px}
-.list{display:flex;flex-direction:column;gap:10px}
-.card{background:#fff;border:1px solid #eee;border-radius:14px;padding:12px 12px 8px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
-.row{display:flex;align-items:center;gap:8px;justify-content:space-between}
-.title{font-weight:600;word-break:break-word}
-.meta{font-size:12px;color:#666;display:flex;gap:10px;margin-top:4px}
-.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.badge{font-size:11px;border:1px solid #ddd;border-radius:999px;padding:3px 8px;background:#fafafa}
-.actions{display:flex;gap:8px;margin-top:10px}
-button{appearance:none;border:1px solid #ddd;background:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
-button.primary{background:#111;color:#fff;border-color:#111}
-.pin{color:#d97706;border-color:#f1d19b;background:#fff8e6}
-.ghost{opacity:.6}
-.empty{color:#777;text-align:center;padding:40px 0}
-.divider{margin:16px 0;border-top:1px dashed #e6e6e6}
-</style>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LIST｜成長志向タスクアプリ</title>
+    <style>
+        body {
+            font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+            margin: 0;
+            background: #f7f7f8;
+            color: #111
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            z-index: 10
+        }
+
+        .bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px
+        }
+
+        .tab {
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer
+        }
+
+            .tab.active {
+                background: #111;
+                color: #fff;
+                border-color: #111
+            }
+
+        .section {
+            padding: 12px 16px
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 14px;
+            padding: 12px 12px 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,.03);
+            position: relative;
+            touch-action: pan-y
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: space-between
+        }
+
+        .title {
+            font-weight: 600;
+            word-break: break-word
+        }
+
+        .meta {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            gap: 10px;
+            margin-top: 4px
+        }
+
+        .badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 8px
+        }
+
+        .badge {
+            font-size: 11px;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            padding: 3px 8px;
+            background: #fafafa
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px
+        }
+
+        button {
+            appearance: none;
+            border: 1px solid #ddd;
+            background: #fff;
+            border-radius: 10px;
+            padding: 8px 10px;
+            cursor: pointer
+        }
+
+            button.primary {
+                background: #111;
+                color: #fff;
+                border-color: #111
+            }
+
+        .pin {
+            color: #d97706;
+            border-color: #f1d19b;
+            background: #fff8e6
+        }
+
+        .ghost {
+            opacity: .6
+        }
+
+        .empty {
+            color: #777;
+            text-align: center;
+            padding: 40px 0
+        }
+
+        .divider {
+            margin: 16px 0;
+            border-top: 1px dashed #e6e6e6
+        }
+
+        .add {
+            display: flex;
+            gap: 8px
+        }
+
+            .add input {
+                flex: 1;
+                border: 1px solid #ddd;
+                border-radius: 10px;
+                padding: 10px
+            }
+
+        .sl {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transform: translateX(var(--dx,0px));
+            transition: transform .15s ease
+        }
+    </style>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
-<header>
-<div class="bar">
-<div style="font-weight:700">LIST</div>
-<div class="tabs">
-<div class="tab active" id="tabTasks">タスク</div>
-<div class="tab" id="tabJournal">ジャーナル</div>
-</div>
-<div id="refreshBtn" class="tab" title="更新">↻</div>
-</div>
-</header>
-<main class="section">
-<div id="pinned" class="list"></div>
-<div id="pinnedDivider" class="divider" style="display:none"></div>
-<div id="active" class="list"></div>
-<div id="completedDivider" class="divider" style="display:none"></div>
-<div id="completed" class="list"></div>
-<div id="empty" class="empty" style="display:none">タスクがありません</div>
-</main>
+    <header>
+        <div class="bar">
+            <div style="font-weight:700">LIST</div>
+            <div class="tabs">
+                <div class="tab active" id="tabTasks">タスク</div>
+                <div class="tab" id="tabJournal">ジャーナル</div>
+            </div>
+            <div id="refreshBtn" class="tab" title="更新">↻</div>
+        </div>
+    </header>
+    <main class="section">
+        <!-- G) 入力UI（新規タスク追加：Botからのメッセージをサーバ側で受けたケースも、ここから追加入力可能） -->
+        <div class="add">
+            <input id="newTitle" placeholder="タスクを入力（例：レポート提出）" />
+            <button id="btnAdd" class="primary">追加</button>
+        </div>
 
+        <div id="pinned" class="list"></div>
+        <div id="pinnedDivider" class="divider" style="display:none"></div>
+        <div id="active" class="list"></div>
+        <div id="completedDivider" class="divider" style="display:none"></div>
+        <div id="completed" class="list"></div>
+        <div id="empty" class="empty" style="display:none">タスクがありません</div>
+    </main>
 
-<script>
-const LIFF_ID = 'LIFF_ID_HERE';
-const API_BASE = 'N8N_BASE_URL'; // 例: https://your-n8n.example.com/webhook
+    <script>
+        /* =========================================================
+         * A) ID & 権限取得（LIFFから userId を取得）
+         * 役割：ユーザー識別（DBのパーティションキー）。
+         * 入出力：liff.getProfile() → userId
+         * =======================================================*/
+        const LIFF_ID = '2008311995';
+        const API_BASE = 'Nhttps://quiteforge.app.n8n.cloud/webhook/list'; // 例: https://your-n8n.example.com/webhook
 
+        let userId = null;
+        let profile = null;
 
-let userId = null;
-let profile = null;
+        /* =========================================================
+         * B) 受け渡し設計（Bot→n8n→DB→LIFF）
+         * - 公式LINEに送られたメッセージは **BotのWebhook(n8n)** で受信し、DB(Supabase)へ保存。
+         * - LIFFは「画面表示時」に **API(GET /list)** でDBの内容を取得して描画。
+         * - 直接Bot→LIFFに“push”はしない（LIFFはPullで同期）。
+         * - 任意で、メッセージリンクからLIFFを開く場合は URLクエリでプリフィル可。
+         * =======================================================*/
 
+        async function init() {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) liff.login();
+            try { profile = await liff.getProfile(); userId = profile.userId; }
+            catch (e) { console.error('LIFF profile error', e); alert('LINEプロフィールの取得に失敗しました'); return; }
+            bindUI();
+            await loadList();
+        }
 
-async function init() {
-await liff.init({ liffId: LIFF_ID });
-if (!liff.isLoggedIn()) liff.login();
+        /* =========================================================
+         * C) UIバインド（動的UIの核：イベント→状態変更→再描画）
+         * 役割：
+         *  - 追加ボタン/更新ボタン/タブ切替のイベント登録
+         *  - 動的UIは **DOM操作** で実現（フレームワーク不要）
+         *  - スワイプは touchstart/move/end で閾値判定
+         * =======================================================*/
+        function bindUI() {
+            document.getElementById('tabTasks').addEventListener('click', () => {
+                // ここでは画面切替のダミー（将来Journalに遷移）
+                alert('ジャーナルは後で実装します。今はタスク一覧のみ');
+            });
+            document.getElementById('tabJournal').addEventListener('click', () => {
+                alert('ジャーナルは後で実装します。今はタスク一覧のみ');
+            });
+            document.getElementById('refreshBtn').addEventListener('click', loadList);
+            document.getElementById('btnAdd').addEventListener('click', onAdd);
+        }
 
+        /* =========================================================
+         * D) データ取得（GET /list）
+         * 役割：n8n経由でユーザーのタスクリストを取得
+         * 入力：userId（クエリ）
+         * 出力：{ pinned[], active[], completed[] }
+         * =======================================================*/
+        async function loadList() {
+            setLoading(true);
+            try {
+                const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('list api failed');
+                const data = await res.json();
+                renderList(data);
+            } catch (err) { console.error(err); alert('一覧の取得に失敗しました'); }
+            finally { setLoading(false); }
+        }
 
-try {
-profile = await liff.getProfile();
-userId = profile.userId;
-} catch (e) {
-console.error('LIFF profile error', e);
-alert('LINEプロフィールの取得に失敗しました');
-return;
-}
+        function setLoading(on) { document.body.style.opacity = on ? .6 : 1; }
 
+        /* =========================================================
+         * E) 描画（Render）
+         * 役割：状態→DOM
+         * - 各カードにスワイプ検出器を付与
+         * =======================================================*/
+        function renderList(payload) {
+            const pinned = document.getElementById('pinned');
+            const active = document.getElementById('active');
+            const completed = document.getElementById('completed');
+            const empty = document.getElementById('empty');
+            const pinnedDivider = document.getElementById('pinnedDivider');
+            const completedDivider = document.getElementById('completedDivider');
+            [pinned, active, completed].forEach(el => el.innerHTML = '');
 
-bindUI();
-await loadList();
-}
+            const p = payload.pinned || [];
+            const a = payload.active || [];
+            const c = payload.completed || [];
 
+            if (p.length) { p.forEach(t => pinned.appendChild(taskCard(t))); pinnedDivider.style.display = 'block'; } else pinnedDivider.style.display = 'none';
+            if (a.length) { a.forEach(t => active.appendChild(taskCard(t))); }
+            if (c.length) { completedDivider.style.display = 'block'; c.forEach(t => completed.appendChild(taskCard(t, true))); } else completedDivider.style.display = 'none';
 
-function bindUI(){
-document.getElementById('tabTasks').addEventListener('click', ()=>{
-// ここでは画面切替のダミー（将来Journalに遷移）
-alert('ジャーナルは後で実装します。今はタスク一覧のみ');
-});
-document.getElementById('tabJournal').addEventListener('click', ()=>{
-alert('ジャーナルは後で実装します。今はタスク一覧のみ');
-});
-document.getElementById('refreshBtn').addEventListener('click', loadList);
+            empty.style.display = (p.length + a.length + c.length) ? 'none' : 'block';
+        }
+
+        function fmtDate(iso) { if (!iso) return '-'; const d = new Date(iso); const mm = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0'); const hh = String(d.getHours()).padStart(2, '0'); const mi = String(d.getMinutes()).padStart(2, '0'); return `${mm}/${dd} ${hh}:${mi}`; }
+
+        function taskCard(t, isCompleted = false) {
+            const wrap = document.createElement('div');
+            wrap.className = 'card';
+
+            const slide = document.createElement('div');
+            slide.className = 'sl';
+
+            const row = document.createElement('div'); row.className = 'row';
+
+            const left = document.createElement('div');
+            const title = document.createElement('div'); title.className = 'title'; title.textContent = t.title || '(無題)';
+            const meta = document.createElement('div'); meta.className = 'meta'; meta.innerHTML = `期限: ${fmtDate(t.due_at)} / 優先度: ${t.priority ?? '-'} / 意味量: ${avgMeaning(t)} / ピン: ${t.pinned ? 'ON' : 'OFF'}`;
+            const badges = document.createElement('div'); badges.className = 'badges';
+            if (t.vision_score != null) addBadge(badges, `vision ${t.vision_score}`);
+            if (t.excite_score != null) addBadge(badges, `excite ${t.excite_score}`);
+            if (t.growth_score != null) addBadge(badges, `growth ${t.growth_score}`);
+            left.appendChild(title); left.appendChild(meta); left.appendChild(badges);
+
+            const right = document.createElement('div');
+            const btnDone = mkBtn('完了', () => action('complete', t.id));
+            const btnRem = mkBtn('リマインド+2h', () => action('remind_plus2h', t.id));
+            const btnPin = mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id), t.pinned ? 'pin' : '');
+            const btnDel = mkBtn('削除', () => action('delete', t.id));
+            right.appendChild(btnDone); right.appendChild(btnRem); right.appendChild(btnPin); right.appendChild(btnDel);
+
+            row.appendChild(left); row.appendChild(right);
+            slide.appendChild(row);
+            wrap.appendChild(slide);
+
+            if (isCompleted) wrap.classList.add('ghost');
+
+            // F) スワイプ検出（最小）：左右±60pxでアクション候補
+            let startX = 0, dx = 0;
+            wrap.addEventListener('touchstart', e => { startX = e.touches[0].clientX; slide.style.transition = 'none'; });
+            wrap.addEventListener('touchmove', e => { dx = e.touches[0].clientX - startX; slide.style.setProperty('--dx', dx + 'px'); });
+            wrap.addEventListener('touchend', () => {
+                slide.style.transition = 'transform .15s ease';
+                if (dx > 60) { action('complete', t.id); }
+                else if (dx < -60) { action(t.pinned ? 'toggle_pin' : 'toggle_pin', t.id); }
+                slide.style.setProperty('--dx', '0px'); dx = 0;
+            });
+
+            return wrap;
+        }
+
+        function addBadge(root, text) { const b = document.createElement('span'); b.className = 'badge'; b.textContent = text; root.appendChild(b); }
+
+        function avgMeaning(t) { const vs = Number(t.vision_score ?? 0); const ex = Number(t.excite_score ?? 0); const gr = Number(t.growth_score ?? 0); const pr = Number(t.priority ?? 0); return Math.round((0.35 * vs + 0.25 * ex + 0.25 * gr + 0.15 * pr) * 10) / 10; }
+
+        function mkBtn(label, onClick, extraClass = '') { const b = document.createElement('button'); b.textContent = label; if (extraClass) b.classList.add(extraClass); b.addEventListener('click', onClick); return b; }
+
+        /* =========================================================
+         * F) 変更系API（POST /action）
+         * 役割：create/complete/toggle_pin/delete/remind_plus2h
+         * =======================================================*/
+        async function action(kind, taskId, extra = {}) {
+            try {
+                const res = await fetch(`${API_BASE}/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, action: kind, task_id: taskId, ...extra }) });
+                if (!res.ok) throw new Error('action failed');
+                const { ok, message } = await res.json();
+                if (!ok) throw new Error(message || 'NG');
+                await loadList();
+            } catch (e) { console.error(e); alert('操作に失敗しました'); }
+        }
+
+        /* =========================================================
+         * G) 作成イベント（UI→POST create）
+         * 役割：入力ボックスの内容を新規タスクとして保存
+         * =======================================================*/
+        async function onAdd() {
+            const title = document.getElementById('newTitle').value.trim();
+            if (!title) return;
+            await action('create', null, { title });
+            document.getElementById('newTitle').value = '';
+        }
+
+        init();
+    </script>
+</body>
 </html>
