@@ -165,6 +165,78 @@
             transform: translateX(var(--dx,0px));
             transition: transform .15s ease
         }
+
+        /* ▼ スワイプ露出UI用 追加CSS ▼ */
+        .actions-rail {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .actions-left, .actions-right {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            gap: 8px;
+            padding: 0 8px;
+            pointer-events: auto;
+        }
+
+        .actions-left {
+            left: 0;
+            background: #e8f7ee;
+            border-right: 1px solid #d4eee0;
+        }
+
+        .actions-right {
+            right: 0;
+            background: #fdeeee;
+            border-left: 1px solid #f6d2d2;
+        }
+
+        .actions-rail button {
+            min-width: 64px;
+            font-size: 12px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .actions-right .danger {
+            border-color: #f5b5b5;
+            background: #fff5f5;
+        }
+
+        .actions-left .primary {
+            border-color: #111;
+            color: #fff;
+            background: #111;
+        }
+
+        .card {
+            overflow: hidden;
+        }
+        /* 露出部のはみ出しを隠す */
+        .sl {
+            will-change: transform;
+        }
+
+        /* 露出スナップ状態（JSで付くクラス） */
+        .card.open-left .sl {
+            transform: translateX(180px);
+        }
+
+        .card.open-right .sl {
+            transform: translateX(-180px);
+        }
+        /* ▲ スワイプ露出UI用 追加CSS ▲ */
+
     </style>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
@@ -202,6 +274,12 @@
          * =======================================================*/
         const LIFF_ID = '2008330840-Lb5bqWMd';
         const API_BASE = 'https://quiteforge.app.n8n.cloud/webhook'; // 例: https://your-n8n.example.com/webhook
+
+        // スワイプ用閾値（CSSと幅を合わせる）
+        const EXPOSE_W = 180;      // 露出幅（px）
+        const SNAP_MIN = 30;       // 小スワイプで露出にスナップ
+        const STRONG_SWIPE = 140;  // 強スワイプで即実行（完了/削除）
+        const MAX_DRAG = EXPOSE_W; // ドラッグの最大量（露出幅まで）
 
         let userId = null;
         let profile = null;
@@ -293,45 +371,111 @@
             const wrap = document.createElement('div');
             wrap.className = 'card';
 
+            // 背景側：露出用アクションレール
+            const rail = document.createElement('div');
+            rail.className = 'actions-rail';
+
+            const leftRail = document.createElement('div');
+            leftRail.className = 'actions-left';
+            // 右スワイプで露出：完了 / +2h
+            leftRail.append(
+                mkBtn('完了', () => action('complete', t.id), 'primary'),
+                mkBtn('+2h', () => action('remind_plus2h', t.id))
+            );
+
+            const rightRail = document.createElement('div');
+            rightRail.className = 'actions-right';
+            // 左スワイプで露出：詳細 / ピン / 削除
+            rightRail.append(
+                mkBtn('詳細', () => openDetail(t.id)),
+                mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id)),
+                mkBtn('削除', () => action('delete', t.id), 'danger')
+            );
+
+            rail.append(leftRail, rightRail);
+
+            // 前景：スライド面（＝普段見える行）
             const slide = document.createElement('div');
             slide.className = 'sl';
 
             const row = document.createElement('div'); row.className = 'row';
-
             const left = document.createElement('div');
+
             const title = document.createElement('div'); title.className = 'title'; title.textContent = t.title || '(無題)';
-            const meta = document.createElement('div'); meta.className = 'meta'; meta.innerHTML = `期限: ${fmtDate(t.due_at)} / 優先度: ${t.priority ?? '-'} / 意味量: ${avgMeaning(t)} / ピン: ${t.pinned ? 'ON' : 'OFF'}`;
+            const meta = document.createElement('div'); meta.className = 'meta';
+            meta.innerHTML = `期限: ${fmtDate(t.due_at)} / 優先度: ${t.priority ?? '-'} / 意味量: ${avgMeaning(t)} / ピン: ${t.pinned ? 'ON' : 'OFF'}`;
+
             const badges = document.createElement('div'); badges.className = 'badges';
             if (t.vision_score != null) addBadge(badges, `vision ${t.vision_score}`);
             if (t.excite_score != null) addBadge(badges, `excite ${t.excite_score}`);
             if (t.growth_score != null) addBadge(badges, `growth ${t.growth_score}`);
-            left.appendChild(title); left.appendChild(meta); left.appendChild(badges);
 
-            const right = document.createElement('div');
-            const btnDone = mkBtn('完了', () => action('complete', t.id));
-            const btnRem = mkBtn('リマインド+2h', () => action('remind_plus2h', t.id));
-            const btnPin = mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id), t.pinned ? 'pin' : '');
-            const btnDel = mkBtn('削除', () => action('delete', t.id));
-            right.appendChild(btnDone); right.appendChild(btnRem); right.appendChild(btnPin); right.appendChild(btnDel);
+            left.append(title, meta, badges);
+            row.append(left);            // ← 一覧では右側の常設ボタンは出さない
+            slide.append(row);
 
-            row.appendChild(left); row.appendChild(right);
-            slide.appendChild(row);
-            wrap.appendChild(slide);
-
+            wrap.append(rail, slide);
             if (isCompleted) wrap.classList.add('ghost');
 
-            // F) スワイプ検出（最小）：左右±60pxでアクション候補
-            let startX = 0, dx = 0;
-            wrap.addEventListener('touchstart', e => { startX = e.touches[0].clientX; slide.style.transition = 'none'; });
-            wrap.addEventListener('touchmove', e => { dx = e.touches[0].clientX - startX; slide.style.setProperty('--dx', dx + 'px'); });
-            wrap.addEventListener('touchend', () => {
-                slide.style.transition = 'transform .15s ease';
-                if (dx > 60) { action('complete', t.id); }
-                else if (dx < -60) { action(t.pinned ? 'toggle_pin' : 'toggle_pin', t.id); }
-                slide.style.setProperty('--dx', '0px'); dx = 0;
+            // ── スワイプ検出（縦スクロールはキャンセル） ──
+            let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false, open = 'none';
+
+            const onStart = (x, y) => { startX = x; startY = y; dx = 0; dy = 0; dragging = true; slide.style.transition = 'none'; };
+            const onMove = (x, y) => {
+                if (!dragging) return;
+                dx = x - startX; dy = y - startY;
+                if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) { onEnd(true); return; } // 縦優先
+                const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
+                let tx = base + dx;
+                tx = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, tx));
+                slide.style.transform = `translateX(${tx}px)`;
+            };
+            const onEnd = (cancel = false) => {
+                if (!dragging) return;
+                dragging = false; slide.style.transition = 'transform .15s ease';
+
+                if (cancel) { snapTo(open); return; }
+
+                const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
+                const tx = base + dx;
+
+                // 強スワイプ即実行：右→完了、左→削除
+                if (tx >= STRONG_SWIPE) { open = 'none'; slide.style.transform = 'translateX(0px)'; action('complete', t.id); return; }
+                if (tx <= -STRONG_SWIPE) { open = 'none'; slide.style.transform = 'translateX(0px)'; action('delete', t.id); return; }
+
+                // 小〜中スワイプは露出でスナップ
+                if (tx > SNAP_MIN) { open = 'left'; snapTo('left'); }  // 右スワイプ
+                else if (tx < -SNAP_MIN) { open = 'right'; snapTo('right'); }  // 左スワイプ
+                else { open = 'none'; snapTo('none'); }  // ほぼ動いてない
+            };
+
+            function snapTo(which) {
+                if (which === 'left') { wrap.classList.add('open-left'); wrap.classList.remove('open-right'); slide.style.transform = `translateX(${EXPOSE_W}px)`; }
+                else if (which === 'right') { wrap.classList.add('open-right'); wrap.classList.remove('open-left'); slide.style.transform = `translateX(${-EXPOSE_W}px)`; }
+                else { wrap.classList.remove('open-left', 'open-right'); slide.style.transform = 'translateX(0px)'; }
+            }
+
+            // タップで閉じる（露出時のみ）
+            wrap.addEventListener('click', e => {
+                if (open !== 'none') { open = 'none'; snapTo('none'); e.preventDefault(); e.stopPropagation(); }
             });
 
+            // タッチ & マウス対応
+            wrap.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+            wrap.addEventListener('touchmove', e => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: false });
+            wrap.addEventListener('touchend', () => onEnd());
+
+            // PCプレビュー用（任意）
+            wrap.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
+            window.addEventListener('mousemove', e => dragging && onMove(e.clientX, e.clientY));
+            window.addEventListener('mouseup', () => dragging && onEnd());
+
             return wrap;
+        }
+
+        function openDetail(taskId) {
+            // TODO: ここをLIFF遷移やボトムシートに差し替え
+            alert(`詳細を開きます（ID: ${taskId}）`);
         }
 
         function addBadge(root, text) { const b = document.createElement('span'); b.className = 'badge'; b.textContent = text; root.appendChild(b); }
@@ -369,6 +513,5 @@
     </script>
 </body>
 </html>
-
 
 
