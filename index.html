@@ -65,7 +65,8 @@
             position: relative;
             overflow: hidden; /* ← 重要 */
             touch-action: pan-y;
-            padding: 12px 12px 8px;
+            min-heigt: 80px;
+            /*adding: 12px 12px 8px;*/
         }
 
         .row {
@@ -171,7 +172,7 @@
 
             /* 1-3) スライド内の実コンテンツにパディングを付与 */
             .sl .content {
-                padding: 16px 18px 14px; /* 元の.cardのpaddingを移植 */
+                padding: 16px 18px; /* 元の.cardのpaddingを移植 */
             }
 
         /* 1-4) 背面アクションレールは一段下げる */
@@ -515,5 +516,6 @@
     </script>
 </body>
 </html>
+
 
 
