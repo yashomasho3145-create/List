@@ -162,7 +162,7 @@
         /* 1-2) 前面スライド面は全面を覆う＋白背景＋最前面 */
         .sl {
             position: absolute;
-            inset: 0;
+            width: 100%;
             transition: transform .15s ease;
             will-change: transform;
             background: #fff; /* ← 重要：背面が透けない */
@@ -178,6 +178,7 @@
         .actions-rail {
             position: absolute;
             inset: 0;
+            border-radius: 14px;
             z-index: 1; /* ← .sl より下 */
             pointer-events: none; /* ← デフォは押せない */
         }
@@ -514,5 +515,4 @@
     </script>
 </body>
 </html>
-
 
