@@ -162,7 +162,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            transform: translateX(var(--dx,0px));
+            /*transform: translateX(var(--dx,0px));*/
             transition: transform .15s ease
         }
 
@@ -410,7 +410,7 @@
             if (t.excite_score != null) addBadge(badges, `excite ${t.excite_score}`);
             if (t.growth_score != null) addBadge(badges, `growth ${t.growth_score}`);
 
-            left.append(title, meta, badges);
+            left.append(title);
             row.append(left);            // ← 一覧では右側の常設ボタンは出さない
             slide.append(row);
 
@@ -462,7 +462,16 @@
 
             // タッチ & マウス対応
             wrap.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
-            wrap.addEventListener('touchmove', e => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: false });
+            wrap.addEventListener('touchmove', e => {
+                const x = e.touches[0].clientX, y = e.touches[0].clientY;
+
+                // ここで一時的な差分を計算して判定する
+                const tmpDx = x - startX;
+                const tmpDy = y - startY;
+                if (Math.abs(tmpDx) > Math.abs(tmpDy)) e.preventDefault();
+
+                onMove(x, y);  // ← その後でonMoveを呼ぶ
+            }, { passive: false });
             wrap.addEventListener('touchend', () => onEnd());
 
             // PCプレビュー用（任意）
