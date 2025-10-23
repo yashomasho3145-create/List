@@ -443,11 +443,12 @@
             const rail = document.createElement('div'); rail.className = 'actions-rail';
             const leftRail = document.createElement('div'); leftRail.className = 'actions-left';
             const rightRail = document.createElement('div'); rightRail.className = 'actions-right';
-            leftRail.append(mkBtn('完了', () => action('complete', t.id), 'primary'),
-                mkBtn('+2h', () => action('remind_plus2h', t.id)));
-            rightRail.append(mkBtn('詳細', () => openDetail(t.id)),
-                mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id)),
-                mkBtn('削除', () => action('delete', t.id), 'danger'));
+            leftRail.append(mkBtn('完了', () => action('complete', t.id), 'btn-complete'),
+                mkBtn('+2h', () => action('remind_plus2h', t.id), 'btn-push2h));
+            rightRail.append(
+                mkBtn('詳細', () => openDetail(t.id), 'btn-detail'),
+                mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id), 'btn-pin'),
+                mkBtn('削除', () => action('delete', t.id), 'btn-delete'));
             rail.append(leftRail, rightRail);
 
             // 前面（全面を覆う）
@@ -571,6 +572,7 @@
     </script>
 </body>
 </html>
+
 
 
 
