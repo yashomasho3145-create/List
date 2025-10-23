@@ -179,8 +179,12 @@
         /* 1-4) 背面アクションレールは一段下げる */
         .actions-rail {
             position: absolute;
-            inset: 0;
-            border-radius: 14px;
+            height: 40px;
+            top: 0px;
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+            border-radius: 0px;
             z-index: 1; /* ← .sl より下 */
             pointer-events: none; /* ← デフォは押せない */
         }
@@ -192,21 +196,20 @@
 
         /* 1-5) レールとボタン（可動域は後で可変に） */
         :root {
-            /* 画面幅の45%を基準に、140〜220pxに収める */
-            --rail-w: clamp(140px, 45vw, 220px);
+            --rail-w: 240px;
         }
-
         /* ← iOSメールっぽい露出幅 */
         .actions-left, .actions-right {
+            
             position: absolute;
             top: 0;
             bottom: 0;
             width: var(--rail-w);
             display: flex;
-            align-items: center;
-            justify-content: space-evenly;
-            gap: 8px;
-            padding: 0 8px;
+            align-items: center; /*ボタンの縦位置（top/center/bottom）*/
+            justify-content: space-evenly; /*ボタンの横位置*/
+            gap: 0px;
+            padding: 0 0px;
         }
 
         .actions-left {
@@ -222,10 +225,12 @@
         }
 
         .actions-rail button {
+            height: 100%;
+            box-sizing: border-box;
             min-width: 64px;
-            font-size: 12px;
-            padding: 8px 10px;
-            border-radius: 10px;
+            font-size: 28px;
+            padding: 0px;
+            border-radius: 0px;
             border: 1px solid #ddd;
             background: #fff;
             cursor: pointer;
@@ -251,84 +256,6 @@
             transform: translateX(calc(var(--rail-w) * -1));
         }
         /* ▲ スワイプ露出UI用 追加CSS ▲ */
-
-        /* ▼ モバイル最適化：ボタンサイズ・余白を詰める */
-        @media (max-width: 480px) {
-            header .bar {
-                padding: 10px 12px;
-            }
-
-            .tab {
-                padding: 7px 10px;
-                font-size: 14px;
-            }
-
-            .section {
-                padding: 10px 12px;
-            }
-
-            .title {
-                font-size: 15px;
-                line-height: 1.4;
-            }
-
-            .meta {
-                font-size: 11px;
-                gap: 6px;
-            }
-
-            .badge {
-                font-size: 10px;
-                padding: 2px 6px;
-            }
-
-            .add input {
-                padding: 10px;
-                font-size: 15px;
-            }
-
-            .add button {
-                padding: 9px 10px;
-                font-size: 14px;
-            }
-
-            /* スワイプ背面ボタンの詰め調整 */
-            .actions-rail {
-                padding: 0 6px;
-            }
-
-                .actions-rail button {
-                    min-width: 56px;
-                    padding: 10px 8px;
-                    font-size: 11px;
-                }
-
-            .actions-left, .actions-right {
-                gap: 6px;
-                justify-content: space-around;
-            }
-        }
-
-        /* 超狭幅（例: 360px未満）でも見切れないようにさらに圧縮 */
-        @media (max-width: 359px) {
-            :root {
-                --rail-w: clamp(120px, 48vw, 180px);
-            }
-
-            .actions-rail button {
-                min-width: 52px;
-                padding: 9px 6px;
-                font-size: 10px;
-            }
-        }
-
-        /* 低モーション設定端末への配慮 */
-        @media (prefers-reduced-motion: reduce) {
-            .sl {
-                transition: none !important;
-            }
-        }
-
 
     </style>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -369,22 +296,10 @@
         const API_BASE = 'https://quiteforge.app.n8n.cloud/webhook-test'; // 例: https://your-n8n.example.com/webhook
 
         // スワイプ用閾値（CSSと幅を合わせる）
-        let EXPOSE_W, SNAP_MIN = 30, STRONG_SWIPE, MAX_DRAG;
-
-        function recomputeSwipeWidths() {
-            // 画面幅に応じて露出幅を再計算（CSSのclampと揃える）
-            const vw = Math.max(320, Math.min(window.innerWidth || 360, 1080));
-            const expose = Math.max(120, Math.min(Math.round(vw * 0.45), vw < 360 ? 180 : 220));
-            EXPOSE_W = expose;
-            STRONG_SWIPE = Math.min(expose, 180); // 強スワイプは露出幅と同等か少し小さめ
-            MAX_DRAG = expose;
-        }
-
-        // 初期計算＋回転/リサイズにも追従
-        recomputeSwipeWidths();
-        window.addEventListener('resize', recomputeSwipeWidths);
-        window.addEventListener('orientationchange', recomputeSwipeWidths);
-
+        const EXPOSE_W = 240;      // ← 180 から 240 へ
+        const SNAP_MIN = 30;
+        const STRONG_SWIPE = 180;  // ← 強スワイプ閾値も少し広げると自然
+        const MAX_DRAG = EXPOSE_W;
 
 
         let userId = null;
