@@ -314,7 +314,8 @@
         const API_BASE = 'https://quiteforge.app.n8n.cloud/webhook-test'; // 例: https://your-n8n.example.com/webhook
 
         // スワイプ用閾値（CSSと幅を合わせる）
-        const EXPOSE_W = 240;      // ← 180 から 240 へ
+        const EXPOSE_W = 129;      // ← 180 から 240 へ
+        const EXPOSE_X = 193;
         const SNAP_MIN = 30;
         const STRONG_SWIPE = 180;  // ← 強スワイプ閾値も少し広げると自然
         const MAX_DRAG = EXPOSE_W;
@@ -471,7 +472,7 @@
 
             function snapTo(which) {
                 if (which === 'left') { wrap.classList.add('open-left'); wrap.classList.remove('open-right'); slide.style.transform = `translateX(${EXPOSE_W}px)`; }
-                else if (which === 'right') { wrap.classList.add('open-right'); wrap.classList.remove('open-left'); slide.style.transform = `translateX(${-EXPOSE_W}px)`; }
+                else if (which === 'right') { wrap.classList.add('open-right'); wrap.classList.remove('open-left'); slide.style.transform = `translateX(${-EXPOSE_X}px)`; }
                 else { wrap.classList.remove('open-left', 'open-right'); slide.style.transform = 'translateX(0px)'; }
             }
 
@@ -542,6 +543,7 @@
     </script>
 </body>
 </html>
+
 
 
 
