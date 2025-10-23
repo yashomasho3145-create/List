@@ -444,7 +444,7 @@
             const leftRail = document.createElement('div'); leftRail.className = 'actions-left';
             const rightRail = document.createElement('div'); rightRail.className = 'actions-right';
             leftRail.append(mkBtn('完了', () => action('complete', t.id), 'btn-complete'),
-                mkBtn('+2h', () => action('remind_plus2h', t.id), 'btn-push2h));
+                mkBtn('+2h', () => action('remind_plus2h', t.id), 'btn-plus2h'));
             rightRail.append(
                 mkBtn('詳細', () => openDetail(t.id), 'btn-detail'),
                 mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id), 'btn-pin'),
@@ -572,6 +572,7 @@
     </script>
 </body>
 </html>
+
 
 
 
