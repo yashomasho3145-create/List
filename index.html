@@ -58,6 +58,8 @@
         }
 
         .card {
+            height: 60px;
+            min-height: 60px;
             background: #fff;
             border: 1px solid #eee;
             border-radius: 0px;
@@ -65,7 +67,6 @@
             position: relative;
             overflow: hidden; /* ← 重要 */
             touch-action: pan-y;
-            min-height: 60px;
             /*adding: 12px 12px 8px;*/
         }
 
@@ -161,8 +162,17 @@
                 padding: 10px
             }
 
+        .list{ gap:0; }                                   /* 行間の余白ゼロ */
+        .list .card{ border-left:0; border-right:0; }     /* 横の枠線は消す（後述とセット） */
+        /* 2枚の境目が2pxにならないよう、下側だけを使うイメージ */
+        .list .card{ border-top:0; }                      /* すべて上枠は消す */
+        .list .card:first-child{ border-top:1px solid #eee; } /* 先頭だけ上枠を復活 */
+
+        .section{ padding-left:0; padding-right:0; }      /* 画面端まで広げる */
+
         /* 1-2) 前面スライド面は全面を覆う＋白背景＋最前面 */
         .sl {
+            height: 100%;
             position: relative;
             width: 100%;
             transition: transform .15s ease;
@@ -173,17 +183,17 @@
 
             /* 1-3) スライド内の実コンテンツにパディングを付与 */
             .sl .content {
-                padding: 20px 18px 16px; /* 元の.cardのpaddingを移植 */
+                height: 100%;
+                display:flex;
+                align-items:center;
+                padding: 0 12px; /* 元の.cardのpaddingを移植 */
             }
 
         /* 1-4) 背面アクションレールは一段下げる */
         .actions-rail {
             position: absolute;
             height: 80px;
-            top: 0px;
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
+            top: 0px; bottom: 0px; left: 0px; right: 0px;
             border-radius: 0px;
             z-index: 1; /* ← .sl より下 */
             pointer-events: none; /* ← デフォは押せない */
@@ -524,6 +534,7 @@
     </script>
 </body>
 </html>
+
 
 
 
