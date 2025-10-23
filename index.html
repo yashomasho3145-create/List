@@ -191,8 +191,11 @@
 
         /* 1-4) 背面アクションレールは一段下げる */
         .actions-rail {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             position: absolute;
-            height: 80px;
             top: 0px; bottom: 0px; left: 0px; right: 0px;
             border-radius: 0px;
             z-index: 1; /* ← .sl より下 */
@@ -217,19 +220,21 @@
             width: var(--rail-w);
             display: flex;
             align-items: center; /*ボタンの縦位置（top/center/bottom）*/
-            justify-content: space-evenly; /*ボタンの横位置*/
+            justify-content: space-between; /*ボタンの横位置*/
             gap: 0px;
             padding: 0px;
         }
 
         .actions-left {
             left: 0;
+            justify-content: flex-start;
             background: #e8f7ee;
             border-right: 1px solid #d4eee0;
         }
 
         .actions-right {
             right: 0;
+            justify-content: flex-end;
             background: #fdeeee;
             border-left: 1px solid #f6d2d2;
         }
@@ -534,6 +539,7 @@
     </script>
 </body>
 </html>
+
 
 
 
