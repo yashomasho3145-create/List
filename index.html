@@ -209,8 +209,10 @@
 
         /* 1-5) レールとボタン（可動域は後で可変に） */
         :root {
-            --rail-w: 240px;
+            /* 画面幅の45%を基準に、140〜220pxに収める */
+            --rail-w: clamp(128px, 35vw, 220px);
         }
+
         /* ← iOSメールっぽい露出幅 */
         .actions-left, .actions-right {
             
@@ -269,7 +271,7 @@
         }
 
         .card.open-right .sl {
-            transform: translateX(calc(var(--rail-w) * -1));
+            transform: translateX(calc(var(--rail-w) * -1 * 1.5));
         }
         /* ▲ スワイプ露出UI用 追加CSS ▲ */
 
@@ -540,6 +542,7 @@
     </script>
 </body>
 </html>
+
 
 
 
