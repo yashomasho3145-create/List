@@ -116,7 +116,7 @@
 
         button {
             appearance: none;
-            border: 1px solid #ddd;
+            border: 0px solid #ddd;
             background: #fff;
             border-radius: 10px;
             padding: 0px;
@@ -166,7 +166,7 @@
         .list .card{ border-left:0; border-right:0; }     /* 横の枠線は消す（後述とセット） */
         /* 2枚の境目が2pxにならないよう、下側だけを使うイメージ */
         .list .card{ border-top:0; }                      /* すべて上枠は消す */
-        .list .card:first-child{ border-top:1px solid #eee; } /* 先頭だけ上枠を復活 */
+        .list .card:first-child{ border-top:0px solid #eee; } /* 先頭だけ上枠を復活 */
 
         .section{ padding-left:0; padding-right:0; }      /* 画面端まで広げる */
 
@@ -229,14 +229,14 @@
             left: 0;
             justify-content: flex-start;
             background: #e8f7ee;
-            border-right: 1px solid #d4eee0;
+            border-right: 0px solid #d4eee0;
         }
 
         .actions-right {
             right: 0;
             justify-content: flex-end;
             background: #fdeeee;
-            border-left: 1px solid #f6d2d2;
+            border-left: 0px solid #f6d2d2;
         }
 
         .actions-rail button {
@@ -246,7 +246,7 @@
             font-size: 20px;
             padding: 0px;
             border-radius: 0px;
-            border: 1px solid #ddd;
+            border: 0px solid #ddd;
             background: #fff;
             cursor: pointer;
         }
@@ -539,6 +539,7 @@
     </script>
 </body>
 </html>
+
 
 
 
