@@ -1,691 +1,143 @@
-<!doctype html>
-<html lang="ja">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LIST｜タスク一覧 </title>
-    <style>
-        body {
-            font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-            margin: 0;
-            background: #f7f7f8;
-            color: #111
+/* ======== タッチ専用：☰ハンドルで並び替え ======== */
+(function enableTouchReorder(){
+  const lists = document.querySelectorAll('.list');
+
+  let dragging = null;   // { card, startY, lastY, placeholder, fromList, offsetY }
+  let autoScrollRAF = null;
+
+  // 各カード生成時に .handle を右端に入れているので、委譲で拾う
+  document.addEventListener('touchstart', (e) => {
+    const handle = e.target.closest('.handle');
+    if (!handle) return;
+    const card = handle.closest('.card');
+    if (!card) return;
+
+    const rect = card.getBoundingClientRect();
+    const ph = document.createElement('div');
+    ph.className = 'card placeholder';
+    ph.style.height = rect.height + 'px'; // 高さをカードに合わせる
+
+    const fromList = card.parentElement;   // pinned/active/completed のいずれか
+    card.classList.add('dragging');
+    card.style.width = rect.width + 'px';
+    card.style.position = 'fixed';
+    card.style.left = rect.left + 'px';
+    card.style.top = rect.top + 'px';
+    card.style.zIndex = '999';
+
+    // 元の位置にプレースホルダを差し込む
+    fromList.insertBefore(ph, card.nextSibling);
+
+    dragging = {
+      card, placeholder: ph, fromList,
+      startY: e.touches[0].clientY,
+      lastY:  e.touches[0].clientY,
+      offsetY: e.touches[0].clientY - rect.top
+    };
+
+    // スクロール抑止（横持ちでも安定させたいので）
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+
+    const y = e.touches[0].clientY;
+    dragging.lastY = y;
+
+    // カードを指に追従
+    const top = y - dragging.offsetY;
+    dragging.card.style.top = `${top}px`;
+
+    // どのリスト上か判定
+    const el = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+    const list = el ? el.closest('.list') : null;
+
+    if (list) {
+      // 同一リスト内の挿入位置を見つける
+      const siblings = [...list.querySelectorAll('.card:not(.dragging)')];
+      let placed = false;
+      for (const sib of siblings) {
+        const r = sib.getBoundingClientRect();
+        // カードの中心が sib の上半分に入ったら、その前に置く
+        if (y < r.top + r.height / 2) {
+          list.insertBefore(dragging.placeholder, sib);
+          placed = true;
+          break;
         }
-
-        header {
-            position: sticky;
-            top: 0;
-            background: #fff;
-            border-bottom: 1px solid #eee;
-            z-index: 10
-        }
-
-        .bar {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px
-        }
-
-        .tabs {
-            display: flex;
-            gap: 8px
-        }
-
-        .tab {
-            padding: 8px 12px;
-            border-radius: 999px;
-            border: 1px solid #ddd;
-            background: #fff;
-            cursor: pointer
-        }
-
-            .tab.active {
-                background: #111;
-                color: #fff;
-                border-color: #111
-            }
-
-        .section {
-            padding: 12px 16px
-        }
-
-        .list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px
-        }
-
-        .card {
-            height: 60px;
-            min-height: 60px;
-            background: #fff;
-            border: 1px solid #eee;
-            border-radius: 0px;
-            box-shadow: 0 1px 2px rgba(0,0,0,.03);
-            position: relative;
-            overflow: hidden; /* ← 重要 */
-            touch-action: pan-y;
-            /*adding: 12px 12px 8px;*/
-        }
-
-        .row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: space-between
-        }
-
-        .title {
-            font-size: 17px;
-            font-weight: 600;
-            word-break: break-word;
-            font-size: 16px;
-            line-height: 1.5
-        }
-
-        .meta {
-            font-size: 12px;
-            color: #666;
-            display: flex;
-            gap: 10px;
-            margin-top: 4px
-        }
-
-        .badges {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-top: 8px
-        }
-
-        .badge {
-            font-size: 11px;
-            border: 1px solid #ddd;
-            border-radius: 999px;
-            padding: 3px 8px;
-            background: #fafafa
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px
-        }
-
-        button {
-            appearance: none;
-            border: 0px solid #ddd;
-            background: #fff;
-            border-radius: 10px;
-            padding: 0px;
-            cursor: pointer
-        }
-
-            button.primary {
-                background: #ddd;
-                color: #fff;
-                border-color: #ddd
-            }
-
-        .pin {
-            color: #d97706;
-            border-color: #f1d19b;
-            background: #fff8e6
-        }
-
-        .ghost {
-            opacity: .6
-        }
-
-        .empty {
-            color: #777;
-            text-align: center;
-            padding: 0px 0
-        }
-
-        .divider {
-            margin: 16px 0;
-            border-top: 1px dashed #e6e6e6
-        }
-
-        .add {
-            display: flex;
-            gap: 8px
-        }
-
-            .add input {
-                flex: 1;
-                border: 1px solid #ddd;
-                border-radius: 10px;
-                padding: 10px
-            }
-
-        .list {
-            gap: 0;
-        }
-            /* 行間の余白ゼロ */
-            .list .card {
-                border-left: 0;
-                border-right: 0;
-            }
-            /* 横の枠線は消す（後述とセット） */
-            /* 2枚の境目が2pxにならないよう、下側だけを使うイメージ */
-            .list .card {
-                border-top: 0;
-            }
-                /* すべて上枠は消す */
-                .list .card:first-child {
-                    border-top: 0px solid #eee;
-                }
-        /* 先頭だけ上枠を復活 */
-
-        .section {
-            padding-left: 0;
-            padding-right: 0;
-        }
-        /* 画面端まで広げる */
-
-        /* 1-2) 前面スライド面は全面を覆う＋白背景＋最前面 */
-        .sl {
-            height: 100%;
-            position: relative;
-            width: 100%;
-            transition: transform .15s ease;
-            will-change: transform;
-            background: #fff; /* ← 重要：背面が透けない */
-            z-index: 2; /* ← 背面より前 */
-        }
-
-            /* 1-3) スライド内の実コンテンツにパディングを付与 */
-            .sl .content {
-                height: 100%;
-                display: flex;
-                align-items: center;
-                padding: 0 12px; /* 元の.cardのpaddingを移植 */
-            }
-
-        /* 1-4) 背面アクションレールは一段下げる */
-        .actions-rail {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: absolute;
-            top: 0px;
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
-            border-radius: 0px;
-            z-index: 1; /* ← .sl より下 */
-            pointer-events: none; /* ← デフォは押せない */
-        }
-        /* 露出時のみボタンを押せる */
-        .card.open-left .actions-rail,
-        .card.open-right .actions-rail {
-            pointer-events: auto;
-        }
-
-        /* 1-5) レールとボタン（可動域は後で可変に） */
-        :root {
-            /* 画面幅の45%を基準に、140〜220pxに収める */
-            --rail-w: clamp(128px, 35vw, 220px);
-        }
-
-        /* ← iOSメールっぽい露出幅 */
-        .actions-left, .actions-right {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: var(--rail-w);
-            display: flex;
-            align-items: center; /*ボタンの縦位置（top/center/bottom）*/
-            justify-content: space-between; /*ボタンの横位置*/
-            gap: 0px;
-            padding: 0px;
-        }
-
-        .actions-left {
-            left: 0;
-            justify-content: flex-start;
-            background: #e8f7ee;
-            border-right: 0px solid #111;
-        }
-
-        .actions-right {
-            right: 0;
-            justify-content: flex-end;
-            background: #fdeeee;
-            border-left: 0px solid #f6d2d2;
-        }
-
-        .actions-rail button {
-            height: 100%;
-            box-sizing: border-box;
-            min-width: 64px;
-            font-size: 20px;
-            padding: 0px;
-            border-radius: 0px;
-            border: 0px solid #ddd;
-            background: #fff;
-            cursor: pointer;
-            color: #000;
-            transition: background 0.2s;
-        }
-
-        /* ▼ 各ボタン専用カラー設定 */
-        button.btn-complete {
-            background: #7e6dff; /* 緑：完了 */
-            color: #fff;
-        }
-
-        button.btn-plus2h {
-            background: #8012e2; /* 青：+2h */
-            color: #fff;
-        }
-
-        button.btn-detail {
-            background: #1e928b; /* 白：詳細 */
-            color: #fff;
-            border: 0px solid #ccc;
-        }
-
-        button.btn-pin {
-            background: #d97706; /* 黄：ピン */
-            color: #fff;
-        }
-
-        button.btn-delete {
-            background: #f03d30; /* 赤：削除 */
-            color: #fff;
-        }
-
-
-        .actions-right .danger {
-            border-color: #40f;
-            color: #fff;
-            background: #40f;
-        }
-
-        .actions-left .primary {
-            border-color: #111;
-            color: #fff;
-            background: #000;
-        }
-
-        /* 1-6) スナップ位置も可動域と連動 */
-        .card.open-left .sl {
-            transform: translateX(var(--rail-w));
-        }
-
-        .card.open-right .sl {
-            transform: translateX(calc(var(--rail-w) * -1 * 1.5));
-        }
-        /* ▲ スワイプ露出UI用 追加CSS ▲ */
-
-        /* ▼ ドラッグハンドル用スタイル▼ */
-        .handle {
-            margin-left: auto;
-            cursor: grab;
-            user-select: none;
-            font-size: 20px;
-            opacity: 0.4;
-            padding: 0 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .card.dragging {
-            opacity: 0.5;
-            transform: scale(0.98);
-            transition: transform 0.1s;
-        }
-
-
-    </style>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-</head>
-<body>
-    <header>
-        <div class="bar">
-            <div style="font-weight:700">LIST</div>
-            <div class="tabs">
-                <div class="tab active" id="tabTasks">タスク</div>
-                <div class="tab" id="tabJournal">ジャーナル</div>
-            </div>
-            <div id="refreshBtn" class="tab" title="更新">↻</div>
-        </div>
-    </header>
-    <main class="section">
-        <!-- G) 入力UI（新規タスク追加：Botからのメッセージをサーバ側で受けたケースも、ここから追加入力可能） -->
-        <div class="add">
-            <input id="newTitle" placeholder="タスクを入力（例：レポート提出）" />
-            <button id="btnAdd" class="primary">追加</button>
-        </div>
-
-        <div id="pinned" class="list"></div>
-        <div id="pinnedDivider" class="divider" style="display:none"></div>
-        <div id="active" class="list"></div>
-        <div id="completedDivider" class="divider" style="display:none"></div>
-        <div id="completed" class="list"></div>
-        <div id="empty" class="empty" style="display:none">タスクがありません</div>
-    </main>
-
-    <script>
-        /* =========================================================
-         * A) ID & 権限取得（LIFFから userId を取得）
-         * 役割：ユーザー識別（DBのパーティションキー）。
-         * 入出力：liff.getProfile() → userId
-         * =======================================================*/
-        const LIFF_ID = '2008330840-Lb5bqWMd';
-        const API_BASE = 'https://quiteforge.app.n8n.cloud/webhook-test'; // 例: https://your-n8n.example.com/webhook
-
-        // スワイプ用閾値（CSSと幅を合わせる）
-        const EXPOSE_W = 129;      // ← 180 から 240 へ
-        const EXPOSE_X = 193;
-        const SNAP_MIN = 30;
-        const STRONG_SWIPE = 180;  // ← 強スワイプ閾値も少し広げると自然
-        const MAX_DRAG = EXPOSE_W;
-
-
-        let userId = null;
-        let profile = null;
-
-        /* =========================================================
-         * B) 受け渡し設計（Bot→n8n→DB→LIFF）
-         * - 公式LINEに送られたメッセージは **BotのWebhook(n8n)** で受信し、DB(Supabase)へ保存。
-         * - LIFFは「画面表示時」に **API(GET /list)** でDBの内容を取得して描画。
-         * - 直接Bot→LIFFに“push”はしない（LIFFはPullで同期）。
-         * - 任意で、メッセージリンクからLIFFを開く場合は URLクエリでプリフィル可。
-         * =======================================================*/
-
-        async function init() {
-            await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) liff.login();
-            try { profile = await liff.getProfile(); userId = profile.userId; }
-            catch (e) { console.error('LIFF profile error', e); alert('LINEプロフィールの取得に失敗しました'); return; }
-            bindUI();
-            await loadList();
-            enableSorting();
-        }
-
-        /* =========================================================
-         * C) UIバインド（動的UIの核：イベント→状態変更→再描画）
-         * 役割：
-         *  - 追加ボタン/更新ボタン/タブ切替のイベント登録
-         *  - 動的UIは **DOM操作** で実現（フレームワーク不要）
-         *  - スワイプは touchstart/move/end で閾値判定
-         * =======================================================*/
-        function bindUI() {
-            document.getElementById('tabTasks').addEventListener('click', () => {
-                // ここでは画面切替のダミー（将来Journalに遷移）
-                alert('ジャーナルは後で実装します。今はタスク一覧のみ');
-            });
-            document.getElementById('tabJournal').addEventListener('click', () => {
-                alert('ジャーナルは後で実装します。今はタスク一覧のみ');
-            });
-            document.getElementById('refreshBtn').addEventListener('click', loadList);
-            document.getElementById('btnAdd').addEventListener('click', onAdd);
-        }
-
-        /* =========================================================
-         * D) データ取得（GET /list）
-         * 役割：n8n経由でユーザーのタスクリストを取得
-         * 入力：userId（クエリ）
-         * 出力：{ pinned[], active[], completed[] }
-         * =======================================================*/
-        async function loadList() {
-            setLoading(true);
-            try {
-                const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
-                const res = await fetch(url);
-                if (!res.ok) throw new Error('list api failed');
-                const data = await res.json();
-                renderList(data);
-            } catch (err) { console.error(err); alert('一覧の取得に失敗しました'); }
-            finally { setLoading(false); }
-        }
-
-        function setLoading(on) { document.body.style.opacity = on ? .6 : 1; }
-
-        /* =========================================================
-         * E) 描画（Render）
-         * 役割：状態→DOM
-         * - 各カードにスワイプ検出器を付与
-         * =======================================================*/
-        function renderList(payload) {
-            const pinned = document.getElementById('pinned');
-            const active = document.getElementById('active');
-            const completed = document.getElementById('completed');
-            const empty = document.getElementById('empty');
-            const pinnedDivider = document.getElementById('pinnedDivider');
-            const completedDivider = document.getElementById('completedDivider');
-            [pinned, active, completed].forEach(el => el.innerHTML = '');
-
-            const p = payload.pinned || [];
-            const a = payload.active || [];
-            const c = payload.completed || [];
-
-            if (p.length) { p.forEach(t => pinned.appendChild(taskCard(t))); pinnedDivider.style.display = 'block'; } else pinnedDivider.style.display = 'none';
-            if (a.length) { a.forEach(t => active.appendChild(taskCard(t))); }
-            if (c.length) { completedDivider.style.display = 'block'; c.forEach(t => completed.appendChild(taskCard(t, true))); } else completedDivider.style.display = 'none';
-
-            empty.style.display = (p.length + a.length + c.length) ? 'none' : 'block';
-        }
-
-        function fmtDate(iso) { if (!iso) return '-'; const d = new Date(iso); const mm = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0'); const hh = String(d.getHours()).padStart(2, '0'); const mi = String(d.getMinutes()).padStart(2, '0'); return `${mm}/${dd} ${hh}:${mi}`; }
-
-        function taskCard(t, isCompleted = false) {
-            const wrap = document.createElement('div');
-            wrap.className = 'card';
-
-            // 背面
-            const rail = document.createElement('div'); rail.className = 'actions-rail';
-            const leftRail = document.createElement('div'); leftRail.className = 'actions-left';
-            const rightRail = document.createElement('div'); rightRail.className = 'actions-right';
-            leftRail.append(mkBtn('完了', () => action('complete', t.id), 'btn-complete'),
-                mkBtn('+2h', () => action('remind_plus2h', t.id), 'btn-plus2h'));
-            rightRail.append(
-                mkBtn('詳細', () => openDetail(t.id), 'btn-detail'),
-                mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id), 'btn-pin'),
-                mkBtn('削除', () => action('delete', t.id), 'btn-delete'));
-            rail.append(leftRail, rightRail);
-
-            // 前面（全面を覆う）
-            const slide = document.createElement('div'); slide.className = 'sl';
-
-            const content = document.createElement('div'); content.className = 'content'; // ← 追加
-            const row = document.createElement('div'); row.className = 'row';
-            const left = document.createElement('div');
-
-            const title = document.createElement('div'); title.className = 'title';
-
-            // 右端にドラッグハンドル（☰）を追加
-            const handle = document.createElement('div');
-            handle.className = 'handle';
-            handle.textContent = '☰';
-            row.append(left, handle);  // ← row.append(left); の代わりにこれ！
-
-            title.textContent = t.title || '(無題)';
-            left.append(title);
-            content.append(row);        // ← content に詰める
-            slide.append(content);      // ← slide に content を入れる
-
-            wrap.append(rail, slide);
-            if (isCompleted) wrap.classList.add('ghost');
-
-            // ── スワイプ検出（縦スクロールはキャンセル） ──
-            let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false, open = 'none';
-
-            const onStart = (x, y) => { startX = x; startY = y; dx = 0; dy = 0; dragging = true; slide.style.transition = 'none'; };
-            const onMove = (x, y) => {
-                if (!dragging) return;
-                dx = x - startX; dy = y - startY;
-                if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) { onEnd(true); return; } // 縦優先
-                const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
-                let tx = base + dx;
-                tx = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, tx));
-                slide.style.transform = `translateX(${tx}px)`;
-            };
-            const onEnd = (cancel = false) => {
-                if (!dragging) return;
-                dragging = false; slide.style.transition = 'transform .15s ease';
-
-                if (cancel) { snapTo(open); return; }
-
-                const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
-                const tx = base + dx;
-
-                // 強スワイプ即実行：右→完了、左→削除
-                if (tx >= STRONG_SWIPE) { open = 'none'; slide.style.transform = 'translateX(0px)'; action('complete', t.id); return; }
-                if (tx <= -STRONG_SWIPE) { open = 'none'; slide.style.transform = 'translateX(0px)'; action('delete', t.id); return; }
-
-                // 小〜中スワイプは露出でスナップ
-                if (tx > SNAP_MIN) { open = 'left'; snapTo('left'); }  // 右スワイプ
-                else if (tx < -SNAP_MIN) { open = 'right'; snapTo('right'); }  // 左スワイプ
-                else { open = 'none'; snapTo('none'); }  // ほぼ動いてない
-            };
-
-            function snapTo(which) {
-                if (which === 'left') { wrap.classList.add('open-left'); wrap.classList.remove('open-right'); slide.style.transform = `translateX(${EXPOSE_W}px)`; }
-                else if (which === 'right') { wrap.classList.add('open-right'); wrap.classList.remove('open-left'); slide.style.transform = `translateX(${-EXPOSE_X}px)`; }
-                else { wrap.classList.remove('open-left', 'open-right'); slide.style.transform = 'translateX(0px)'; }
-            }
-
-            // タップで閉じる（露出時のみ）
-            wrap.addEventListener('click', e => {
-                if (open !== 'none') { open = 'none'; snapTo('none'); e.preventDefault(); e.stopPropagation(); }
-            });
-
-            // タッチ & マウス対応
-            wrap.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
-            wrap.addEventListener('touchmove', e => {
-                const x = e.touches[0].clientX, y = e.touches[0].clientY;
-
-                // ここで一時的な差分を計算して判定する
-                const tmpDx = x - startX;
-                const tmpDy = y - startY;
-                if (Math.abs(tmpDx) > Math.abs(tmpDy)) e.preventDefault();
-
-                onMove(x, y);  // ← その後でonMoveを呼ぶ
-            }, { passive: false });
-            wrap.addEventListener('touchend', () => onEnd());
-
-            // PCプレビュー用（任意）
-            wrap.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
-            window.addEventListener('mousemove', e => dragging && onMove(e.clientX, e.clientY));
-            window.addEventListener('mouseup', () => dragging && onEnd());
-
-            wrap.setAttribute('draggable', 'true');
-
-            return wrap;
-        }
-
-        function openDetail(taskId) {
-            // TODO: ここをLIFF遷移やボトムシートに差し替え
-            alert(`詳細を開きます（ID: ${taskId}）`);
-        }
-
-        function addBadge(root, text) { const b = document.createElement('span'); b.className = 'badge'; b.textContent = text; root.appendChild(b); }
-
-        function avgMeaning(t) { const vs = Number(t.vision_score ?? 0); const ex = Number(t.excite_score ?? 0); const gr = Number(t.growth_score ?? 0); const pr = Number(t.priority ?? 0); return Math.round((0.35 * vs + 0.25 * ex + 0.25 * gr + 0.15 * pr) * 10) / 10; }
-
-        function mkBtn(label, onClick, extraClass = '') { const b = document.createElement('button'); b.textContent = label; if (extraClass) b.classList.add(extraClass); b.addEventListener('click', onClick); return b; }
-
-        /* =========================================================
-         * F) 変更系API（POST /action）
-         * 役割：create/complete/toggle_pin/delete/remind_plus2h
-         * =======================================================*/
-        async function action(kind, taskId, extra = {}) {
-            try {
-                const res = await fetch(`${API_BASE}/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, action: kind, task_id: taskId, ...extra }) });
-                if (!res.ok) throw new Error('action failed');
-                const { ok, message } = await res.json();
-                if (!ok) throw new Error(message || 'NG');
-                await loadList();
-            } catch (e) { console.error(e); alert('操作に失敗しました'); }
-        }
-
-        /* =========================================================
-         * G) 作成イベント（UI→POST create）
-         * 役割：入力ボックスの内容を新規タスクとして保存
-         * =======================================================*/
-        async function onAdd() {
-            const title = document.getElementById('newTitle').value.trim();
-            if (!title) return;
-            await action('create', null, { title });
-            document.getElementById('newTitle').value = '';
-        }
-
-        /* =========================================================
-         * H) 並び替え機能（ドラッグで順序変更）
-         * =======================================================*/
-        function enableSorting() {
-            const lists = document.querySelectorAll('.list');
-            lists.forEach(list => {
-                list.addEventListener('dragstart', e => {
-                    if (!e.target.classList.contains('card')) return;
-                    e.target.classList.add('dragging');
-                });
-
-                list.addEventListener('dragend', e => {
-                    e.target.classList.remove('dragging');
-                    // TODO: 並び順を保存したい場合はここでAPI呼び出し
-                });
-
-                list.addEventListener('dragover', e => {
-                    e.preventDefault();
-                    const after = getDragAfterElement(list, e.clientY);
-                    const dragging = document.querySelector('.dragging');
-                    if (!dragging) return;
-                    if (after == null) list.appendChild(dragging);
-                    else list.insertBefore(dragging, after);
-                });
-            });
-        }
-
-        function getDragAfterElement(container, y) {
-            const cards = [...container.querySelectorAll('.card:not(.dragging)')];
-            return cards.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                return offset < 0 && offset > closest.offset
-                    ? { offset, element: child }
-                    : closest;
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-
-                /* スマホ長押し対応ハンドルドラッグ */
-        let longPressTimer;
-
-        document.addEventListener('touchstart', e => {
-            const handle = e.target.closest('.handle');
-            if (!handle) return;
-            const card = handle.closest('.card');
-            longPressTimer = setTimeout(() => {
-                card.setAttribute('draggable', 'true');
-                card.classList.add('dragging');
-            }, 400); // 長押し0.4秒で有効化
-        }, { passive: true });
-
-        document.addEventListener('touchend', e => {
-            clearTimeout(longPressTimer);
-            const card = document.querySelector('.card.dragging');
-            if (card) {
-                card.removeAttribute('draggable');
-                card.classList.remove('dragging');
-            }
-        });
-
-        init();
-    </script>
-</body>
-</html>
-
-
-
-
-
-
+      }
+      if (!placed) {
+        list.appendChild(dragging.placeholder);
+      }
+    }
+
+    // 画面端でのオートスクロール
+    maybeAutoScroll();
+
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (!dragging) return;
+    cancelAutoScroll();
+
+    const { card, placeholder } = dragging;
+
+    // プレースホルダ位置に確定
+    placeholder.parentElement.insertBefore(card, placeholder);
+    placeholder.remove();
+
+    // スタイル後始末
+    card.classList.remove('dragging');
+    card.style.position = '';
+    card.style.left = '';
+    card.style.top = '';
+    card.style.width = '';
+    card.style.zIndex = '';
+
+    // ここで順序の保存APIを呼ぶ場合は、list内の並びを読み取って送信する
+    // saveOrderIfNeeded(placeholder.parentElement);
+
+    dragging = null;
+  });
+
+  function maybeAutoScroll(){
+    if (autoScrollRAF) return;
+    const margin = 60; // 端からこのピクセルでオートスクロール
+    const speed  = 12; // スクロール速度(px/frame)
+
+    const step = () => {
+      if (!dragging) { autoScrollRAF = null; return; }
+      const y = dragging.lastY;
+      const vh = window.innerHeight;
+
+      if (y < margin) {
+        window.scrollBy(0, -speed);
+      } else if (y > vh - margin) {
+        window.scrollBy(0, speed);
+      }
+      autoScrollRAF = requestAnimationFrame(step);
+    };
+    autoScrollRAF = requestAnimationFrame(step);
+  }
+
+  function cancelAutoScroll(){
+    if (autoScrollRAF) cancelAnimationFrame(autoScrollRAF);
+    autoScrollRAF = null;
+  }
+
+  // 並び順を保存したいときの例（必要なら使って）
+  async function saveOrderIfNeeded(listEl){
+    const listId = listEl.id; // 'pinned'|'active'|'completed'
+    const order = [...listEl.querySelectorAll('.card')].map((c, idx) => {
+      // t.id を data-id に入れてある場合
+      return { task_id: c.dataset.id, pos: idx };
+    });
+    // 例:
+    // await fetch(`${API_BASE}/action`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type':'application/json' },
+    //   body: JSON.stringify({ user_id: userId, action:'reorder', list: listId, order })
+    // });
+  }
+})();
