@@ -326,16 +326,22 @@
 
         /* ▼ ドラッグハンドル用スタイル▼ */
         .handle {
-            margin-left: auto;
-            cursor: grab;
-            user-select: none;
-            font-size: 20px;
-            opacity: 0.4;
-            padding: 0 12px;
+            position: absolute;
+            right: 8px;
+            top: 0;
+            bottom: 0;
+            width: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 30px;
+            color: #888;
+            opacity: 0.5;
+            cursor: grab;
+            user-select: none;
+            z-index: 5;
         }
+
 
         .card.dragging {
             opacity: 0.5;
@@ -503,10 +509,11 @@
             const title = document.createElement('div'); title.className = 'title';
 
             // 右端にドラッグハンドル（☰）を追加
+            // 右端固定ハンドル（☰）
             const handle = document.createElement('div');
             handle.className = 'handle';
             handle.textContent = '☰';
-            row.append(left, handle);  // ← row.append(left); の代わりにこれ！
+            wrap.appendChild(handle); // ← wrap直下に追加！
 
             title.textContent = t.title || '(無題)';
             left.append(title);
@@ -637,23 +644,18 @@
             const lists = document.querySelectorAll('.list');
             lists.forEach(list => {
                 list.addEventListener('dragstart', e => {
-                    if (!e.target.classList.contains('card')) return;
-                    e.target.classList.add('dragging');
+                    const handle = e.target.closest('.handle');
+                    if (!handle) return; // ☰以外では反応しない
+                    const card = handle.closest('.card');
+                    card.classList.add('dragging');
                 });
 
                 list.addEventListener('dragend', e => {
-                    e.target.classList.remove('dragging');
-                    // TODO: 並び順を保存したい場合はここでAPI呼び出し
+                    const card = e.target.closest('.card');
+                    if (!card) return;
+                    card.classList.remove('dragging');
                 });
 
-                list.addEventListener('dragover', e => {
-                    e.preventDefault();
-                    const after = getDragAfterElement(list, e.clientY);
-                    const dragging = document.querySelector('.dragging');
-                    if (!dragging) return;
-                    if (after == null) list.appendChild(dragging);
-                    else list.insertBefore(dragging, after);
-                });
             });
         }
 
@@ -667,6 +669,28 @@
                     : closest;
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
+
+        /* スマホ長押し対応ハンドルドラッグ */
+        let longPressTimer;
+
+        document.addEventListener('touchstart', e => {
+            const handle = e.target.closest('.handle');
+            if (!handle) return;
+            const card = handle.closest('.card');
+            longPressTimer = setTimeout(() => {
+                card.setAttribute('draggable', 'true');
+                card.classList.add('dragging');
+            }, 400); // 長押し0.4秒で有効化
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            clearTimeout(longPressTimer);
+            const card = document.querySelector('.card.dragging');
+            if (card) {
+                card.removeAttribute('draggable');
+                card.classList.remove('dragging');
+            }
+        });
 
         init();
     </script>
