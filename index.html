@@ -124,7 +124,7 @@
         }
 
             button.primary {
-                background: #646969;
+                background: #ddd;
                 color: #fff;
                 border-color: #ddd
             }
@@ -146,7 +146,7 @@
         }
 
         .divider {
-            margin: 1px 0;
+            margin: 16px 0;
             border-top: 1px dashed #e6e6e6
         }
 
@@ -157,9 +157,9 @@
 
             .add input {
                 flex: 1;
-                border: 10px solid #ddd;
+                border: 1px solid #ddd;
                 border-radius: 10px;
-                padding: 20px
+                padding: 10px
             }
 
         .list {
@@ -325,42 +325,25 @@
         /* ▲ スワイプ露出UI用 追加CSS ▲ */
 
         /* ▼ ドラッグハンドル用スタイル▼ */
-        /* slide は相対配置（既に relative ならOK） */
-        .sl {
-            position: relative;
-        }
-
-        /* 右端に重ねるハンドル（カード全面の右端） */
         .handle {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 44px; /* タップしやすい幅 */
-            height: 100%;
+            margin-left: auto;
+            cursor: grab;
+            user-select: none;
+            font-size: 20px;
+            opacity: 0.4;
+            padding: 0 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: grab;
-            user-select: none;
-            -webkit-user-select: none;
-            z-index: 3; /* .sl の内容より前面 */
-            opacity: .5;
-        /* 視認性を上げたい場合の薄いグラデ（任意）
-        background: linear-gradient(to left, rgba(255,255,255,.95), rgba(255,255,255,0));
-        */
         }
-
-        /* ハンドル分、本文の右パディングを増やして重なりを防止 */
-        .sl .content {
-            padding-right: 56px; /* 44px(ハンドル) + 余白 */
-        }
-
 
         .card.dragging {
             opacity: 0.5;
             transform: scale(0.98);
             transition: transform 0.1s;
         }
+
+
     </style>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
@@ -523,9 +506,7 @@
             const handle = document.createElement('div');
             handle.className = 'handle';
             handle.textContent = '☰';
-            row.append(left);
-            content.appennd(row);
-            slide.a@@end(content, handle);
+            row.append(left, handle);  // ← row.append(left); の代わりにこれ！
 
             title.textContent = t.title || '(無題)';
             left.append(title);
@@ -676,7 +657,7 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
-        /* スマホ長押し対応ハンドルドラッグ */
+                /* スマホ長押し対応ハンドルドラッグ */
         let longPressTimer;
 
         document.addEventListener('touchstart', e => {
@@ -702,8 +683,6 @@
     </script>
 </body>
 </html>
-
-
 
 
 
