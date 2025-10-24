@@ -292,8 +292,8 @@
         }
 
         button.btn-pin {
-            background: #ed3; /* 黄：ピン */
-            color: #bbbb18;
+            background: #d97706; /* 黄：ピン */
+            color: #fff;
         }
 
         button.btn-delete {
@@ -657,10 +657,33 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
+                /* スマホ長押し対応ハンドルドラッグ */
+        let longPressTimer;
+
+        document.addEventListener('touchstart', e => {
+            const handle = e.target.closest('.handle');
+            if (!handle) return;
+            const card = handle.closest('.card');
+            longPressTimer = setTimeout(() => {
+                card.setAttribute('draggable', 'true');
+                card.classList.add('dragging');
+            }, 400); // 長押し0.4秒で有効化
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            clearTimeout(longPressTimer);
+            const card = document.querySelector('.card.dragging');
+            if (card) {
+                card.removeAttribute('draggable');
+                card.classList.remove('dragging');
+            }
+        });
+
         init();
     </script>
 </body>
 </html>
+
 
 
 
