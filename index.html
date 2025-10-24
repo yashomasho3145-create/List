@@ -326,22 +326,16 @@
 
         /* ▼ ドラッグハンドル用スタイル▼ */
         .handle {
-            position: absolute;
-            right: 8px;
-            top: 0;
-            bottom: 0;
-            width: 36px;
+            margin-left: auto;
+            cursor: grab;
+            user-select: none;
+            font-size: 20px;
+            opacity: 0.4;
+            padding: 0 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
-            color: #888;
-            opacity: 0.5;
-            cursor: grab;
-            user-select: none;
-            z-index: 5;
         }
-
 
         .card.dragging {
             opacity: 0.5;
@@ -509,17 +503,15 @@
             const title = document.createElement('div'); title.className = 'title';
 
             // 右端にドラッグハンドル（☰）を追加
-            // 右端固定ハンドル（☰）
             const handle = document.createElement('div');
             handle.className = 'handle';
             handle.textContent = '☰';
-            wrap.appendChild(handle); // ← wrap直下に追加！
+            row.append(left, handle);  // ← row.append(left); の代わりにこれ！
 
             title.textContent = t.title || '(無題)';
             left.append(title);
             content.append(row);        // ← content に詰める
             slide.append(content);      // ← slide に content を入れる
-            row.append(left);
 
             wrap.append(rail, slide);
             if (isCompleted) wrap.classList.add('ghost');
@@ -585,6 +577,8 @@
             wrap.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
             window.addEventListener('mousemove', e => dragging && onMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', () => dragging && onEnd());
+
+            wrap.setAttribute('draggable', 'true');
 
             return wrap;
         }
@@ -663,33 +657,10 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
-        /* スマホ長押し対応ハンドルドラッグ */
-        let longPressTimer;
-
-        document.addEventListener('touchstart', e => {
-            const handle = e.target.closest('.handle');
-            if (!handle) return;
-            const card = handle.closest('.card');
-            longPressTimer = setTimeout(() => {
-                card.setAttribute('draggable', 'true');
-                card.classList.add('dragging');
-            }, 400); // 長押し0.4秒で有効化
-        }, { passive: true });
-
-        document.addEventListener('touchend', e => {
-            clearTimeout(longPressTimer);
-            const card = document.querySelector('.card.dragging');
-            if (card) {
-                card.removeAttribute('draggable');
-                card.classList.remove('dragging');
-            }
-        });
-
         init();
     </script>
 </body>
 </html>
-
 
 
 
