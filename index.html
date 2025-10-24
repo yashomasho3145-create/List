@@ -519,6 +519,7 @@
             left.append(title);
             content.append(row);        // ← content に詰める
             slide.append(content);      // ← slide に content を入れる
+            row.append(left);
 
             wrap.append(rail, slide);
             if (isCompleted) wrap.classList.add('ghost');
@@ -586,17 +587,17 @@
             window.addEventListener('mouseup', () => dragging && onEnd());
 
             list.addEventListener('dragstart', e => {
-                const card = e.target.closest('.card');
-                if (!card) return;
+                const handle = e.target.closest('.handle');
+                if (!handle) return; // ☰以外では反応しない
+                const card = handle.closest('.card');
                 card.classList.add('dragging');
             });
+
             list.addEventListener('dragend', e => {
                 const card = e.target.closest('.card');
                 if (!card) return;
                 card.classList.remove('dragging');
-                // 並び順保存が必要ならここでAPI
             });
-
 
             return wrap;
         }
@@ -644,18 +645,23 @@
             const lists = document.querySelectorAll('.list');
             lists.forEach(list => {
                 list.addEventListener('dragstart', e => {
-                    const handle = e.target.closest('.handle');
-                    if (!handle) return; // ☰以外では反応しない
-                    const card = handle.closest('.card');
-                    card.classList.add('dragging');
+                    if (!e.target.classList.contains('card')) return;
+                    e.target.classList.add('dragging');
                 });
 
                 list.addEventListener('dragend', e => {
-                    const card = e.target.closest('.card');
-                    if (!card) return;
-                    card.classList.remove('dragging');
+                    e.target.classList.remove('dragging');
+                    // TODO: 並び順を保存したい場合はここでAPI呼び出し
                 });
 
+                list.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    const after = getDragAfterElement(list, e.clientY);
+                    const dragging = document.querySelector('.dragging');
+                    if (!dragging) return;
+                    if (after == null) list.appendChild(dragging);
+                    else list.insertBefore(dragging, after);
+                });
             });
         }
 
