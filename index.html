@@ -335,6 +335,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            touch-action: none; /* ← 追加：縦ドラッグをブラウザが奪わないように */
+        }
+
+        /*ドラッグ中の差し込み位置用ダミー要素*/
+        .card.placeholder{
+            visibility:hidden;
         }
 
         .card.dragging {
@@ -342,8 +348,6 @@
             transform: scale(0.98);
             transition: transform 0.1s;
         }
-
-
     </style>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
@@ -392,6 +396,8 @@
 
         let userId = null;
         let profile = null;
+        let IS_SORT_DRAG = false; // ← 並び替え実行中はtrueにする
+
 
         /* =========================================================
          * B) 受け渡し設計（Bot→n8n→DB→LIFF）
@@ -657,38 +663,122 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
-                /* スマホ長押し対応ハンドルドラッグ */
-        let longPressTimer;
+        /* ─────────────────────────────────────────
+         * スマホ長押し対応：ハンドルで縦並び替え（Pointer Events版）
+         * ───────────────────────────────────────── */
+        (() => {
+            const LONG = 400;           // 長押し判定 ms
+            let pressTimer = null;
+            let draggingCard = null;
+            let placeholder = null;
+            let originList = null;
+            let startOffsetY = 0;
+            let startRect = null;
 
-        document.addEventListener('touchstart', e => {
-            const handle = e.target.closest('.handle');
-            if (!handle) return;
-            const card = handle.closest('.card');
-            longPressTimer = setTimeout(() => {
-                card.setAttribute('draggable', 'true');
-                card.classList.add('dragging');
-            }, 400); // 長押し0.4秒で有効化
-        }, { passive: true });
+            function onPointerDown(e) {
+                const handle = e.target.closest('.handle');
+                if (!handle) return;
+                const card = handle.closest('.card');
+                if (!card) return;
 
-        document.addEventListener('touchend', e => {
-            clearTimeout(longPressTimer);
-            const card = document.querySelector('.card.dragging');
-            if (card) {
-                card.removeAttribute('draggable');
-                card.classList.remove('dragging');
+                clearTimeout(pressTimer);
+                pressTimer = setTimeout(() => beginDrag(e, card), LONG);
             }
-        });
+
+            function beginDrag(e, card) {
+                IS_SORT_DRAG = true;
+                draggingCard = card;
+                originList = card.parentElement;
+
+                startRect = card.getBoundingClientRect();
+                startOffsetY = e.clientY - startRect.top;
+
+                // 占位要素を作成（同じ高さ）
+                placeholder = document.createElement('div');
+                placeholder.className = 'card placeholder';
+                placeholder.style.height = `${startRect.height}px`;
+                originList.insertBefore(placeholder, card.nextSibling);
+
+                // カードを浮かせる（画面上に固定配置）
+                card.style.width = `${startRect.width}px`;
+                card.style.position = 'fixed';
+                card.style.left = `${startRect.left}px`;
+                card.style.top = `${e.clientY - startOffsetY}px`;
+                card.style.zIndex = 999;
+                card.classList.add('dragging');
+
+                // Pointer Capture（対応環境のみ）
+                if (card.setPointerCapture && e.pointerId != null) {
+                    try { card.setPointerCapture(e.pointerId); } catch { }
+                }
+            }
+
+            function onPointerMove(e) {
+                if (!draggingCard) {
+                    clearTimeout(pressTimer);
+                    return;
+                }
+                e.preventDefault(); // ページスクロール抑止
+
+                // 位置更新
+                draggingCard.style.top = `${e.clientY - startOffsetY}px`;
+
+                // 差し込み位置の決定
+                const list = originList;
+                const after = getDragAfterElement(list, e.clientY);
+                if (!after) list.appendChild(placeholder);
+                else list.insertBefore(placeholder, after);
+            }
+
+            function onPointerUp() {
+                clearTimeout(pressTimer);
+                if (!draggingCard) return;
+
+                // 確定：占位位置へ戻す
+                originList.insertBefore(draggingCard, placeholder);
+
+                // 後片付け
+                draggingCard.style.position = '';
+                draggingCard.style.left = '';
+                draggingCard.style.top = '';
+                draggingCard.style.width = '';
+                draggingCard.style.zIndex = '';
+                draggingCard.classList.remove('dragging');
+
+                placeholder.remove();
+                placeholder = null;
+                draggingCard = null;
+                startRect = null;
+                IS_SORT_DRAG = false;
+
+                // TODO: 並び順保存が必要ならここでAPI呼び出し
+                // saveOrder(originList);
+            }
+
+            // 既存が無い場合だけ定義
+            if (typeof getDragAfterElement !== 'function') {
+                window.getDragAfterElement = function (container, y) {
+                    const cards = [...container.querySelectorAll('.card:not(.dragging):not(.placeholder)')];
+                    return cards.reduce((closest, child) => {
+                        const box = child.getBoundingClientRect();
+                        const offset = y - box.top - box.height / 2;
+                        return (offset < 0 && offset > closest.offset) ? { offset, element: child } : closest;
+                    }, { offset: -Infinity, element: null }).element;
+                }
+            }
+
+            // ドキュメント全体でハンドル長押しを拾う
+            document.addEventListener('pointerdown', onPointerDown, { passive: true });
+            document.addEventListener('pointermove', onPointerMove, { passive: false });
+            document.addEventListener('pointerup', onPointerUp, { passive: true });
+            document.addEventListener('pointercancel', onPointerUp, { passive: true });
+        })();
+
+
 
         init();
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
 
 
