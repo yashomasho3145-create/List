@@ -1,786 +1,881 @@
 <!doctype html>
 <html lang="ja">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LIST｜タスク一覧 </title>
-    <style>
-        body {
-            font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-            margin: 0;
-            background: #f7f7f8;
-            color: #111
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LIST｜タスク一覧</title>
+  <style>
+    body {
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      margin: 0;
+      background: #f7f7f8;
+      color: #111;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      z-index: 10;
+    }
+    .bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .tab {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .tab.active {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
 
-        header {
-            position: sticky;
-            top: 0;
-            background: #fff;
-            border-bottom: 1px solid #eee;
-            z-index: 10
-        }
+    .section {
+      padding: 12px 16px;
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .card {
+      height: 60px;
+      min-height: 60px;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 0;
+      box-shadow: 0 1px 2px rgba(0,0,0,.03);
+      position: relative;
+      overflow: hidden;
+      touch-action: pan-y;
+      border-left: 0;
+      border-right: 0;
+      border-top: 0;
+    }
+    .list .card:first-child {
+      border-top: 0;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: 600;
+      word-break: break-word;
+      line-height: 1.5;
+    }
+    .empty {
+      color: #777;
+      text-align: center;
+      padding: 24px 0;
+      font-size: 13px;
+    }
+    .divider {
+      margin: 0;
+      border-top: 1px dashed #e6e6e6;
+    }
 
-        .bar {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px
-        }
+    .add {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .add input {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+    }
 
-        .tabs {
-            display: flex;
-            gap: 8px
-        }
+    button {
+      appearance: none;
+      border: 0;
+      background: #fff;
+      border-radius: 10px;
+      padding: 0;
+      cursor: pointer;
+    }
+    button.primary {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+      padding: 0 14px;
+      font-size: 13px;
+    }
 
-        .tab {
-            padding: 8px 12px;
-            border-radius: 999px;
-            border: 1px solid #ddd;
-            background: #fff;
-            cursor: pointer
-        }
+    .section {
+      padding-left: 0;
+      padding-right: 0;
+    }
 
-            .tab.active {
-                background: #111;
-                color: #fff;
-                border-color: #111
-            }
+    /* ===== スワイプUI ===== */
+    .sl {
+      height: 100%;
+      position: relative;
+      width: 100%;
+      transition: transform .15s ease;
+      will-change: transform;
+      background: #fff;
+      z-index: 2;
+    }
+    .sl .content {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+    }
+    .actions-rail {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-radius: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .card.open-left .actions-rail,
+    .card.open-right .actions-rail {
+      pointer-events: auto;
+    }
 
-        .section {
-            padding: 12px 16px
-        }
+    :root {
+      --rail-w: clamp(128px, 35vw, 220px);
+    }
+    .actions-left, .actions-right {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: var(--rail-w);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0;
+      padding: 0;
+    }
+    .actions-left {
+      left: 0;
+      justify-content: flex-start;
+      background: #e8f7ee;
+    }
+    .actions-right {
+      right: 0;
+      justify-content: flex-end;
+      background: #fdeeee;
+    }
+    .actions-rail button {
+      height: 100%;
+      box-sizing: border-box;
+      min-width: 64px;
+      font-size: 12px;
+      padding: 0 10px;
+      border-radius: 0;
+      border: 0;
+      color: #fff;
+      transition: background 0.2s;
+    }
+    button.btn-complete { background: #7e6dff; }
+    button.btn-plus2h { background: #8012e2; }
+    button.btn-detail { background: #1e928b; }
+    button.btn-pin { background: #d97706; }
+    button.btn-delete { background: #f03d30; }
 
-        .list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px
-        }
+    .card.open-left .sl {
+      transform: translateX(var(--rail-w));
+    }
+    .card.open-right .sl {
+      transform: translateX(calc(var(--rail-w) * -1 * 1.5));
+    }
 
-        .card {
-            height: 60px;
-            min-height: 60px;
-            background: #fff;
-            border: 1px solid #eee;
-            border-radius: 0px;
-            box-shadow: 0 1px 2px rgba(0,0,0,.03);
-            position: relative;
-            overflow: hidden; /* ← 重要 */
-            touch-action: pan-y;
-            /*adding: 12px 12px 8px;*/
-        }
+    /* 並び替えハンドル */
+    .handle {
+      margin-left: auto;
+      cursor: grab;
+      user-select: none;
+      font-size: 20px;
+      opacity: 0.1;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+    .card.placeholder {
+      visibility: hidden;
+    }
+    .card.dragging {
+      opacity: 0.5;
+      transform: scale(0.98);
+      transition: transform 0.1s;
+    }
+    .ghost {
+      opacity: 0.6;
+    }
 
-        .row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: space-between
-        }
-
-        .title {
-            font-size: 17px;
-            font-weight: 600;
-            word-break: break-word;
-            font-size: 16px;
-            line-height: 1.5
-        }
-
-        .meta {
-            font-size: 12px;
-            color: #666;
-            display: flex;
-            gap: 10px;
-            margin-top: 4px
-        }
-
-        .badges {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-top: 8px
-        }
-
-        .badge {
-            font-size: 11px;
-            border: 1px solid #ddd;
-            border-radius: 999px;
-            padding: 3px 8px;
-            background: #fafafa
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px
-        }
-
-        button {
-            appearance: none;
-            border: 0px solid #ddd;
-            background: #fff;
-            border-radius: 10px;
-            padding: 0px;
-            cursor: pointer
-        }
-
-            button.primary {
-                background: #ddd;
-                color: #fff;
-                border-color: #ddd
-            }
-
-        .pin {
-            color: #d97706;
-            border-color: #f1d19b;
-            background: #fff8e6
-        }
-
-        .ghost {
-            opacity: .6
-        }
-
-        .empty {
-            color: #777;
-            text-align: center;
-            padding: 0px 0
-        }
-
-        .divider {
-            margin: 16px 0;
-            border-top: 1px dashed #e6e6e6
-        }
-
-        .add {
-            display: flex;
-            gap: 8px
-        }
-
-            .add input {
-                flex: 1;
-                border: 1px solid #ddd;
-                border-radius: 10px;
-                padding: 10px
-            }
-
-        .list {
-            gap: 0;
-        }
-            /* 行間の余白ゼロ */
-            .list .card {
-                border-left: 0;
-                border-right: 0;
-            }
-            /* 横の枠線は消す（後述とセット） */
-            /* 2枚の境目が2pxにならないよう、下側だけを使うイメージ */
-            .list .card {
-                border-top: 0;
-            }
-                /* すべて上枠は消す */
-                .list .card:first-child {
-                    border-top: 0px solid #eee;
-                }
-        /* 先頭だけ上枠を復活 */
-
-        .section {
-            padding-left: 0;
-            padding-right: 0;
-        }
-        /* 画面端まで広げる */
-
-        /* 1-2) 前面スライド面は全面を覆う＋白背景＋最前面 */
-        .sl {
-            height: 100%;
-            position: relative;
-            width: 100%;
-            transition: transform .15s ease;
-            will-change: transform;
-            background: #fff; /* ← 重要：背面が透けない */
-            z-index: 2; /* ← 背面より前 */
-        }
-
-            /* 1-3) スライド内の実コンテンツにパディングを付与 */
-            .sl .content {
-                height: 100%;
-                display: flex;
-                align-items: center;
-                padding: 0 12px; /* 元の.cardのpaddingを移植 */
-            }
-
-        /* 1-4) 背面アクションレールは一段下げる */
-        .actions-rail {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: absolute;
-            top: 0px;
-            bottom: 0px;
-            left: 0px;
-            right: 0px;
-            border-radius: 0px;
-            z-index: 1; /* ← .sl より下 */
-            pointer-events: none; /* ← デフォは押せない */
-        }
-        /* 露出時のみボタンを押せる */
-        .card.open-left .actions-rail,
-        .card.open-right .actions-rail {
-            pointer-events: auto;
-        }
-
-        /* 1-5) レールとボタン（可動域は後で可変に） */
-        :root {
-            /* 画面幅の45%を基準に、140〜220pxに収める */
-            --rail-w: clamp(128px, 35vw, 220px);
-        }
-
-        /* ← iOSメールっぽい露出幅 */
-        .actions-left, .actions-right {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: var(--rail-w);
-            display: flex;
-            align-items: center; /*ボタンの縦位置（top/center/bottom）*/
-            justify-content: space-between; /*ボタンの横位置*/
-            gap: 0px;
-            padding: 0px;
-        }
-
-        .actions-left {
-            left: 0;
-            justify-content: flex-start;
-            background: #e8f7ee;
-            border-right: 0px solid #111;
-        }
-
-        .actions-right {
-            right: 0;
-            justify-content: flex-end;
-            background: #fdeeee;
-            border-left: 0px solid #f6d2d2;
-        }
-
-        .actions-rail button {
-            height: 100%;
-            box-sizing: border-box;
-            min-width: 64px;
-            font-size: 20px;
-            padding: 0px;
-            border-radius: 0px;
-            border: 0px solid #ddd;
-            background: #fff;
-            cursor: pointer;
-            color: #000;
-            transition: background 0.2s;
-        }
-
-        /* ▼ 各ボタン専用カラー設定 */
-        button.btn-complete {
-            background: #7e6dff; /* 緑：完了 */
-            color: #fff;
-        }
-
-        button.btn-plus2h {
-            background: #8012e2; /* 青：+2h */
-            color: #fff;
-        }
-
-        button.btn-detail {
-            background: #1e928b; /* 白：詳細 */
-            color: #fff;
-            border: 0px solid #ccc;
-        }
-
-        button.btn-pin {
-            background: #d97706; /* 黄：ピン */
-            color: #fff;
-        }
-
-        button.btn-delete {
-            background: #f03d30; /* 赤：削除 */
-            color: #fff;
-        }
-
-
-        .actions-right .danger {
-            border-color: #40f;
-            color: #fff;
-            background: #40f;
-        }
-
-        .actions-left .primary {
-            border-color: #111;
-            color: #fff;
-            background: #000;
-        }
-
-        /* 1-6) スナップ位置も可動域と連動 */
-        .card.open-left .sl {
-            transform: translateX(var(--rail-w));
-        }
-
-        .card.open-right .sl {
-            transform: translateX(calc(var(--rail-w) * -1 * 1.5));
-        }
-        /* ▲ スワイプ露出UI用 追加CSS ▲ */
-
-        /* ▼ ドラッグハンドル用スタイル▼ */
-        .handle {
-            margin-left: auto;
-            cursor: grab;
-            user-select: none;
-            font-size: 20px;
-            opacity: 0.1;
-            padding: 0 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: none; /* ← 追加：縦ドラッグをブラウザが奪わないように */
-        }
-
-        /*ドラッグ中の差し込み位置用ダミー要素*/
-        .card.placeholder{
-            visibility:hidden;
-        }
-
-        .card.dragging {
-            opacity: 0.5;
-            transform: scale(0.98);
-            transition: transform 0.1s;
-        }
-    </style>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    /* ====== 詳細モーダル ====== */
+    .modal-root {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 50;
+      font-size: 14px;
+    }
+    .modal-root.visible {
+      display: flex;
+    }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,.25);
+    }
+    .modal-panel {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-radius: 20px 20px 0 0;
+      padding: 16px 18px 20px;
+      box-shadow: 0 -4px 24px rgba(0,0,0,.18);
+      animation: slideUp .18s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .modal-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .modal-close {
+      background: transparent;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .modal-task-title {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .slider-group {
+      margin: 8px 0 12px;
+    }
+    .slider-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2px;
+      font-size: 12px;
+    }
+    .slider-label-row span.value {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .slider-group input[type="range"] {
+      width: 100%;
+    }
+    .modal-footer {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .btn-secondary {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      background: #f9f9f9;
+      font-size: 13px;
+    }
+    .btn-primary-solid {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 0;
+      background: #7e6dff;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+    }
+  </style>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
-    <header>
-        <div class="bar">
-            <div style="font-weight:700">LIST</div>
-            <div class="tabs">
-                <div class="tab active" id="tabTasks">タスク</div>
-                <div class="tab" id="tabJournal">ジャーナル</div>
-            </div>
-            <div id="refreshBtn" class="tab" title="更新">↻</div>
-        </div>
-    </header>
-    <main class="section">
-        <!-- G) 入力UI（新規タスク追加：Botからのメッセージをサーバ側で受けたケースも、ここから追加入力可能） -->
-        <div class="add">
-            <input id="newTitle" placeholder="タスクを入力（例：レポート提出）" />
-            <button id="btnAdd" class="primary">追加</button>
-        </div>
-
-        <div id="pinned" class="list"></div>
-        <div id="pinnedDivider" class="divider" style="display:none"></div>
-        <div id="active" class="list"></div>
-        <div id="completedDivider" class="divider" style="display:none"></div>
-        <div id="completed" class="list"></div>
-        <div id="empty" class="empty" style="display:none">タスクがありません</div>
-    </main>
-
-    <script>
-        /* =========================================================
-         * A) ID & 権限取得（LIFFから userId を取得）
-         * 役割：ユーザー識別（DBのパーティションキー）。
-         * 入出力：liff.getProfile() → userId
-         * =======================================================*/
-        const LIFF_ID = '2008372898-2q9qWmxv';
-        const API_BASE = 'https://yamasho.xvps.jp/webhook'; // 例: https://your-n8n.example.com/webhook
-
-        // スワイプ用閾値（CSSと幅を合わせる）
-        const EXPOSE_W = 129;      // ← 180 から 240 へ
-        const EXPOSE_X = 193;
-        const SNAP_MIN = 30;
-        const STRONG_SWIPE = 180;  // ← 強スワイプ閾値も少し広げると自然
-        const MAX_DRAG = EXPOSE_W;
-
-
-        let userId = null;
-        let profile = null;
-        let IS_SORT_DRAG = false; // ← 並び替え実行中はtrueにする
-
-
-        /* =========================================================
-         * B) 受け渡し設計（Bot→n8n→DB→LIFF）
-         * - 公式LINEに送られたメッセージは **BotのWebhook(n8n)** で受信し、DB(Supabase)へ保存。
-         * - LIFFは「画面表示時」に **API(GET /list)** でDBの内容を取得して描画。
-         * - 直接Bot→LIFFに“push”はしない（LIFFはPullで同期）。
-         * - 任意で、メッセージリンクからLIFFを開く場合は URLクエリでプリフィル可。
-         * =======================================================*/
-
-        async function init() {
-            await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) liff.login();
-            try { profile = await liff.getProfile(); userId = profile.userId; }
-            catch (e) { console.error('LIFF profile error', e); alert('LINEプロフィールの取得に失敗しました'); return; }
-            bindUI();
-            await loadList();
-            enableSorting();
-        }
-
-        /* =========================================================
-         * C) UIバインド（動的UIの核：イベント→状態変更→再描画）
-         * 役割：
-         *  - 追加ボタン/更新ボタン/タブ切替のイベント登録
-         *  - 動的UIは **DOM操作** で実現（フレームワーク不要）
-         *  - スワイプは touchstart/move/end で閾値判定
-         * =======================================================*/
-        function bindUI() {
-            document.getElementById('tabTasks').addEventListener('click', () => {
-                // ここでは画面切替のダミー（将来Journalに遷移）
-                alert('ジャーナルは後で実装します。今はタスク一覧のみ');
-            });
-            document.getElementById('tabJournal').addEventListener('click', () => {
-                alert('ジャーナルは後で実装します。今はタスク一覧のみ');
-            });
-            document.getElementById('refreshBtn').addEventListener('click', loadList);
-            document.getElementById('btnAdd').addEventListener('click', onAdd);
-        }
-
-        /* =========================================================
-         * D) データ取得（GET /list）
-         * 役割：n8n経由でユーザーのタスクリストを取得
-         * 入力：userId（クエリ）
-         * 出力：{ pinned[], active[], completed[] }
-         * =======================================================*/
-        async function loadList() {
-            setLoading(true);
-            try {
-                const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
-                const res = await fetch(url);
-                if (!res.ok) throw new Error('list api failed');
-                const data = await res.json();
-                renderList(data);
-            } catch (err) { console.error(err); alert('一覧の取得に失敗しました'); }
-            finally { setLoading(false); }
-        }
-
-        function setLoading(on) { document.body.style.opacity = on ? .6 : 1; }
-
-        /* =========================================================
-         * E) 描画（Render）
-         * 役割：状態→DOM
-         * - 各カードにスワイプ検出器を付与
-         * =======================================================*/
-        function renderList(payload) {
-            const pinned = document.getElementById('pinned');
-            const active = document.getElementById('active');
-            const completed = document.getElementById('completed');
-            const empty = document.getElementById('empty');
-            const pinnedDivider = document.getElementById('pinnedDivider');
-            const completedDivider = document.getElementById('completedDivider');
-            [pinned, active, completed].forEach(el => el.innerHTML = '');
-
-            const p = payload.pinned || [];
-            const a = payload.active || [];
-            const c = payload.completed || [];
-
-            if (p.length) { p.forEach(t => pinned.appendChild(taskCard(t))); pinnedDivider.style.display = 'block'; } else pinnedDivider.style.display = 'none';
-            if (a.length) { a.forEach(t => active.appendChild(taskCard(t))); }
-            if (c.length) { completedDivider.style.display = 'block'; c.forEach(t => completed.appendChild(taskCard(t, true))); } else completedDivider.style.display = 'none';
-
-            empty.style.display = (p.length + a.length + c.length) ? 'none' : 'block';
-        }
-
-        function fmtDate(iso) { if (!iso) return '-'; const d = new Date(iso); const mm = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0'); const hh = String(d.getHours()).padStart(2, '0'); const mi = String(d.getMinutes()).padStart(2, '0'); return `${mm}/${dd} ${hh}:${mi}`; }
-
-        function taskCard(t, isCompleted = false) {
-            const wrap = document.createElement('div');
-            wrap.className = 'card';
-
-            // 背面
-            const rail = document.createElement('div'); rail.className = 'actions-rail';
-            const leftRail = document.createElement('div'); leftRail.className = 'actions-left';
-            const rightRail = document.createElement('div'); rightRail.className = 'actions-right';
-            leftRail.append(mkBtn('完了', () => action('complete', t.id), 'btn-complete'),
-                mkBtn('+2h', () => action('remind_plus2h', t.id), 'btn-plus2h'));
-            rightRail.append(
-                mkBtn('詳細', () => openDetail(t.id), 'btn-detail'),
-                mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id), 'btn-pin'),
-                mkBtn('削除', () => action('delete', t.id), 'btn-delete'));
-            rail.append(leftRail, rightRail);
-
-            // 前面（全面を覆う）
-            const slide = document.createElement('div'); slide.className = 'sl';
-
-            const content = document.createElement('div'); content.className = 'content'; // ← 追加
-            const row = document.createElement('div'); row.className = 'row';
-            const left = document.createElement('div');
-
-            const title = document.createElement('div'); title.className = 'title';
-
-            // 右端にドラッグハンドル（☰）を追加
-            const handle = document.createElement('div');
-            handle.className = 'handle';
-            handle.textContent = '☰';
-            row.append(left, handle);  // ← row.append(left); の代わりにこれ！
-
-            title.textContent = t.title || '(無題)';
-            left.append(title);
-            content.append(row);        // ← content に詰める
-            slide.append(content);      // ← slide に content を入れる
-
-            wrap.append(rail, slide);
-            if (isCompleted) wrap.classList.add('ghost');
-
-            // ── スワイプ検出（縦スクロールはキャンセル） ──
-            let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false, open = 'none';
-
-            const onStart = (x, y) => { startX = x; startY = y; dx = 0; dy = 0; dragging = true; slide.style.transition = 'none'; };
-            const onMove = (x, y) => {
-                if (!dragging) return;
-                dx = x - startX; dy = y - startY;
-                if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) { onEnd(true); return; } // 縦優先
-                const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
-                let tx = base + dx;
-                tx = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, tx));
-                slide.style.transform = `translateX(${tx}px)`;
-            };
-            const onEnd = (cancel = false) => {
-                if (!dragging) return;
-                dragging = false; slide.style.transition = 'transform .15s ease';
-
-                if (cancel) { snapTo(open); return; }
-
-                const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
-                const tx = base + dx;
-
-                // 強スワイプ即実行：右→完了、左→削除
-                if (tx >= STRONG_SWIPE) { open = 'none'; slide.style.transform = 'translateX(0px)'; action('complete', t.id); return; }
-                if (tx <= -STRONG_SWIPE) { open = 'none'; slide.style.transform = 'translateX(0px)'; action('delete', t.id); return; }
-
-                // 小〜中スワイプは露出でスナップ
-                if (tx > SNAP_MIN) { open = 'left'; snapTo('left'); }  // 右スワイプ
-                else if (tx < -SNAP_MIN) { open = 'right'; snapTo('right'); }  // 左スワイプ
-                else { open = 'none'; snapTo('none'); }  // ほぼ動いてない
-            };
-
-            function snapTo(which) {
-                if (which === 'left') { wrap.classList.add('open-left'); wrap.classList.remove('open-right'); slide.style.transform = `translateX(${EXPOSE_W}px)`; }
-                else if (which === 'right') { wrap.classList.add('open-right'); wrap.classList.remove('open-left'); slide.style.transform = `translateX(${-EXPOSE_X}px)`; }
-                else { wrap.classList.remove('open-left', 'open-right'); slide.style.transform = 'translateX(0px)'; }
-            }
-
-            // タップで閉じる（露出時のみ）
-            wrap.addEventListener('click', e => {
-                if (open !== 'none') { open = 'none'; snapTo('none'); e.preventDefault(); e.stopPropagation(); }
-            });
-
-            // タッチ & マウス対応
-            wrap.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
-            wrap.addEventListener('touchmove', e => {
-                const x = e.touches[0].clientX, y = e.touches[0].clientY;
-
-                // ここで一時的な差分を計算して判定する
-                const tmpDx = x - startX;
-                const tmpDy = y - startY;
-                if (Math.abs(tmpDx) > Math.abs(tmpDy)) e.preventDefault();
-
-                onMove(x, y);  // ← その後でonMoveを呼ぶ
-            }, { passive: false });
-            wrap.addEventListener('touchend', () => onEnd());
-
-            // PCプレビュー用（任意）
-            wrap.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
-            window.addEventListener('mousemove', e => dragging && onMove(e.clientX, e.clientY));
-            window.addEventListener('mouseup', () => dragging && onEnd());
-
-            wrap.setAttribute('draggable', 'true');
-
-            return wrap;
-        }
-
-        function openDetail(taskId) {
-            // TODO: ここをLIFF遷移やボトムシートに差し替え
-            alert(`詳細を開きます（ID: ${taskId}）`);
-        }
-
-        function addBadge(root, text) { const b = document.createElement('span'); b.className = 'badge'; b.textContent = text; root.appendChild(b); }
-
-        function avgMeaning(t) { const vs = Number(t.vision_score ?? 0); const ex = Number(t.excite_score ?? 0); const gr = Number(t.growth_score ?? 0); const pr = Number(t.priority ?? 0); return Math.round((0.35 * vs + 0.25 * ex + 0.25 * gr + 0.15 * pr) * 10) / 10; }
-
-        function mkBtn(label, onClick, extraClass = '') { const b = document.createElement('button'); b.textContent = label; if (extraClass) b.classList.add(extraClass); b.addEventListener('click', onClick); return b; }
-
-        /* =========================================================
-         * F) 変更系API（POST /action）
-         * 役割：create/complete/toggle_pin/delete/remind_plus2h
-         * =======================================================*/
-        async function action(kind, taskId, extra = {}) {
-            try {
-                const res = await fetch(`${API_BASE}/action`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, action: kind, task_id: taskId, ...extra }) });
-                if (!res.ok) throw new Error('action failed');
-                const { ok, message } = await res.json();
-                if (!ok) throw new Error(message || 'NG');
-                await loadList();
-            } catch (e) { console.error(e); alert('操作に失敗しました'); }
-        }
-
-        /* =========================================================
-         * G) 作成イベント（UI→POST create）
-         * 役割：入力ボックスの内容を新規タスクとして保存
-         * =======================================================*/
-        async function onAdd() {
-            const title = document.getElementById('newTitle').value.trim();
-            if (!title) return;
-            await action('create', null, { title });
-            document.getElementById('newTitle').value = '';
-        }
-
-        /* =========================================================
-         * H) 並び替え機能（ドラッグで順序変更）
-         * =======================================================*/
-        function enableSorting() {
-            const lists = document.querySelectorAll('.list');
-            lists.forEach(list => {
-                list.addEventListener('dragstart', e => {
-                    if (!e.target.classList.contains('card')) return;
-                    e.target.classList.add('dragging');
-                });
-
-                list.addEventListener('dragend', e => {
-                    e.target.classList.remove('dragging');
-                    // TODO: 並び順を保存したい場合はここでAPI呼び出し
-                });
-
-                list.addEventListener('dragover', e => {
-                    e.preventDefault();
-                    const after = getDragAfterElement(list, e.clientY);
-                    const dragging = document.querySelector('.dragging');
-                    if (!dragging) return;
-                    if (after == null) list.appendChild(dragging);
-                    else list.insertBefore(dragging, after);
-                });
-            });
-        }
-
-        function getDragAfterElement(container, y) {
-            const cards = [...container.querySelectorAll('.card:not(.dragging)')];
-            return cards.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                return offset < 0 && offset > closest.offset
-                    ? { offset, element: child }
-                    : closest;
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-
-        /* ─────────────────────────────────────────
-         * スマホ長押し対応：ハンドルで縦並び替え（Pointer Events版）
-         * ───────────────────────────────────────── */
-        (() => {
-            const LONG = 400;           // 長押し判定 ms
-            let pressTimer = null;
-            let draggingCard = null;
-            let placeholder = null;
-            let originList = null;
-            let startOffsetY = 0;
-            let startRect = null;
-
-            function onPointerDown(e) {
-                const handle = e.target.closest('.handle');
-                if (!handle) return;
-                const card = handle.closest('.card');
-                if (!card) return;
-
-                clearTimeout(pressTimer);
-                pressTimer = setTimeout(() => beginDrag(e, card), LONG);
-            }
-
-            function beginDrag(e, card) {
-                IS_SORT_DRAG = true;
-                draggingCard = card;
-                originList = card.parentElement;
-
-                startRect = card.getBoundingClientRect();
-                startOffsetY = e.clientY - startRect.top;
-
-                // 占位要素を作成（同じ高さ）
-                placeholder = document.createElement('div');
-                placeholder.className = 'card placeholder';
-                placeholder.style.height = `${startRect.height}px`;
-                originList.insertBefore(placeholder, card.nextSibling);
-
-                // カードを浮かせる（画面上に固定配置）
-                card.style.width = `${startRect.width}px`;
-                card.style.position = 'fixed';
-                card.style.left = `${startRect.left}px`;
-                card.style.top = `${e.clientY - startOffsetY}px`;
-                card.style.zIndex = 999;
-                card.classList.add('dragging');
-
-                // Pointer Capture（対応環境のみ）
-                if (card.setPointerCapture && e.pointerId != null) {
-                    try { card.setPointerCapture(e.pointerId); } catch { }
-                }
-            }
-
-            function onPointerMove(e) {
-                if (!draggingCard) {
-                    clearTimeout(pressTimer);
-                    return;
-                }
-                e.preventDefault(); // ページスクロール抑止
-
-                // 位置更新
-                draggingCard.style.top = `${e.clientY - startOffsetY}px`;
-
-                // 差し込み位置の決定
-                const list = originList;
-                const after = getDragAfterElement(list, e.clientY);
-                if (!after) list.appendChild(placeholder);
-                else list.insertBefore(placeholder, after);
-            }
-
-            function onPointerUp() {
-                clearTimeout(pressTimer);
-                if (!draggingCard) return;
-
-                // 確定：占位位置へ戻す
-                originList.insertBefore(draggingCard, placeholder);
-
-                // 後片付け
-                draggingCard.style.position = '';
-                draggingCard.style.left = '';
-                draggingCard.style.top = '';
-                draggingCard.style.width = '';
-                draggingCard.style.zIndex = '';
-                draggingCard.classList.remove('dragging');
-
-                placeholder.remove();
-                placeholder = null;
-                draggingCard = null;
-                startRect = null;
-                IS_SORT_DRAG = false;
-
-                // TODO: 並び順保存が必要ならここでAPI呼び出し
-                // saveOrder(originList);
-            }
-
-            // 既存が無い場合だけ定義
-            if (typeof getDragAfterElement !== 'function') {
-                window.getDragAfterElement = function (container, y) {
-                    const cards = [...container.querySelectorAll('.card:not(.dragging):not(.placeholder)')];
-                    return cards.reduce((closest, child) => {
-                        const box = child.getBoundingClientRect();
-                        const offset = y - box.top - box.height / 2;
-                        return (offset < 0 && offset > closest.offset) ? { offset, element: child } : closest;
-                    }, { offset: -Infinity, element: null }).element;
-                }
-            }
-
-            // ドキュメント全体でハンドル長押しを拾う
-            document.addEventListener('pointerdown', onPointerDown, { passive: true });
-            document.addEventListener('pointermove', onPointerMove, { passive: false });
-            document.addEventListener('pointerup', onPointerUp, { passive: true });
-            document.addEventListener('pointercancel', onPointerUp, { passive: true });
-        })();
-
-
-
-        init();
-    </script>
+<header>
+  <div class="bar">
+    <div style="font-weight:700">LIST</div>
+    <div class="tabs">
+      <div class="tab active" id="tabTasks">タスク</div>
+      <div class="tab" id="tabJournal">ジャーナル</div>
+    </div>
+    <div id="refreshBtn" class="tab" title="更新">↻</div>
+  </div>
+</header>
+
+<main class="section">
+  <div class="add">
+    <input id="newTitle" placeholder="タスクを入力（例：レポート提出）" />
+    <button id="btnAdd" class="primary">追加</button>
+  </div>
+
+  <div id="pinned" class="list"></div>
+  <div id="pinnedDivider" class="divider" style="display:none"></div>
+  <div id="active" class="list"></div>
+  <div id="completedDivider" class="divider" style="display:none"></div>
+  <div id="completed" class="list"></div>
+  <div id="empty" class="empty" style="display:none">タスクがありません</div>
+</main>
+
+<!-- ===== 詳細モーダル ===== -->
+<div id="detailModal" class="modal-root">
+  <div class="modal-backdrop" id="detailBackdrop"></div>
+  <div class="modal-panel">
+    <div class="modal-header">
+      <div class="modal-title">タスク詳細</div>
+      <button class="modal-close" id="detailCloseBtn">&times;</button>
+    </div>
+    <div class="modal-task-title" id="detailTaskTitle"></div>
+
+    <div class="slider-group">
+      <div class="slider-label-row">
+        <span>優先度</span>
+        <span class="value" id="valPriority">0</span>
+      </div>
+      <input type="range" id="inputPriority" min="0" max="10" step="1">
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-label-row">
+        <span>ビジョン関連度</span>
+        <span class="value" id="valVision">0</span>
+      </div>
+      <input type="range" id="inputVision" min="0" max="10" step="1">
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-label-row">
+        <span>わくわく度</span>
+        <span class="value" id="valExcite">0</span>
+      </div>
+      <input type="range" id="inputExcite" min="0" max="10" step="1">
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-label-row">
+        <span>成長度</span>
+        <span class="value" id="valGrowth">0</span>
+      </div>
+      <input type="range" id="inputGrowth" min="0" max="10" step="1">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" id="detailCancelBtn">キャンセル</button>
+      <button class="btn-primary-solid" id="detailSaveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const LIFF_ID = '2008372898-2q9qWmxv';
+  const API_BASE = 'https://yamasho.xvps.jp/webhook';
+
+  const EXPOSE_W = 129;
+  const EXPOSE_X = 193;
+  const SNAP_MIN = 30;
+  const STRONG_SWIPE = 180;
+  const MAX_DRAG = EXPOSE_W;
+
+  let userId = null;
+  let profile = null;
+
+  // 詳細編集中のタスク
+  let currentDetailTask = null;
+
+  async function init() {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) liff.login();
+    try {
+      profile = await liff.getProfile();
+      userId = profile.userId;
+    } catch (e) {
+      console.error('LIFF profile error', e);
+      alert('LINEプロフィールの取得に失敗しました');
+      return;
+    }
+    bindUI();
+    bindDetailModalUI();
+    await loadList();
+    enableSorting();
+  }
+
+  function bindUI() {
+    document.getElementById('tabTasks').addEventListener('click', () => {
+      // 今はこの画面がタスクなので何もしない
+    });
+    document.getElementById('tabJournal').addEventListener('click', () => {
+      // ここで journal.html などに遷移する想定
+      alert('ジャーナル画面はこれから実装予定です');
+    });
+    document.getElementById('refreshBtn').addEventListener('click', loadList);
+    document.getElementById('btnAdd').addEventListener('click', onAdd);
+  }
+
+  /* ===== 詳細モーダルのイベント束ね ===== */
+  function bindDetailModalUI() {
+    const modal = document.getElementById('detailModal');
+    const backdrop = document.getElementById('detailBackdrop');
+    const closeBtn = document.getElementById('detailCloseBtn');
+    const cancelBtn = document.getElementById('detailCancelBtn');
+    const saveBtn = document.getElementById('detailSaveBtn');
+
+    [backdrop, closeBtn, cancelBtn].forEach(el => {
+      el.addEventListener('click', () => closeDetail());
+    });
+    saveBtn.addEventListener('click', saveDetail);
+
+    // スライダー値表示
+    const bindSlider = (idInput, idLabel) => {
+      const input = document.getElementById(idInput);
+      const label = document.getElementById(idLabel);
+      input.addEventListener('input', () => {
+        label.textContent = input.value;
+      });
+    };
+    bindSlider('inputPriority', 'valPriority');
+    bindSlider('inputVision', 'valVision');
+    bindSlider('inputExcite', 'valExcite');
+    bindSlider('inputGrowth', 'valGrowth');
+  }
+
+  function openDetail(task) {
+    currentDetailTask = task;
+    const modal = document.getElementById('detailModal');
+    document.getElementById('detailTaskTitle').textContent = task.title || '(無題)';
+
+    const priority = Number(task.priority ?? 0);
+    const vision = Number(task.vision_score ?? 0);
+    const excite = Number(task.excite_score ?? 0);
+    const growth = Number(task.growth_score ?? 0);
+
+    document.getElementById('inputPriority').value = priority;
+    document.getElementById('valPriority').textContent = priority;
+
+    document.getElementById('inputVision').value = vision;
+    document.getElementById('valVision').textContent = vision;
+
+    document.getElementById('inputExcite').value = excite;
+    document.getElementById('valExcite').textContent = excite;
+
+    document.getElementById('inputGrowth').value = growth;
+    document.getElementById('valGrowth').textContent = growth;
+
+    modal.classList.add('visible');
+  }
+
+  function closeDetail() {
+    currentDetailTask = null;
+    document.getElementById('detailModal').classList.remove('visible');
+  }
+
+  async function saveDetail() {
+    if (!currentDetailTask) return;
+    const taskId = currentDetailTask.id;
+
+    const priority = Number(document.getElementById('inputPriority').value);
+    const vision_score = Number(document.getElementById('inputVision').value);
+    const excite_score = Number(document.getElementById('inputExcite').value);
+    const growth_score = Number(document.getElementById('inputGrowth').value);
+
+    try {
+      await action('update_detail', taskId, {
+        priority,
+        vision_score,
+        excite_score,
+        growth_score
+      });
+      closeDetail();
+    } catch (e) {
+      // action() 内でアラートは出るのでここではログだけ
+      console.error(e);
+    }
+  }
+
+  /* ====== API: LIST取得 ====== */
+  async function loadList() {
+    setLoading(true);
+    try {
+      const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('list api failed');
+      const data = await res.json();
+      renderList(data);
+    } catch (err) {
+      console.error(err);
+      alert('一覧の取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function setLoading(on) {
+    document.body.style.opacity = on ? .6 : 1;
+  }
+
+  function renderList(payload) {
+    const pinned = document.getElementById('pinned');
+    const active = document.getElementById('active');
+    const completed = document.getElementById('completed');
+    const empty = document.getElementById('empty');
+    const pinnedDivider = document.getElementById('pinnedDivider');
+    const completedDivider = document.getElementById('completedDivider');
+    [pinned, active, completed].forEach(el => el.innerHTML = '');
+
+    const p = payload.pinned || [];
+    const a = payload.active || [];
+    const c = payload.completed || [];
+
+    if (p.length) {
+      p.forEach(t => pinned.appendChild(taskCard(t)));
+      pinnedDivider.style.display = 'block';
+    } else pinnedDivider.style.display = 'none';
+
+    if (a.length) a.forEach(t => active.appendChild(taskCard(t)));
+
+    if (c.length) {
+      completedDivider.style.display = 'block';
+      c.forEach(t => completed.appendChild(taskCard(t, true)));
+    } else completedDivider.style.display = 'none';
+
+    empty.style.display = (p.length + a.length + c.length) ? 'none' : 'block';
+  }
+
+  function taskCard(t, isCompleted = false) {
+    const wrap = document.createElement('div');
+    wrap.className = 'card';
+
+    // 背面アクション
+    const rail = document.createElement('div');
+    rail.className = 'actions-rail';
+    const leftRail = document.createElement('div');
+    leftRail.className = 'actions-left';
+    const rightRail = document.createElement('div');
+    rightRail.className = 'actions-right';
+
+    leftRail.append(
+      mkBtn('完了', () => action('complete', t.id), 'btn-complete'),
+      mkBtn('+2h', () => action('remind_plus2h', t.id), 'btn-plus2h')
+    );
+    rightRail.append(
+      mkBtn('詳細', () => openDetail(t), 'btn-detail'),
+      mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id), 'btn-pin'),
+      mkBtn('削除', () => action('delete', t.id), 'btn-delete')
+    );
+    rail.append(leftRail, rightRail);
+
+    // 前面
+    const slide = document.createElement('div');
+    slide.className = 'sl';
+    const content = document.createElement('div');
+    content.className = 'content';
+    const row = document.createElement('div');
+    row.className = 'row';
+    const left = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'title';
+    title.textContent = t.title || '(無題)';
+    left.append(title);
+
+    const handle = document.createElement('div');
+    handle.className = 'handle';
+    handle.textContent = '☰';
+
+    row.append(left, handle);
+    content.append(row);
+    slide.append(content);
+
+    wrap.append(rail, slide);
+    if (isCompleted) wrap.classList.add('ghost');
+
+    // スワイプ処理
+    let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false, open = 'none';
+
+    const onStart = (x, y) => {
+      startX = x; startY = y;
+      dx = 0; dy = 0;
+      dragging = true;
+      slide.style.transition = 'none';
+    };
+    const onMove = (x, y) => {
+      if (!dragging) return;
+      dx = x - startX; dy = y - startY;
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+        onEnd(true);
+        return;
+      }
+      const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
+      let tx = base + dx;
+      tx = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, tx));
+      slide.style.transform = `translateX(${tx}px)`;
+    };
+    const onEnd = (cancel = false) => {
+      if (!dragging) return;
+      dragging = false;
+      slide.style.transition = 'transform .15s ease';
+
+      if (cancel) { snapTo(open); return; }
+
+      const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
+      const tx = base + dx;
+
+      if (tx >= STRONG_SWIPE) {
+        open = 'none';
+        slide.style.transform = 'translateX(0px)';
+        action('complete', t.id);
+        return;
+      }
+      if (tx <= -STRONG_SWIPE) {
+        open = 'none';
+        slide.style.transform = 'translateX(0px)';
+        action('delete', t.id);
+        return;
+      }
+
+      if (tx > SNAP_MIN) { open = 'left'; snapTo('left'); }
+      else if (tx < -SNAP_MIN) { open = 'right'; snapTo('right'); }
+      else { open = 'none'; snapTo('none'); }
+    };
+
+    function snapTo(which) {
+      if (which === 'left') {
+        wrap.classList.add('open-left');
+        wrap.classList.remove('open-right');
+        slide.style.transform = `translateX(${EXPOSE_W}px)`;
+      } else if (which === 'right') {
+        wrap.classList.add('open-right');
+        wrap.classList.remove('open-left');
+        slide.style.transform = `translateX(${-EXPOSE_X}px)`;
+      } else {
+        wrap.classList.remove('open-left', 'open-right');
+        slide.style.transform = 'translateX(0px)';
+      }
+    }
+
+    wrap.addEventListener('click', e => {
+      if (open !== 'none') {
+        open = 'none';
+        snapTo('none');
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+
+    wrap.addEventListener('touchstart', e =>
+      onStart(e.touches[0].clientX, e.touches[0].clientY),
+      { passive: true }
+    );
+    wrap.addEventListener('touchmove', e => {
+      const x = e.touches[0].clientX, y = e.touches[0].clientY;
+      const tmpDx = x - startX;
+      const tmpDy = y - startY;
+      if (Math.abs(tmpDx) > Math.abs(tmpDy)) e.preventDefault();
+      onMove(x, y);
+    }, { passive: false });
+    wrap.addEventListener('touchend', () => onEnd());
+
+    wrap.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
+    window.addEventListener('mousemove', e => dragging && onMove(e.clientX, e.clientY));
+    window.addEventListener('mouseup', () => dragging && onEnd());
+
+    wrap.setAttribute('draggable', 'true');
+    return wrap;
+  }
+
+  function mkBtn(label, onClick, extraClass = '') {
+    const b = document.createElement('button');
+    b.textContent = label;
+    if (extraClass) b.classList.add(extraClass);
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      onClick();
+    });
+    return b;
+  }
+
+  async function action(kind, taskId, extra = {}) {
+    try {
+      const res = await fetch(`${API_BASE}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          action: kind,
+          task_id: taskId,
+          ...extra
+        })
+      });
+      if (!res.ok) throw new Error('action failed');
+      const { ok, message } = await res.json();
+      if (!ok) throw new Error(message || 'NG');
+      await loadList();
+    } catch (e) {
+      console.error(e);
+      alert('操作に失敗しました');
+      throw e;
+    }
+  }
+
+  async function onAdd() {
+    const title = document.getElementById('newTitle').value.trim();
+    if (!title) return;
+    await action('create', null, { title });
+    document.getElementById('newTitle').value = '';
+  }
+
+  function enableSorting() {
+    const lists = document.querySelectorAll('.list');
+    lists.forEach(list => {
+      list.addEventListener('dragstart', e => {
+        if (!e.target.classList.contains('card')) return;
+        e.target.classList.add('dragging');
+      });
+      list.addEventListener('dragend', e => {
+        e.target.classList.remove('dragging');
+      });
+      list.addEventListener('dragover', e => {
+        e.preventDefault();
+        const after = getDragAfterElement(list, e.clientY);
+        const dragging = document.querySelector('.dragging');
+        if (!dragging) return;
+        if (after == null) list.appendChild(dragging);
+        else list.insertBefore(dragging, after);
+      });
+    });
+  }
+
+  function getDragAfterElement(container, y) {
+    const cards = [...container.querySelectorAll('.card:not(.dragging)')];
+    return cards.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      return offset < 0 && offset > closest.offset
+        ? { offset, element: child }
+        : closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  // スマホ長押しで縦ドラッグ
+  (() => {
+    const LONG = 400;
+    let pressTimer = null;
+    let draggingCard = null;
+    let placeholder = null;
+    let originList = null;
+    let startOffsetY = 0;
+    let startRect = null;
+
+    function onPointerDown(e) {
+      const handle = e.target.closest('.handle');
+      if (!handle) return;
+      const card = handle.closest('.card');
+      if (!card) return;
+      clearTimeout(pressTimer);
+      pressTimer = setTimeout(() => beginDrag(e, card), LONG);
+    }
+
+    function beginDrag(e, card) {
+      draggingCard = card;
+      originList = card.parentElement;
+
+      startRect = card.getBoundingClientRect();
+      startOffsetY = e.clientY - startRect.top;
+
+      placeholder = document.createElement('div');
+      placeholder.className = 'card placeholder';
+      placeholder.style.height = `${startRect.height}px`;
+      originList.insertBefore(placeholder, card.nextSibling);
+
+      card.style.width = `${startRect.width}px`;
+      card.style.position = 'fixed';
+      card.style.left = `${startRect.left}px`;
+      card.style.top = `${e.clientY - startOffsetY}px`;
+      card.style.zIndex = 999;
+      card.classList.add('dragging');
+
+      if (card.setPointerCapture && e.pointerId != null) {
+        try { card.setPointerCapture(e.pointerId); } catch {}
+      }
+    }
+
+    function onPointerMove(e) {
+      if (!draggingCard) {
+        clearTimeout(pressTimer);
+        return;
+      }
+      e.preventDefault();
+      draggingCard.style.top = `${e.clientY - startOffsetY}px`;
+
+      const list = originList;
+      const after = getDragAfterElement(list, e.clientY);
+      if (!after) list.appendChild(placeholder);
+      else list.insertBefore(placeholder, after);
+    }
+
+    function onPointerUp() {
+      clearTimeout(pressTimer);
+      if (!draggingCard) return;
+
+      originList.insertBefore(draggingCard, placeholder);
+
+      draggingCard.style.position = '';
+      draggingCard.style.left = '';
+      draggingCard.style.top = '';
+      draggingCard.style.width = '';
+      draggingCard.style.zIndex = '';
+      draggingCard.classList.remove('dragging');
+
+      placeholder.remove();
+      placeholder = null;
+      draggingCard = null;
+      startRect = null;
+    }
+
+    document.addEventListener('pointerdown', onPointerDown, { passive: true });
+    document.addEventListener('pointermove', onPointerMove, { passive: false });
+    document.addEventListener('pointerup', onPointerUp, { passive: true });
+    document.addEventListener('pointercancel', onPointerUp, { passive: true });
+  })();
+
+  init();
+</script>
 </body>
 </html>
-
-
-
-
