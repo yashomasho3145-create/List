@@ -45,6 +45,13 @@
     pointer-events:none; z-index:1;
   }
 
+    /* スワイプで開いているときだけボタンを押せるようにする */
+  .card.open-left .actions-rail,
+  .card.open-right .actions-rail {
+    pointer-events: auto;
+  }
+
+
   :root { --rail-w:140px; }
 
   .actions-left, .actions-right {
@@ -480,4 +487,5 @@ init();
 </script>
 </body>
 </html>
+
 
