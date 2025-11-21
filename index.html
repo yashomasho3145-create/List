@@ -273,27 +273,44 @@ function bindModalUI() {
   LIST API
 ========================== */
 async function loadList() {
-  try {
-    const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
-    console.log("[LIST] request:", url);
+  const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
+  console.log("[LIST] request:", url);
 
+  try {
     const res = await fetch(url);
-    const text = await res.text();
     console.log("[LIST] status:", res.status);
-    console.log("[LIST] raw response:", text);
+
+    const text = await res.text();
+    console.log("[LIST] raw response:", JSON.stringify(text));
 
     if (!res.ok) {
-      throw new Error(`list api error: ${res.status}`);
+      console.error("[LIST] http error:", res.status, text);
+      alert("タスク一覧の取得に失敗しました（HTTPエラー）");
+      return;
     }
 
-    // ちゃんとJSONが返っていることを確認してからパース
-    const data = text ? JSON.parse(text) : {};
-    console.log("[LIST] parsed json:", data);
+    if (!text) {
+      console.warn("[LIST] 空レスポンスでした");
+      // 空ならとりあえず全部空配列で描画
+      renderList({ pinned: [], active: [], completed: [] });
+      return;
+    }
 
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("[LIST] JSONパースエラー:", e);
+      alert("サーバーからJSONが返ってきていません");
+      return;
+    }
+
+    console.log("[LIST] parsed json:", data);
     renderList(data);
+
   } catch (e) {
-    console.error("[LIST] error:", e);
-    alert("タスク一覧の取得に失敗しました");
+    console.error("[LIST] fetch error:", e);
+    alert("タスク一覧の取得に失敗しました（通信エラー）");
   }
 }
 
@@ -500,6 +517,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
