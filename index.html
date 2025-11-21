@@ -80,7 +80,15 @@
       font-weight: 600;
       word-break: break-word;
       line-height: 1.5;
+      display: flex;
+      align-items: center;
     }
+    /* 完了タスクの見た目 */
+    .card.completed .title {
+      color: #9ca3af;
+      text-decoration: line-through;
+    }
+
     .empty {
       color: #777;
       text-align: center;
@@ -90,6 +98,13 @@
     .divider {
       margin: 0;
       border-top: 1px dashed #e6e6e6;
+    }
+
+    .divider-label {
+      font-size: 11px;
+      color: #9ca3af;
+      text-align: center;
+      margin: 4px 0 8px;
     }
 
     .add {
@@ -197,10 +212,10 @@
       transition: background 0.2s;
     }
     button.btn-complete { background: #7e6dff; }
-    button.btn-plus2h { background: #8012e2; }
-    button.btn-detail { background: #1e928b; }
-    button.btn-pin { background: #d97706; }
-    button.btn-delete { background: #f03d30; }
+    button.btn-plus2h   { background: #8012e2; }
+    button.btn-detail   { background: #1e928b; }
+    button.btn-pin      { background: #d97706; }
+    button.btn-delete   { background: #f03d30; }
 
     .card.open-left .sl {
       transform: translateX(var(--rail-w));
@@ -214,6 +229,7 @@
       margin-left: auto;
       cursor: grab;
       user-select: none;
+      -webkit-user-select: none; /* iOS Safari */
       font-size: 20px;
       opacity: 0.1;
       padding: 0 12px;
@@ -264,7 +280,7 @@
     }
     @keyframes slideUp {
       from { transform: translateY(40px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      to   { transform: translateY(0);    opacity: 1; }
     }
     .modal-header {
       display: flex;
@@ -348,11 +364,17 @@
     <button id="btnAdd" class="primary">追加</button>
   </div>
 
+  <!-- 未完了タスク（ピン＋通常） -->
+  <div id="incompleteLabel" class="divider-label">――― 未完了タスク ―――</div>
   <div id="pinned" class="list"></div>
   <div id="pinnedDivider" class="divider" style="display:none"></div>
   <div id="active" class="list"></div>
-  <div id="completedDivider" class="divider" style="display:none"></div>
+
+  <!-- 完了タスク側（線より下） -->
+  <div id="completedLine" class="divider" style="margin-top:12px;"></div>
+  <div class="divider-label">――― 達成タスク ―――</div>
   <div id="completed" class="list"></div>
+
   <div id="empty" class="empty" style="display:none">タスクがありません</div>
 </main>
 
@@ -406,7 +428,7 @@
 </div>
 
 <script>
-  const LIFF_ID = '2008372898-2q9qWmxv';
+  const LIFF_ID = '2008372898-2q9qWmxv'; // 実際のLIFF IDに合わせて変更
   const API_BASE = 'https://yamasho.xvps.jp/webhook';
 
   const EXPOSE_W = 129;
@@ -443,16 +465,15 @@
       // 今はこの画面がタスクなので何もしない
     });
     document.getElementById('tabJournal').addEventListener('click', () => {
-      // ここで journal.html などに遷移する想定
+      // TODO: ジャーナル画面に遷移
       alert('ジャーナル画面はこれから実装予定です');
     });
     document.getElementById('refreshBtn').addEventListener('click', loadList);
     document.getElementById('btnAdd').addEventListener('click', onAdd);
   }
 
-  /* ===== 詳細モーダルのイベント束ね ===== */
+  /* ===== 詳細モーダル ===== */
   function bindDetailModalUI() {
-    const modal = document.getElementById('detailModal');
     const backdrop = document.getElementById('detailBackdrop');
     const closeBtn = document.getElementById('detailCloseBtn');
     const cancelBtn = document.getElementById('detailCancelBtn');
@@ -463,7 +484,6 @@
     });
     saveBtn.addEventListener('click', saveDetail);
 
-    // スライダー値表示
     const bindSlider = (idInput, idLabel) => {
       const input = document.getElementById(idInput);
       const label = document.getElementById(idLabel);
@@ -479,7 +499,6 @@
 
   function openDetail(task) {
     currentDetailTask = task;
-    const modal = document.getElementById('detailModal');
     document.getElementById('detailTaskTitle').textContent = task.title || '(無題)';
 
     const priority = Number(task.priority ?? 0);
@@ -499,7 +518,7 @@
     document.getElementById('inputGrowth').value = growth;
     document.getElementById('valGrowth').textContent = growth;
 
-    modal.classList.add('visible');
+    document.getElementById('detailModal').classList.add('visible');
   }
 
   function closeDetail() {
@@ -525,7 +544,6 @@
       });
       closeDetail();
     } catch (e) {
-      // action() 内でアラートは出るのでここではログだけ
       console.error(e);
     }
   }
@@ -557,7 +575,7 @@
     const completed = document.getElementById('completed');
     const empty = document.getElementById('empty');
     const pinnedDivider = document.getElementById('pinnedDivider');
-    const completedDivider = document.getElementById('completedDivider');
+
     [pinned, active, completed].forEach(el => el.innerHTML = '');
 
     const p = payload.pinned || [];
@@ -565,16 +583,15 @@
     const c = payload.completed || [];
 
     if (p.length) {
-      p.forEach(t => pinned.appendChild(taskCard(t)));
+      p.forEach(t => pinned.appendChild(taskCard(t, false)));
       pinnedDivider.style.display = 'block';
     } else pinnedDivider.style.display = 'none';
 
-    if (a.length) a.forEach(t => active.appendChild(taskCard(t)));
+    if (a.length) a.forEach(t => active.appendChild(taskCard(t, false)));
 
     if (c.length) {
-      completedDivider.style.display = 'block';
       c.forEach(t => completed.appendChild(taskCard(t, true)));
-    } else completedDivider.style.display = 'none';
+    }
 
     empty.style.display = (p.length + a.length + c.length) ? 'none' : 'block';
   }
@@ -582,6 +599,9 @@
   function taskCard(t, isCompleted = false) {
     const wrap = document.createElement('div');
     wrap.className = 'card';
+    if (isCompleted) {
+      wrap.classList.add('completed', 'ghost');
+    }
 
     // 背面アクション
     const rail = document.createElement('div');
@@ -591,14 +611,29 @@
     const rightRail = document.createElement('div');
     rightRail.className = 'actions-right';
 
-    leftRail.append(
-      mkBtn('完了', () => action('complete', t.id), 'btn-complete'),
-      mkBtn('+2h', () => action('remind_plus2h', t.id), 'btn-plus2h')
-    );
+    // 左レール：未完なら「完了」、完了なら「未完」
+    if (!isCompleted) {
+      leftRail.append(
+        mkBtn('完了', () => action('complete', t.id), 'btn-complete'),
+        mkBtn('+2h', () => action('remind_plus2h', t.id), 'btn-plus2h')
+      );
+    } else {
+      leftRail.append(
+        mkBtn('未完', () => action('uncomplete', t.id), 'btn-complete')
+      );
+    }
+
+    // 右レール：詳細 / ピン / 削除（ピン中は削除不可）
     rightRail.append(
       mkBtn('詳細', () => openDetail(t), 'btn-detail'),
       mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id), 'btn-pin'),
-      mkBtn('削除', () => action('delete', t.id), 'btn-delete')
+      mkBtn('削除', () => {
+        if (t.pinned) {
+          alert('ピンを外してください');
+          return;
+        }
+        action('delete', t.id);
+      }, 'btn-delete')
     );
     rail.append(leftRail, rightRail);
 
@@ -610,9 +645,19 @@
     const row = document.createElement('div');
     row.className = 'row';
     const left = document.createElement('div');
+
     const title = document.createElement('div');
     title.className = 'title';
-    title.textContent = t.title || '(無題)';
+
+    // ピン中なら📍を先頭に表示
+    if (t.pinned) {
+      const pinIcon = document.createElement('span');
+      pinIcon.textContent = '📍';
+      pinIcon.style.marginRight = '4px';
+      title.appendChild(pinIcon);
+    }
+    title.appendChild(document.createTextNode(t.title || '(無題)'));
+
     left.append(title);
 
     const handle = document.createElement('div');
@@ -624,7 +669,6 @@
     slide.append(content);
 
     wrap.append(rail, slide);
-    if (isCompleted) wrap.classList.add('ghost');
 
     // スワイプ処理
     let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false, open = 'none';
@@ -666,7 +710,11 @@
       if (tx <= -STRONG_SWIPE) {
         open = 'none';
         slide.style.transform = 'translateX(0px)';
-        action('delete', t.id);
+        if (t.pinned) {
+          alert('ピンを外してください');
+        } else {
+          action('delete', t.id);
+        }
         return;
       }
 
@@ -793,7 +841,7 @@
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
 
-  // スマホ長押しで縦ドラッグ
+  // スマホ長押しで縦ドラッグ（☰で発火、iOS選択を抑制）
   (() => {
     const LONG = 400;
     let pressTimer = null;
@@ -808,6 +856,12 @@
       if (!handle) return;
       const card = handle.closest('.card');
       if (!card) return;
+
+      // iOSのテキスト選択を抑制
+      e.preventDefault();
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
+
       clearTimeout(pressTimer);
       pressTimer = setTimeout(() => beginDrag(e, card), LONG);
     }
@@ -852,6 +906,11 @@
 
     function onPointerUp() {
       clearTimeout(pressTimer);
+
+      // 選択禁止を解除
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
+
       if (!draggingCard) return;
 
       originList.insertBefore(draggingCard, placeholder);
@@ -869,11 +928,21 @@
       startRect = null;
     }
 
-    document.addEventListener('pointerdown', onPointerDown, { passive: true });
+    document.addEventListener('pointerdown', onPointerDown, { passive: false });
     document.addEventListener('pointermove', onPointerMove, { passive: false });
     document.addEventListener('pointerup', onPointerUp, { passive: true });
     document.addEventListener('pointercancel', onPointerUp, { passive: true });
   })();
+
+  /*
+    ★メモ：3日経過した完了タスクの自動削除について
+    - Supabase 側の complete_at を「0/1」ではなく
+      「完了日時（timestamp）」にしておくと、
+      n8n の Cron で
+        NOW() - interval '3 days' より古いものを DELETE
+      というバッチが組みやすいです。
+    - フロント側は /list の結果を描画するだけでOK。
+  */
 
   init();
 </script>
