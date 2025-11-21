@@ -274,16 +274,29 @@ function bindModalUI() {
 ========================== */
 async function loadList() {
   try {
-    const res = await fetch(`${API_BASE}/list?user_id=${encodeURIComponent(userId)}`);
-    if (!res.ok) throw new Error("list api error");
-    const data = await res.json();
-    console.log("LIST payload:", data);
+    const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
+    console.log("[LIST] request:", url);
+
+    const res = await fetch(url);
+    const text = await res.text();
+    console.log("[LIST] status:", res.status);
+    console.log("[LIST] raw response:", text);
+
+    if (!res.ok) {
+      throw new Error(`list api error: ${res.status}`);
+    }
+
+    // ちゃんとJSONが返っていることを確認してからパース
+    const data = text ? JSON.parse(text) : {};
+    console.log("[LIST] parsed json:", data);
+
     renderList(data);
   } catch (e) {
-    console.error(e);
+    console.error("[LIST] error:", e);
     alert("タスク一覧の取得に失敗しました");
   }
 }
+
 
 function renderList(payload) {
   pinnedEl.innerHTML    = "";
@@ -487,5 +500,6 @@ init();
 </script>
 </body>
 </html>
+
 
 
