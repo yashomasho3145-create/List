@@ -1,984 +1,392 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LIST｜タスク一覧</title>
-  <style>
-    body {
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      margin: 0;
-      background: #f7f7f8;
-      color: #111;
-    }
-    header {
-      position: sticky;
-      top: 0;
-      background: #fff;
-      border-bottom: 1px solid #eee;
-      z-index: 10;
-    }
-    .bar {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-    }
-    .tabs {
-      display: flex;
-      gap: 8px;
-    }
-    .tab {
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid #ddd;
-      background: #fff;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .tab.active {
-      background: #111;
-      color: #fff;
-      border-color: #111;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LIST｜タスク一覧</title>
+<style>
+  body { font-family: -apple-system, system-ui; margin:0; background:#f7f7f8; }
 
-    .section {
-      padding: 12px 16px;
-    }
-    .list {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-    .card {
-      height: 60px;
-      min-height: 60px;
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 0;
-      box-shadow: 0 1px 2px rgba(0,0,0,.03);
-      position: relative;
-      overflow: hidden;
-      touch-action: pan-y;
-      border-left: 0;
-      border-right: 0;
-      border-top: 0;
-    }
-    .list .card:first-child {
-      border-top: 0;
-    }
-    .row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      justify-content: space-between;
-      width: 100%;
-    }
-    .title {
-      font-size: 16px;
-      font-weight: 600;
-      word-break: break-word;
-      line-height: 1.5;
-      display: flex;
-      align-items: center;
-    }
-    /* 完了タスクの見た目 */
-    .card.completed .title {
-      color: #9ca3af;
-      text-decoration: line-through;
-    }
+  header { position:sticky; top:0; background:#fff; border-bottom:1px solid #eee; z-index:10; }
+  .bar { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; }
 
-    .empty {
-      color: #777;
-      text-align: center;
-      padding: 24px 0;
-      font-size: 13px;
-    }
-    .divider {
-      margin: 0;
-      border-top: 1px dashed #e6e6e6;
-    }
+  .tab { padding:6px 12px; border-radius:14px; border:1px solid #ddd; font-size:13px; cursor:pointer; }
+  .tab.active { background:#111; color:white; border-color:#111; }
 
-    .divider-label {
-      font-size: 11px;
-      color: #9ca3af;
-      text-align: center;
-      margin: 4px 0 8px;
-    }
+  .add { display:flex; gap:8px; padding:12px 16px; }
+  .add input { flex:1; padding:10px; border-radius:8px; border:1px solid #ddd; }
 
-    .add {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .add input {
-      flex: 1;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 14px;
-    }
+  .list { display:flex; flex-direction:column; }
 
-    button {
-      appearance: none;
-      border: 0;
-      background: #fff;
-      border-radius: 10px;
-      padding: 0;
-      cursor: pointer;
-    }
-    button.primary {
-      background: #111;
-      color: #fff;
-      border-color: #111;
-      padding: 0 14px;
-      font-size: 13px;
-    }
+  .card {
+    position:relative;
+    background:white;
+    border-bottom:1px solid #eee;
+    height:60px;
+    overflow:hidden;
+    touch-action:pan-y;
+  }
+  .card.completed .title { color:#aaa; text-decoration:line-through; }
 
-    .section {
-      padding-left: 0;
-      padding-right: 0;
-    }
+  .sl {
+    position:relative;
+    height:100%; width:100%;
+    display:flex;
+    align-items:center;
+    padding:0 12px;
+    transition:transform .15s ease;
+    background:white;
+    z-index:2;
+  }
 
-    /* ===== スワイプUI ===== */
-    .sl {
-      height: 100%;
-      position: relative;
-      width: 100%;
-      transition: transform .15s ease;
-      will-change: transform;
-      background: #fff;
-      z-index: 2;
-    }
-    .sl .content {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-    }
-    .actions-rail {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      border-radius: 0;
-      z-index: 1;
-      pointer-events: none;
-    }
-    .card.open-left .actions-rail,
-    .card.open-right .actions-rail {
-      pointer-events: auto;
-    }
+  .actions-rail {
+    position:absolute; inset:0;
+    display:flex; justify-content:space-between; align-items:center;
+    pointer-events:none; z-index:1;
+  }
 
-    :root {
-      --rail-w: clamp(128px, 35vw, 220px);
-    }
-    .actions-left, .actions-right {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: var(--rail-w);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0;
-      padding: 0;
-    }
-    .actions-left {
-      left: 0;
-      justify-content: flex-start;
-      background: #e8f7ee;
-    }
-    .actions-right {
-      right: 0;
-      justify-content: flex-end;
-      background: #fdeeee;
-    }
-    .actions-rail button {
-      height: 100%;
-      box-sizing: border-box;
-      min-width: 64px;
-      font-size: 12px;
-      padding: 0 10px;
-      border-radius: 0;
-      border: 0;
-      color: #fff;
-      transition: background 0.2s;
-    }
-    button.btn-complete { background: #7e6dff; }
-    button.btn-plus2h   { background: #8012e2; }
-    button.btn-detail   { background: #1e928b; }
-    button.btn-pin      { background: #d97706; }
-    button.btn-delete   { background: #f03d30; }
+  :root { --rail-w:140px; }
 
-    .card.open-left .sl {
-      transform: translateX(var(--rail-w));
-    }
-    .card.open-right .sl {
-      transform: translateX(calc(var(--rail-w) * -1 * 1.5));
-    }
+  .actions-left, .actions-right {
+    width:var(--rail-w);
+    height:100%;
+    display:flex; align-items:center;
+  }
+  .actions-left { background:#e8f7ee; justify-content:flex-start; }
+  .actions-right { background:#fdeeee; justify-content:flex-end; }
 
-    /* 並び替えハンドル */
-    .handle {
-      margin-left: auto;
-      cursor: grab;
-      user-select: none;
-      -webkit-user-select: none; /* iOS Safari */
-      font-size: 20px;
-      opacity: 0.1;
-      padding: 0 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      touch-action: none;
-    }
-    .card.placeholder {
-      visibility: hidden;
-    }
-    .card.dragging {
-      opacity: 0.5;
-      transform: scale(0.98);
-      transition: transform 0.1s;
-    }
-    .ghost {
-      opacity: 0.6;
-    }
+  .actions-rail button {
+    height:100%; min-width:64px; border:none; color:white; font-size:13px;
+    border-radius:0;
+  }
 
-    /* ====== 詳細モーダル ====== */
-    .modal-root {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-      z-index: 50;
-      font-size: 14px;
-    }
-    .modal-root.visible {
-      display: flex;
-    }
-    .modal-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,.25);
-    }
-    .modal-panel {
-      position: relative;
-      width: 100%;
-      max-width: 480px;
-      background: #fff;
-      border-radius: 20px 20px 0 0;
-      padding: 16px 18px 20px;
-      box-shadow: 0 -4px 24px rgba(0,0,0,.18);
-      animation: slideUp .18s ease-out;
-    }
-    @keyframes slideUp {
-      from { transform: translateY(40px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .modal-title {
-      font-weight: 600;
-      font-size: 15px;
-    }
-    .modal-close {
-      background: transparent;
-      border-radius: 999px;
-      padding: 4px 8px;
-      font-size: 18px;
-      line-height: 1;
-    }
-    .modal-task-title {
-      font-size: 13px;
-      color: #555;
-      margin-bottom: 8px;
-    }
-    .slider-group {
-      margin: 8px 0 12px;
-    }
-    .slider-label-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 2px;
-      font-size: 12px;
-    }
-    .slider-label-row span.value {
-      font-weight: 600;
-      font-size: 13px;
-    }
-    .slider-group input[type="range"] {
-      width: 100%;
-    }
-    .modal-footer {
-      margin-top: 10px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-    .btn-secondary {
-      padding: 8px 14px;
-      border-radius: 999px;
-      border: 1px solid #ddd;
-      background: #f9f9f9;
-      font-size: 13px;
-    }
-    .btn-primary-solid {
-      padding: 8px 16px;
-      border-radius: 999px;
-      border: 0;
-      background: #7e6dff;
-      color: #fff;
-      font-size: 13px;
-      font-weight: 600;
-    }
-  </style>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  .btn-complete { background:#7e6dff; }
+  .btn-plus2h   { background:#8012e2; }
+  .btn-detail   { background:#1e928b; }
+  .btn-pin      { background:#d97706; }
+  .btn-delete   { background:#f03d30; }
+
+  .handle {
+    margin-left:auto; cursor:grab; opacity:0.1;
+    -webkit-user-select:none; user-select:none;
+    padding:0 12px; font-size:20px;
+  }
+
+  .divider-label { text-align:center; color:#888; font-size:12px; padding:6px 0; }
+
+  /* 詳細モーダル */
+  .modal-root { position:fixed; inset:0; display:none; z-index:50; align-items:flex-end; justify-content:center; }
+  .modal-root.visible { display:flex; }
+  .modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.25); }
+  .modal-panel {
+    width:100%; max-width:480px; background:#fff;
+    border-radius:20px 20px 0 0; padding:16px;
+    animation:slideUp .18s ease-out;
+  }
+  @keyframes slideUp { from{ transform:translateY(40px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
+
+  .slider-group { margin:14px 0; }
+  .slider-label-row { display:flex; justify-content:space-between; font-size:12px; }
+  .slider-label-row span.value { font-size:13px; font-weight:600; }
+
+  .modal-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+  .btn-secondary { padding:8px 14px; border:1px solid #ddd; border-radius:20px; background:#fafafa; }
+  .btn-primary-solid { padding:8px 16px; border-radius:20px; background:#7e6dff; color:white; border:none; }
+</style>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
+
 <header>
   <div class="bar">
-    <div style="font-weight:700">LIST</div>
-    <div class="tabs">
-      <div class="tab active" id="tabTasks">タスク</div>
-      <div class="tab" id="tabJournal">ジャーナル</div>
-    </div>
-    <div id="refreshBtn" class="tab" title="更新">↻</div>
+    <div style="font-weight:600">LIST</div>
+    <div class="tab active">タスク</div>
+    <div class="tab" id="refreshBtn">↻</div>
   </div>
 </header>
 
-<main class="section">
+<main>
   <div class="add">
-    <input id="newTitle" placeholder="タスクを入力（例：レポート提出）" />
-    <button id="btnAdd" class="primary">追加</button>
+    <input id="newTitle" placeholder="タスクを入力…" />
+    <button id="btnAdd" class="tab" style="background:#111;color:white;border-color:#111">追加</button>
   </div>
 
-  <!-- 未完了タスク（ピン＋通常） -->
-  <div id="incompleteLabel" class="divider-label">――― 未完了タスク ―――</div>
+  <div class="divider-label">未完了タスク</div>
   <div id="pinned" class="list"></div>
-  <div id="pinnedDivider" class="divider" style="display:none"></div>
   <div id="active" class="list"></div>
 
-  <!-- 完了タスク側（線より下） -->
-  <div id="completedLine" class="divider" style="margin-top:12px;"></div>
-  <div class="divider-label">――― 達成タスク ―――</div>
+  <div class="divider-label" style="margin-top:16px;">達成タスク</div>
   <div id="completed" class="list"></div>
-
-  <div id="empty" class="empty" style="display:none">タスクがありません</div>
 </main>
 
-<!-- ===== 詳細モーダル ===== -->
+<!-- 詳細モーダル -->
 <div id="detailModal" class="modal-root">
-  <div class="modal-backdrop" id="detailBackdrop"></div>
+  <div id="detailBackdrop" class="modal-backdrop"></div>
   <div class="modal-panel">
-    <div class="modal-header">
-      <div class="modal-title">タスク詳細</div>
-      <button class="modal-close" id="detailCloseBtn">&times;</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:600">タスク詳細</div>
+      <button id="detailCloseBtn" style="background:none;border:none;font-size:20px">&times;</button>
     </div>
-    <div class="modal-task-title" id="detailTaskTitle"></div>
+
+    <div id="detailTaskTitle" style="font-size:13px;color:#555;margin-bottom:8px;"></div>
 
     <div class="slider-group">
-      <div class="slider-label-row">
-        <span>優先度</span>
-        <span class="value" id="valPriority">0</span>
-      </div>
-      <input type="range" id="inputPriority" min="0" max="10" step="1">
+      <div class="slider-label-row"><span>優先度</span><span class="value" id="valPriority"></span></div>
+      <input id="inputPriority" type="range" min="0" max="10" step="1"/>
     </div>
 
     <div class="slider-group">
-      <div class="slider-label-row">
-        <span>ビジョン関連度</span>
-        <span class="value" id="valVision">0</span>
-      </div>
-      <input type="range" id="inputVision" min="0" max="10" step="1">
+      <div class="slider-label-row"><span>ビジョン関連度</span><span class="value" id="valVision"></span></div>
+      <input id="inputVision" type="range" min="0" max="10" step="1"/>
     </div>
 
     <div class="slider-group">
-      <div class="slider-label-row">
-        <span>わくわく度</span>
-        <span class="value" id="valExcite">0</span>
-      </div>
-      <input type="range" id="inputExcite" min="0" max="10" step="1">
+      <div class="slider-label-row"><span>わくわく度</span><span class="value" id="valExcite"></span></div>
+      <input id="inputExcite" type="range" min="0" max="10" step="1"/>
     </div>
 
     <div class="slider-group">
-      <div class="slider-label-row">
-        <span>成長度</span>
-        <span class="value" id="valGrowth">0</span>
-      </div>
-      <input type="range" id="inputGrowth" min="0" max="10" step="1">
+      <div class="slider-label-row"><span>成長度</span><span class="value" id="valGrowth"></span></div>
+      <input id="inputGrowth" type="range" min="0" max="10" step="1"/>
     </div>
 
     <div class="modal-footer">
-      <button class="btn-secondary" id="detailCancelBtn">キャンセル</button>
-      <button class="btn-primary-solid" id="detailSaveBtn">保存</button>
+      <button id="detailCancelBtn" class="btn-secondary">キャンセル</button>
+      <button id="detailSaveBtn" class="btn-primary-solid">保存</button>
     </div>
   </div>
 </div>
 
 <script>
-  const LIFF_ID = '2008372898-2q9qWmxv'; // 実際のLIFF IDに合わせて変更
-  const API_BASE = 'https://yamasho.xvps.jp/webhook';
+const LIFF_ID = "2008372898-2q9qWmxv";
+const API_BASE = "https://yamasho.xvps.jp/webhook";
+let userId = null;
+let currentDetailTask = null;
 
-  const EXPOSE_W = 129;
-  const EXPOSE_X = 193;
-  const SNAP_MIN = 30;
-  const STRONG_SWIPE = 180;
-  const MAX_DRAG = EXPOSE_W;
+const EXPOSE_W = 140;
+const EXPOSE_X = 200;
 
-  let userId = null;
-  let profile = null;
+/* ==========================
+   INIT
+========================== */
+async function init() {
+  await liff.init({ liffId: LIFF_ID });
+  if (!liff.isLoggedIn()) liff.login();
 
-  // 詳細編集中のタスク
-  let currentDetailTask = null;
+  const profile = await liff.getProfile();
+  userId = profile.userId;
 
-      /* === PC版クリックによる自動スワイプ === */
-    if (!/Mobi|Android/i.test(navigator.userAgent)) {
-      // PC判定
-      slide.addEventListener("click", (e) => {
-        const rect = slide.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const half = rect.width / 2;
+  bindUI();
+  bindModalUI();
+  loadList();
+}
 
-        // card open 状態なら閉じる
-        if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
-          wrap.classList.remove("open-left", "open-right");
-          slide.style.transform = "translateX(0px)";
-          return;
-        }
+document.getElementById("refreshBtn").onclick = loadList;
 
-        if (clickX < half) {
-          // 左半分クリック → 右スワイプ（左側ボタン表示）
-          wrap.classList.add("open-left");
-          wrap.classList.remove("open-right");
-          slide.style.transform = `translateX(${EXPOSE_W}px)`;
-        } else {
-          // 右半分クリック → 左スワイプ（右側ボタン表示）
-          wrap.classList.add("open-right");
-          wrap.classList.remove("open-left");
-          slide.style.transform = `translateX(${-EXPOSE_X}px)`;
-        }
-      });
-    }
+/* ==========================
+  詳細モーダル UI
+========================== */
+function bindModalUI() {
+  const close = () => detailModal.classList.remove("visible");
 
+  detailBackdrop.onclick = close;
+  detailCloseBtn.onclick = close;
+  detailCancelBtn.onclick = close;
 
-  async function init() {
-    await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) liff.login();
-    try {
-      profile = await liff.getProfile();
-      userId = profile.userId;
-    } catch (e) {
-      console.error('LIFF profile error', e);
-      alert('LINEプロフィールの取得に失敗しました');
-      return;
-    }
-    bindUI();
-    bindDetailModalUI();
-    await loadList();
-    enableSorting();
-  }
-
-  function bindUI() {
-    document.getElementById('tabTasks').addEventListener('click', () => {
-      // 今はこの画面がタスクなので何もしない
-    });
-    document.getElementById('tabJournal').addEventListener('click', () => {
-      // TODO: ジャーナル画面に遷移
-      alert('ジャーナル画面はこれから実装予定です');
-    });
-    document.getElementById('refreshBtn').addEventListener('click', loadList);
-    document.getElementById('btnAdd').addEventListener('click', onAdd);
-  }
-
-  /* ===== 詳細モーダル ===== */
-  function bindDetailModalUI() {
-    const backdrop = document.getElementById('detailBackdrop');
-    const closeBtn = document.getElementById('detailCloseBtn');
-    const cancelBtn = document.getElementById('detailCancelBtn');
-    const saveBtn = document.getElementById('detailSaveBtn');
-
-    [backdrop, closeBtn, cancelBtn].forEach(el => {
-      el.addEventListener('click', () => closeDetail());
-    });
-    saveBtn.addEventListener('click', saveDetail);
-
-    const bindSlider = (idInput, idLabel) => {
-      const input = document.getElementById(idInput);
-      const label = document.getElementById(idLabel);
-      input.addEventListener('input', () => {
-        label.textContent = input.value;
-      });
+  detailSaveBtn.onclick = async () => {
+    const payload = {
+      priority: Number(inputPriority.value),
+      vision_score: Number(inputVision.value),
+      excite_score: Number(inputExcite.value),
+      growth_score: Number(inputGrowth.value),
     };
-    bindSlider('inputPriority', 'valPriority');
-    bindSlider('inputVision', 'valVision');
-    bindSlider('inputExcite', 'valExcite');
-    bindSlider('inputGrowth', 'valGrowth');
-  }
+    await action("update_detail", currentDetailTask.id, payload);
+    close();
+  };
+}
 
-  function openDetail(task) {
-    currentDetailTask = task;
-    document.getElementById('detailTaskTitle').textContent = task.title || '(無題)';
+/* ==========================
+  LIST API
+========================== */
+async function loadList() {
+  const res = await fetch(`${API_BASE}/list?user_id=${userId}`);
+  const data = await res.json();
+  renderList(data);
+}
 
-    const priority = Number(task.priority ?? 0);
-    const vision = Number(task.vision_score ?? 0);
-    const excite = Number(task.excite_score ?? 0);
-    const growth = Number(task.growth_score ?? 0);
+function renderList(payload) {
+  pinned.innerHTML = "";
+  active.innerHTML = "";
+  completed.innerHTML = "";
 
-    document.getElementById('inputPriority').value = priority;
-    document.getElementById('valPriority').textContent = priority;
+  (payload.pinned || []).forEach(t => pinned.appendChild(taskCard(t)));
+  (payload.active || []).forEach(t => active.appendChild(taskCard(t)));
+  (payload.completed || []).forEach(t => completed.appendChild(taskCard(t, true)));
+}
 
-    document.getElementById('inputVision').value = vision;
-    document.getElementById('valVision').textContent = vision;
+/* ==========================
+  TASK CARD
+========================== */
+function taskCard(t, isCompleted = false) {
+  const wrap = document.createElement("div");
+  wrap.className = "card";
+  if (isCompleted) wrap.classList.add("completed");
 
-    document.getElementById('inputExcite').value = excite;
-    document.getElementById('valExcite').textContent = excite;
+  // 背面レール
+  const rail = document.createElement("div");
+  rail.className = "actions-rail";
 
-    document.getElementById('inputGrowth').value = growth;
-    document.getElementById('valGrowth').textContent = growth;
+  const left = document.createElement("div");
+  left.className = "actions-left";
 
-    document.getElementById('detailModal').classList.add('visible');
-  }
-
-  function closeDetail() {
-    currentDetailTask = null;
-    document.getElementById('detailModal').classList.remove('visible');
-  }
-
-  async function saveDetail() {
-    if (!currentDetailTask) return;
-    const taskId = currentDetailTask.id;
-
-    const priority = Number(document.getElementById('inputPriority').value);
-    const vision_score = Number(document.getElementById('inputVision').value);
-    const excite_score = Number(document.getElementById('inputExcite').value);
-    const growth_score = Number(document.getElementById('inputGrowth').value);
-
-    try {
-      await action('update_detail', taskId, {
-        priority,
-        vision_score,
-        excite_score,
-        growth_score
-      });
-      closeDetail();
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  /* ====== API: LIST取得 ====== */
-  async function loadList() {
-    setLoading(true);
-    try {
-      const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('list api failed');
-      const data = await res.json();
-      renderList(data);
-    } catch (err) {
-      console.error(err);
-      alert('一覧の取得に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function setLoading(on) {
-    document.body.style.opacity = on ? .6 : 1;
-  }
-
-  function renderList(payload) {
-    const pinned = document.getElementById('pinned');
-    const active = document.getElementById('active');
-    const completed = document.getElementById('completed');
-    const empty = document.getElementById('empty');
-    const pinnedDivider = document.getElementById('pinnedDivider');
-
-    [pinned, active, completed].forEach(el => el.innerHTML = '');
-
-    const p = payload.pinned || [];
-    const a = payload.active || [];
-    const c = payload.completed || [];
-
-    if (p.length) {
-      p.forEach(t => pinned.appendChild(taskCard(t, false)));
-      pinnedDivider.style.display = 'block';
-    } else pinnedDivider.style.display = 'none';
-
-    if (a.length) a.forEach(t => active.appendChild(taskCard(t, false)));
-
-    if (c.length) {
-      c.forEach(t => completed.appendChild(taskCard(t, true)));
-    }
-
-    empty.style.display = (p.length + a.length + c.length) ? 'none' : 'block';
-  }
-
-  function taskCard(t, isCompleted = false) {
-    const wrap = document.createElement('div');
-    wrap.className = 'card';
-    if (isCompleted) {
-      wrap.classList.add('completed', 'ghost');
-    }
-
-    // 背面アクション
-    const rail = document.createElement('div');
-    rail.className = 'actions-rail';
-    const leftRail = document.createElement('div');
-    leftRail.className = 'actions-left';
-    const rightRail = document.createElement('div');
-    rightRail.className = 'actions-right';
-
-    // 左レール：未完なら「完了」、完了なら「未完」
-    if (!isCompleted) {
-      leftRail.append(
-        mkBtn('完了', () => action('complete', t.id), 'btn-complete'),
-        mkBtn('+2h', () => action('remind_plus2h', t.id), 'btn-plus2h')
-      );
-    } else {
-      leftRail.append(
-        mkBtn('未完', () => action('uncomplete', t.id), 'btn-complete')
-      );
-    }
-
-    // 右レール：詳細 / ピン / 削除（ピン中は削除不可）
-    rightRail.append(
-      mkBtn('詳細', () => openDetail(t), 'btn-detail'),
-      mkBtn(t.pinned ? 'ピン解除' : 'ピン', () => action('toggle_pin', t.id), 'btn-pin'),
-      mkBtn('削除', () => {
-        if (t.pinned) {
-          alert('ピンを外してください');
-          return;
-        }
-        action('delete', t.id);
-      }, 'btn-delete')
+  if (!isCompleted) {
+    left.append(
+      mkBtn("完了", () => action("complete", t.id), "btn-complete"),
+      mkBtn("+2h", () => action("remind_plus2h", t.id), "btn-plus2h")
     );
-    rail.append(leftRail, rightRail);
+  } else {
+    left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
+  }
 
-    // 前面
-    const slide = document.createElement('div');
-    slide.className = 'sl';
-    const content = document.createElement('div');
-    content.className = 'content';
-    const row = document.createElement('div');
-    row.className = 'row';
-    const left = document.createElement('div');
+  const right = document.createElement("div");
+  right.className = "actions-right";
+  right.append(
+    mkBtn("詳細", () => openDetail(t), "btn-detail"),
+    mkBtn(t.pinned ? "ピン解除" : "ピン", () => action("toggle_pin", t.id), "btn-pin"),
+    mkBtn("削除", () => {
+      if (t.pinned) return alert("ピンを外してください！");
+      action("delete", t.id);
+    }, "btn-delete")
+  );
 
-    const title = document.createElement('div');
-    title.className = 'title';
+  rail.append(left, right);
 
-    // ピン中なら📍を先頭に表示
-    if (t.pinned) {
-      const pinIcon = document.createElement('span');
-      pinIcon.textContent = '📍';
-      pinIcon.style.marginRight = '4px';
-      title.appendChild(pinIcon);
-    }
-    title.appendChild(document.createTextNode(t.title || '(無題)'));
+  // 前面
+  const sl = document.createElement("div");
+  sl.className = "sl";
 
-    left.append(title);
+  const title = document.createElement("div");
+  title.className = "title";
+  if (t.pinned) title.innerHTML = "📍 " + t.task_name;
+  else title.textContent = t.task_name;
 
-    const handle = document.createElement('div');
-    handle.className = 'handle';
-    handle.textContent = '☰';
+  const handle = document.createElement("div");
+  handle.className = "handle";
+  handle.textContent = "☰";
 
-    row.append(left, handle);
-    content.append(row);
-    slide.append(content);
+  sl.append(title, handle);
+  wrap.append(rail, sl);
 
-    wrap.append(rail, slide);
+  /* ==========================
+      PC版 クリックでスワイプ
+  ========================== */
+  if (!/Mobi|Android/i.test(navigator.userAgent)) {
+    sl.addEventListener("click", e => {
+      const rect = sl.getBoundingClientRect();
+      const x = e.clientX - rect.left;
 
-    // スワイプ処理
-    let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false, open = 'none';
-
-    const onStart = (x, y) => {
-      startX = x; startY = y;
-      dx = 0; dy = 0;
-      dragging = true;
-      slide.style.transition = 'none';
-    };
-    const onMove = (x, y) => {
-      if (!dragging) return;
-      dx = x - startX; dy = y - startY;
-      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
-        onEnd(true);
-        return;
-      }
-      const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
-      let tx = base + dx;
-      tx = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, tx));
-      slide.style.transform = `translateX(${tx}px)`;
-    };
-    const onEnd = (cancel = false) => {
-      if (!dragging) return;
-      dragging = false;
-      slide.style.transition = 'transform .15s ease';
-
-      if (cancel) { snapTo(open); return; }
-
-      const base = (open === 'left') ? EXPOSE_W : (open === 'right' ? -EXPOSE_W : 0);
-      const tx = base + dx;
-
-      if (tx >= STRONG_SWIPE) {
-        open = 'none';
-        slide.style.transform = 'translateX(0px)';
-        action('complete', t.id);
-        return;
-      }
-      if (tx <= -STRONG_SWIPE) {
-        open = 'none';
-        slide.style.transform = 'translateX(0px)';
-        if (t.pinned) {
-          alert('ピンを外してください');
-        } else {
-          action('delete', t.id);
-        }
+      if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
+        wrap.classList.remove("open-left", "open-right");
+        sl.style.transform = "translateX(0)";
         return;
       }
 
-      if (tx > SNAP_MIN) { open = 'left'; snapTo('left'); }
-      else if (tx < -SNAP_MIN) { open = 'right'; snapTo('right'); }
-      else { open = 'none'; snapTo('none'); }
-    };
-
-    function snapTo(which) {
-      if (which === 'left') {
-        wrap.classList.add('open-left');
-        wrap.classList.remove('open-right');
-        slide.style.transform = `translateX(${EXPOSE_W}px)`;
-      } else if (which === 'right') {
-        wrap.classList.add('open-right');
-        wrap.classList.remove('open-left');
-        slide.style.transform = `translateX(${-EXPOSE_X}px)`;
+      if (x < rect.width / 2) {
+        wrap.classList.add("open-left");
+        sl.style.transform = `translateX(${EXPOSE_W}px)`;
       } else {
-        wrap.classList.remove('open-left', 'open-right');
-        slide.style.transform = 'translateX(0px)';
-      }
-    }
-
-    wrap.addEventListener('click', e => {
-      if (open !== 'none') {
-        open = 'none';
-        snapTo('none');
-        e.preventDefault();
-        e.stopPropagation();
+        wrap.classList.add("open-right");
+        sl.style.transform = `translateX(${-EXPOSE_X}px)`;
       }
     });
-
-    wrap.addEventListener('touchstart', e =>
-      onStart(e.touches[0].clientX, e.touches[0].clientY),
-      { passive: true }
-    );
-    wrap.addEventListener('touchmove', e => {
-      const x = e.touches[0].clientX, y = e.touches[0].clientY;
-      const tmpDx = x - startX;
-      const tmpDy = y - startY;
-      if (Math.abs(tmpDx) > Math.abs(tmpDy)) e.preventDefault();
-      onMove(x, y);
-    }, { passive: false });
-    wrap.addEventListener('touchend', () => onEnd());
-    // PC の場合はスワイプ開始させない
-    wrap.addEventListener('mousedown', e => {
-        if (!/Mobi|Android/i.test(navigator.userAgent)) return;
-        onStart(e.clientX, e.clientY);
-    });
-
-    window.addEventListener('mousemove', e => dragging && onMove(e.clientX, e.clientY));
-    window.addEventListener('mouseup', () => dragging && onEnd());
-
-    wrap.setAttribute('draggable', 'true');
-    return wrap;
   }
 
-  function mkBtn(label, onClick, extraClass = '') {
-    const b = document.createElement('button');
-    b.textContent = label;
-    if (extraClass) b.classList.add(extraClass);
-    b.addEventListener('click', e => {
-      e.stopPropagation();
-      onClick();
-    });
-    return b;
-  }
+  /* ==========================
+      スマホ版 スワイプ
+  ========================== */
+  let startX = 0, dx = 0;
 
-  async function action(kind, taskId, extra = {}) {
-    try {
-      const res = await fetch(`${API_BASE}/action`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          action: kind,
-          task_id: taskId,
-          ...extra
-        })
-      });
-      if (!res.ok) throw new Error('action failed');
-      const { ok, message } = await res.json();
-      if (!ok) throw new Error(message || 'NG');
-      await loadList();
-    } catch (e) {
-      console.error(e);
-      alert('操作に失敗しました');
-      throw e;
+  wrap.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+    sl.style.transition = "none";
+  });
+
+  wrap.addEventListener("touchmove", e => {
+    dx = e.touches[0].clientX - startX;
+    if (Math.abs(dx) > 8) e.preventDefault();
+    sl.style.transform = `translateX(${dx}px)`;
+  }, { passive:false });
+
+  wrap.addEventListener("touchend", () => {
+    sl.style.transition = "transform .15s";
+    if (dx > 60) {
+      wrap.classList.add("open-left");
+      sl.style.transform = `translateX(${EXPOSE_W}px)`;
+    } else if (dx < -60) {
+      wrap.classList.add("open-right");
+      sl.style.transform = `translateX(${-EXPOSE_X}px)`;
+    } else {
+      wrap.classList.remove("open-left", "open-right");
+      sl.style.transform = "translateX(0)";
     }
-  }
+  });
 
-  async function onAdd() {
-    const title = document.getElementById('newTitle').value.trim();
-    if (!title) return;
-    await action('create', null, { title });
-    document.getElementById('newTitle').value = '';
-  }
+  return wrap;
+}
 
-  function enableSorting() {
-    const lists = document.querySelectorAll('.list');
-    lists.forEach(list => {
-      list.addEventListener('dragstart', e => {
-        if (!e.target.classList.contains('card')) return;
-        e.target.classList.add('dragging');
-      });
-      list.addEventListener('dragend', e => {
-        e.target.classList.remove('dragging');
-      });
-      list.addEventListener('dragover', e => {
-        e.preventDefault();
-        const after = getDragAfterElement(list, e.clientY);
-        const dragging = document.querySelector('.dragging');
-        if (!dragging) return;
-        if (after == null) list.appendChild(dragging);
-        else list.insertBefore(dragging, after);
-      });
-    });
-  }
+/* ==========================
+   MODAL OPEN
+========================== */
+function openDetail(t) {
+  currentDetailTask = t;
 
-  function getDragAfterElement(container, y) {
-    const cards = [...container.querySelectorAll('.card:not(.dragging)')];
-    return cards.reduce((closest, child) => {
-      const box = child.getBoundingClientRect();
-      const offset = y - box.top - box.height / 2;
-      return offset < 0 && offset > closest.offset
-        ? { offset, element: child }
-        : closest;
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-  }
+  detailTaskTitle.textContent = t.task_name;
+  inputPriority.value = t.priority ?? 0;
+  valPriority.textContent = inputPriority.value;
 
-  // スマホ長押しで縦ドラッグ（☰で発火、iOS選択を抑制）
-  (() => {
-    const LONG = 400;
-    let pressTimer = null;
-    let draggingCard = null;
-    let placeholder = null;
-    let originList = null;
-    let startOffsetY = 0;
-    let startRect = null;
+  inputVision.value = t.vision_score ?? 0;
+  valVision.textContent = inputVision.value;
 
-    function onPointerDown(e) {
-      const handle = e.target.closest('.handle');
-      if (!handle) return;
-      const card = handle.closest('.card');
-      if (!card) return;
+  inputExcite.value = t.excite_score ?? 0;
+  valExcite.textContent = inputExcite.value;
 
-      // iOSのテキスト選択を抑制
-      e.preventDefault();
-      document.body.style.userSelect = 'none';
-      document.body.style.webkitUserSelect = 'none';
+  inputGrowth.value = t.growth_score ?? 0;
+  valGrowth.textContent = inputGrowth.value;
 
-      clearTimeout(pressTimer);
-      pressTimer = setTimeout(() => beginDrag(e, card), LONG);
-    }
+  detailModal.classList.add("visible");
+}
 
-    function beginDrag(e, card) {
-      draggingCard = card;
-      originList = card.parentElement;
+/* ==========================
+   ADD
+========================== */
+btnAdd.onclick = async () => {
+  const title = newTitle.value.trim();
+  if (!title) return;
 
-      startRect = card.getBoundingClientRect();
-      startOffsetY = e.clientY - startRect.top;
+  await action("create", null, { task_name: title });
+  newTitle.value = "";
+};
 
-      placeholder = document.createElement('div');
-      placeholder.className = 'card placeholder';
-      placeholder.style.height = `${startRect.height}px`;
-      originList.insertBefore(placeholder, card.nextSibling);
+/* ==========================
+   API ACTION
+========================== */
+async function action(kind, id, extra={}) {
+  await fetch(`${API_BASE}/action`, {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({
+      user_id: userId,
+      action: kind,
+      task_id: id,
+      ...extra
+    })
+  });
 
-      card.style.width = `${startRect.width}px`;
-      card.style.position = 'fixed';
-      card.style.left = `${startRect.left}px`;
-      card.style.top = `${e.clientY - startOffsetY}px`;
-      card.style.zIndex = 999;
-      card.classList.add('dragging');
+  loadList();
+}
 
-      if (card.setPointerCapture && e.pointerId != null) {
-        try { card.setPointerCapture(e.pointerId); } catch {}
-      }
-    }
-
-    function onPointerMove(e) {
-      if (!draggingCard) {
-        clearTimeout(pressTimer);
-        return;
-      }
-      e.preventDefault();
-      draggingCard.style.top = `${e.clientY - startOffsetY}px`;
-
-      const list = originList;
-      const after = getDragAfterElement(list, e.clientY);
-      if (!after) list.appendChild(placeholder);
-      else list.insertBefore(placeholder, after);
-    }
-
-    function onPointerUp() {
-      clearTimeout(pressTimer);
-
-      // 選択禁止を解除
-      document.body.style.userSelect = '';
-      document.body.style.webkitUserSelect = '';
-
-      if (!draggingCard) return;
-
-      originList.insertBefore(draggingCard, placeholder);
-
-      draggingCard.style.position = '';
-      draggingCard.style.left = '';
-      draggingCard.style.top = '';
-      draggingCard.style.width = '';
-      draggingCard.style.zIndex = '';
-      draggingCard.classList.remove('dragging');
-
-      placeholder.remove();
-      placeholder = null;
-      draggingCard = null;
-      startRect = null;
-    }
-
-    document.addEventListener('pointerdown', onPointerDown, { passive: false });
-    document.addEventListener('pointermove', onPointerMove, { passive: false });
-    document.addEventListener('pointerup', onPointerUp, { passive: true });
-    document.addEventListener('pointercancel', onPointerUp, { passive: true });
-  })();
-
-  /*
-    ★メモ：3日経過した完了タスクの自動削除について
-    - Supabase 側の complete_at を「0/1」ではなく
-      「完了日時（timestamp）」にしておくと、
-      n8n の Cron で
-        NOW() - interval '3 days' より古いものを DELETE
-      というバッチが組みやすいです。
-    - フロント側は /list の結果を描画するだけでOK。
-  */
-
-  init();
+init();
 </script>
 </body>
 </html>
