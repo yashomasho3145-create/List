@@ -443,6 +443,36 @@
   // 詳細編集中のタスク
   let currentDetailTask = null;
 
+      /* === PC版クリックによる自動スワイプ === */
+    if (!/Mobi|Android/i.test(navigator.userAgent)) {
+      // PC判定
+      slide.addEventListener("click", (e) => {
+        const rect = slide.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const half = rect.width / 2;
+
+        // card open 状態なら閉じる
+        if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
+          wrap.classList.remove("open-left", "open-right");
+          slide.style.transform = "translateX(0px)";
+          return;
+        }
+
+        if (clickX < half) {
+          // 左半分クリック → 右スワイプ（左側ボタン表示）
+          wrap.classList.add("open-left");
+          wrap.classList.remove("open-right");
+          slide.style.transform = `translateX(${EXPOSE_W}px)`;
+        } else {
+          // 右半分クリック → 左スワイプ（右側ボタン表示）
+          wrap.classList.add("open-right");
+          wrap.classList.remove("open-left");
+          slide.style.transform = `translateX(${-EXPOSE_X}px)`;
+        }
+      });
+    }
+
+
   async function init() {
     await liff.init({ liffId: LIFF_ID });
     if (!liff.isLoggedIn()) liff.login();
@@ -759,8 +789,12 @@
       onMove(x, y);
     }, { passive: false });
     wrap.addEventListener('touchend', () => onEnd());
+    // PC の場合はスワイプ開始させない
+    wrap.addEventListener('mousedown', e => {
+        if (!/Mobi|Android/i.test(navigator.userAgent)) return;
+        onStart(e.clientX, e.clientY);
+    });
 
-    wrap.addEventListener('mousedown', e => onStart(e.clientX, e.clientY));
     window.addEventListener('mousemove', e => dragging && onMove(e.clientX, e.clientY));
     window.addEventListener('mouseup', () => dragging && onEnd());
 
