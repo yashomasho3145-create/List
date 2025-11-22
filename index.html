@@ -493,8 +493,9 @@ function mkBtn(label, onClick, cls) {
    API ACTION
 ========================== */
 async function action(kind, id, extra = {}) {
+  const url = `${API_BASE}/action`;
   try {
-    const res = await fetch(`${API_BASE}/action`, {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -504,12 +505,20 @@ async function action(kind, id, extra = {}) {
         ...extra
       })
     });
-    if (!res.ok) throw new Error("action api error");
-    await res.json().catch(() => null); // 形式ゆるめ
-    await loadList();
+
+    const text = await res.text();
+    console.log("[ACTION]", kind, "status:", res.status, "resp:", text);
+
+    if (!res.ok) {
+      alert("操作に失敗しました（" + res.status + "）");
+      return;
+    }
   } catch (e) {
-    console.error(e);
-    alert("操作に失敗しました");
+    console.error("[ACTION] fetch error:", e);
+    alert("通信エラーで操作に失敗しました");
+  } finally {
+    // 成功/失敗に関わらず一覧を取り直す
+    loadList();
   }
 }
 
@@ -517,6 +526,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
