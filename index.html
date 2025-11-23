@@ -89,7 +89,7 @@
     margin-left:auto; cursor:grab; opacity:0.25;
     -webkit-user-select:none; user-select:none;
     padding:0 8px; font-size:20px;
-    touch-action: none; /* ブラウザの標準スクロールなどを抑制 */
+    touch-action: none;
   }
 
   .divider-label { text-align:center; color:#888; font-size:12px; padding:6px 0; }
@@ -184,10 +184,11 @@ const API_BASE = "https://yamasho.xvps.jp/webhook";
 let userId = null;
 let currentDetailTask = null;
 
-const STRONG_RATIO = 0.85;
-const SNAP_THRESHOLD = 40;
+// 強スワイプ判定の比率
+const STRONG_RATIO = 0.85;  // ボタン幅の約85%以上
+const SNAP_THRESHOLD = 40;  // このpx以上で「開く」スナップ
 
-// DOM
+// DOMキャッシュ
 const pinnedEl    = document.getElementById("pinned");
 const activeEl    = document.getElementById("active");
 const completedEl = document.getElementById("completed");
@@ -195,7 +196,7 @@ const refreshBtn  = document.getElementById("refreshBtn");
 const btnAdd      = document.getElementById("btnAdd");
 const newTitle    = document.getElementById("newTitle");
 
-// モーダル
+// モーダル要素
 const detailModal      = document.getElementById("detailModal");
 const detailBackdrop   = document.getElementById("detailBackdrop");
 const detailCloseBtn   = document.getElementById("detailCloseBtn");
@@ -416,10 +417,19 @@ function taskCard(t, isCompleted = false) {
   handle.className = "handle";
   handle.textContent = "☰";
 
+  handle.addEventListener("touchstart", e => {
+    e.stopPropagation();
+  }, { passive:true });
+
+  handle.addEventListener("touchmove", e => {
+    e.preventDefault();   // ← スクロールを止める
+    e.stopPropagation();  // ← wrap までイベントが行かないようにする
+  }, { passive:false });
+
   sl.append(titleEl, handle);
   wrap.append(rail, sl);
 
-  // ==== スワイプ用：ボタン幅計測 ====
+  // ===== ボタン幅を測って data に保存（端を揃える用） =====
   requestAnimationFrame(() => {
     const lRect = left.getBoundingClientRect();
     const rRect = right.getBoundingClientRect();
@@ -460,25 +470,47 @@ function taskCard(t, isCompleted = false) {
       スマホ版 スワイプ
   ========================== */
   let startX = 0, dx = 0;
+  let isHandleDrag = false;  // ← 追加：☰ から始まったかどうか
 
   wrap.addEventListener("touchstart", e => {
-    // ボタン or 並び替えハンドルをタップしている場合はスワイプを起動しない
-    if (e.target.closest("button") || e.target.closest(".handle")) {
+    // ボタンをタップしている場合はスワイプ処理を起動しない
+    if (e.target.closest("button")) {
       return;
     }
+
+    // ☰（.handle）から始まったタッチなら、スワイプ処理は一切しない
+    if (e.target.closest(".handle")) {
+      isHandleDrag = true;
+      return;
+    } else {
+      isHandleDrag = false;
+    }
+
     startX = e.touches[0].clientX;
     dx = 0;
     sl.style.transition = "none";
   }, { passive:true });
 
   wrap.addEventListener("touchmove", e => {
+    if (isHandleDrag) {
+      // ☰ をドラッグしてるときは、ここ（横スワイプ）には入らない
+      return;
+    }
     if (e.touches.length === 0) return;
     dx = e.touches[0].clientX - startX;
-    if (Math.abs(dx) > 8) e.preventDefault(); // 横スワイプ中は縦スクロール抑制
+    if (Math.abs(dx) > 8) e.preventDefault();
     sl.style.transform = `translateX(${dx}px)`;
   }, { passive:false });
 
   wrap.addEventListener("touchend", () => {
+    // ☰ ドラッグだった場合は、スワイプの後処理をしない
+    if (isHandleDrag) {
+      isHandleDrag = false;
+      sl.style.transition = "";
+      sl.style.transform = "translateX(0)";
+      return;
+    }
+
     sl.style.transition = "transform .15s";
 
     const leftW  = Number(wrap.dataset.leftWidth)  || 140;
@@ -487,7 +519,7 @@ function taskCard(t, isCompleted = false) {
     const leftStrong  = leftW  * STRONG_RATIO;
     const rightStrong = rightW * STRONG_RATIO;
 
-    // 強スワイプ → 完了 / 未完 / 削除
+    // ここ以下は今のままの強スワイプ判定でOK
     if (dx > leftStrong) {
       if (!isCompleted) {
         action("complete", t.id);
@@ -509,7 +541,6 @@ function taskCard(t, isCompleted = false) {
       return;
     }
 
-    // 軽いスワイプ → 「開いた」状態にスナップ
     if (dx > SNAP_THRESHOLD) {
       wrap.classList.add("open-left");
       wrap.classList.remove("open-right");
@@ -525,7 +556,7 @@ function taskCard(t, isCompleted = false) {
   });
 
   /* ==========================
-      ☰ で並び替え（Pointer Event）
+      ☰ で並び替え（ドラッグ）
   ========================== */
   const startDrag = (startEvent) => {
     startEvent.preventDefault();
@@ -537,6 +568,8 @@ function taskCard(t, isCompleted = false) {
 
     card.classList.add("dragging");
     document.body.style.userSelect = "none";
+
+    const pointerId = startEvent.pointerId;
 
     const getY = (ev) => ev.clientY;
 
@@ -565,7 +598,7 @@ function taskCard(t, isCompleted = false) {
       }
     };
 
-    const onUp = () => {
+    const onUp = (ev) => {
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
       card.classList.remove("dragging");
@@ -579,6 +612,13 @@ function taskCard(t, isCompleted = false) {
 
   if (window.PointerEvent) {
     handle.addEventListener("pointerdown", startDrag);
+  } else {
+    // pointer未対応ブラウザ用のフォールバック（必要なら）
+    handle.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // ここで同様のロジックを実装してもOK（簡略のため省略）
+    }, { passive:false });
   }
 
   // 並び替え用にタスク情報を紐付け
