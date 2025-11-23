@@ -14,7 +14,13 @@
   .tab.active { background:#111; color:white; border-color:#111; }
 
   .add { display:flex; gap:8px; padding:12px 16px; }
-  .add input { flex:1; padding:10px; border-radius:8px; border:1px solid #ddd; }
+  .add input {
+    flex:1;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+    font-size:16px; /* ← iOSの勝手ズーム防止 */
+  }
 
   .list { display:flex; flex-direction:column; }
 
@@ -45,12 +51,11 @@
     pointer-events:none; z-index:1;
   }
 
-    /* スワイプで開いているときだけボタンを押せるようにする */
+  /* スワイプで開いているときだけボタンを押せるようにする */
   .card.open-left .actions-rail,
   .card.open-right .actions-rail {
     pointer-events: auto;
   }
-
 
   :root { --rail-w:140px; }
 
@@ -59,7 +64,6 @@
     height:100%;
     display:flex; align-items:center;
   }
-  
   .actions-left { background:#e8f7ee; justify-content:flex-start; }
   .actions-right { background:#fdeeee; justify-content:flex-end; }
 
@@ -122,7 +126,7 @@
     <button id="btnAdd" class="tab" style="background:#111;color:white;border-color:#111">追加</button>
   </div>
 
-  <div class="divider-label">ToDoタスク</div>
+  <div class="divider-label">未完了タスク</div>
   <div id="pinned" class="list"></div>
   <div id="active" class="list"></div>
 
@@ -174,8 +178,10 @@ const API_BASE = "https://yamasho.xvps.jp/webhook";
 let userId = null;
 let currentDetailTask = null;
 
-const EXPOSE_W = 140;
-const EXPOSE_X = 200;
+const EXPOSE_W = 140;  // 左右のスナップ距離（ボタン幅と一致）
+const EXPOSE_X = 140;  // 右も同じにして揃える
+const SNAP_X   = 60;   // 軽いスワイプで「開く」しきい値
+const STRONG_SWIPE = 140; // 強スワイプで完了/削除発火
 
 // DOMキャッシュ
 const pinnedEl    = document.getElementById("pinned");
@@ -292,7 +298,6 @@ async function loadList() {
 
     if (!text) {
       console.warn("[LIST] 空レスポンスでした");
-      // 空ならとりあえず全部空配列で描画
       renderList({ pinned: [], active: [], completed: [] });
       return;
     }
@@ -374,7 +379,6 @@ function taskCard(t, isCompleted = false) {
   const titleEl = document.createElement("div");
   titleEl.className = "title";
 
-  // バックエンドが task_name か title か、両対応にする
   const name = t.task_name || t.title || "(無題)";
 
   if (t.pinned) {
@@ -385,7 +389,7 @@ function taskCard(t, isCompleted = false) {
 
   const handle = document.createElement("div");
   handle.className = "handle";
-  handle.textContent = "☰  ";
+  handle.textContent = "☰";
 
   sl.append(titleEl, handle);
   wrap.append(rail, sl);
@@ -411,7 +415,7 @@ function taskCard(t, isCompleted = false) {
       } else {
         wrap.classList.add("open-right");
         wrap.classList.remove("open-left");
-        sl.style.transform = `translateX(${-EXPOSE_X}px)`;
+        sl.style.transform = `translateX(${-EXPOSE_W}px)`; // 右も幅を揃える
       }
     });
   }
@@ -422,16 +426,17 @@ function taskCard(t, isCompleted = false) {
   let startX = 0, dx = 0;
 
   wrap.addEventListener("touchstart", e => {
-      // もしアクションボタン上をタッチしていたら、スワイプ処理は起動しない
-      if (e.target.closest("button")) {
-          return;
-      }
-      startX = e.touches[0].clientX;
-      dx = 0;
-      sl.style.transition = "none";
-  }, { passive: true });
+    // ボタンをタップしている場合はスワイプ処理を起動しない
+    if (e.target.closest("button")) {
+      return;
+    }
+    startX = e.touches[0].clientX;
+    dx = 0;
+    sl.style.transition = "none";
+  }, { passive:true });
 
   wrap.addEventListener("touchmove", e => {
+    if (e.touches.length === 0) return;
     dx = e.touches[0].clientX - startX;
     if (Math.abs(dx) > 8) e.preventDefault();
     sl.style.transform = `translateX(${dx}px)`;
@@ -439,14 +444,36 @@ function taskCard(t, isCompleted = false) {
 
   wrap.addEventListener("touchend", () => {
     sl.style.transition = "transform .15s";
-    if (dx > 60) {
+
+    // 強スワイプ → 完了 / 削除
+    if (dx > STRONG_SWIPE && !isCompleted) {
+      // 右に強くスワイプ → 完了
+      action("complete", t.id);
+      wrap.classList.remove("open-left", "open-right");
+      sl.style.transform = "translateX(0)";
+      return;
+    }
+    if (dx < -STRONG_SWIPE) {
+      // 左に強くスワイプ → 削除
+      if (t.pinned) {
+        alert("ピンを外してください！");
+      } else {
+        action("delete", t.id);
+      }
+      wrap.classList.remove("open-left", "open-right");
+      sl.style.transform = "translateX(0)";
+      return;
+    }
+
+    // 軽いスワイプ → 「開いた」状態にスナップ
+    if (dx > SNAP_X) {
       wrap.classList.add("open-left");
       wrap.classList.remove("open-right");
       sl.style.transform = `translateX(${EXPOSE_W}px)`;
-    } else if (dx < -60) {
+    } else if (dx < -SNAP_X) {
       wrap.classList.add("open-right");
       wrap.classList.remove("open-left");
-      sl.style.transform = `translateX(${-EXPOSE_X}px)`;
+      sl.style.transform = `translateX(${-EXPOSE_W}px)`;
     } else {
       wrap.classList.remove("open-left", "open-right");
       sl.style.transform = "translateX(0)";
@@ -484,21 +511,24 @@ function openDetail(t) {
    BUTTON HELPER
 ========================== */
 function mkBtn(label, onClick, cls) {
-    const b = document.createElement("button");
-    b.textContent = label;
-    if (cls) b.className = cls;
-     const handler = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        onClick();
-    };
-     // タッチデバイスでは touchend 優先
-    if ("ontouchend" in window) {
-        b.addEventListener("touchend", handler, { passive: false });
-    } else {
-        b.addEventListener("click", handler);
-    }
-     return b;
+  const b = document.createElement("button");
+  b.textContent = label;
+  if (cls) b.className = cls;
+
+  const handler = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onClick();
+  };
+
+  // タッチデバイスでは touchend 優先
+  if ("ontouchend" in window) {
+    b.addEventListener("touchend", handler, { passive:false });
+  } else {
+    b.addEventListener("click", handler);
+  }
+
+  return b;
 }
 
 /* ==========================
@@ -538,9 +568,3 @@ init();
 </script>
 </body>
 </html>
-
-
-
-
-
-
