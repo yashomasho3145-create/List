@@ -31,9 +31,15 @@
     height:60px;
     overflow:hidden;
     touch-action:pan-y;
-    box-sizing:border-box; /* ☰ の見切れ対策 */
+    box-sizing:border-box;
   }
   .card.completed .title { color:#aaa; text-decoration:line-through; }
+
+  .card.dragging {
+    opacity:0.9;
+    box-shadow:0 4px 12px rgba(0,0,0,0.18);
+    z-index:5;
+  }
 
   .sl {
     position:relative;
@@ -44,7 +50,7 @@
     transition:transform .15s ease;
     background:white;
     z-index:2;
-    box-sizing:border-box; /* ☰ の見切れ対策 */
+    box-sizing:border-box;
   }
 
   .actions-rail {
@@ -56,7 +62,7 @@
   /* スワイプで開いているときだけボタンを押せるようにする */
   .card.open-left .actions-rail,
   .card.open-right .actions-rail {
-    pointer-events: auto;
+    pointer-events:auto;
   }
 
   .actions-left, .actions-right {
@@ -80,9 +86,9 @@
   .title { font-size:15px; }
 
   .handle {
-    margin-left:auto; cursor:grab; opacity:0.1;
+    margin-left:auto; cursor:grab; opacity:0.25;
     -webkit-user-select:none; user-select:none;
-    padding:0 12px; font-size:20px;
+    padding:0 8px; font-size:20px;
   }
 
   .divider-label { text-align:center; color:#888; font-size:12px; padding:6px 0; }
@@ -252,7 +258,6 @@ function bindModalUI() {
   detailCloseBtn.onclick = close;
   detailCancelBtn.onclick = close;
 
-  // スライダーのラベル更新
   const bindSlider = (input, label) => {
     input.addEventListener("input", () => { label.textContent = input.value; });
   };
@@ -318,7 +323,6 @@ async function loadList() {
   }
 }
 
-
 function renderList(payload) {
   pinnedEl.innerHTML    = "";
   activeEl.innerHTML    = "";
@@ -331,6 +335,34 @@ function renderList(payload) {
   pinned.forEach(t    => pinnedEl.appendChild(taskCard(t, false)));
   active.forEach(t    => activeEl.appendChild(taskCard(t, false)));
   completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
+}
+
+/* ==========================
+  並び順をサーバーへ保存
+========================== */
+async function saveSortOrder() {
+  if (!userId) return;
+
+  const orders = [];
+
+  pinnedEl.querySelectorAll(".card").forEach((card, index) => {
+    const t = card.__taskData;
+    if (!t) return;
+    orders.push({ id: t.id, sort_order: index, section: "pinned" });
+  });
+  activeEl.querySelectorAll(".card").forEach((card, index) => {
+    const t = card.__taskData;
+    if (!t) return;
+    orders.push({ id: t.id, sort_order: index, section: "active" });
+  });
+  completedEl.querySelectorAll(".card").forEach((card, index) => {
+    const t = card.__taskData;
+    if (!t) return;
+    orders.push({ id: t.id, sort_order: index, section: "completed" });
+  });
+
+  console.log("[SORT_UPDATE] orders:", orders);
+  await action("sort_update", null, { orders });
 }
 
 /* ==========================
@@ -349,13 +381,11 @@ function taskCard(t, isCompleted = false) {
   left.className = "actions-left";
 
   if (!isCompleted) {
-    // 未完了タスク：完了 & +2h
     left.append(
       mkBtn("完了", () => action("complete", t.id), "btn-complete"),
       mkBtn("+2h", () => action("remind_plus2h", t.id), "btn-plus2h")
     );
   } else {
-    // 達成タスク：未完に戻す
     left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
   }
 
@@ -380,12 +410,7 @@ function taskCard(t, isCompleted = false) {
   titleEl.className = "title";
 
   const name = t.task_name || t.title || "(無題)";
-
-  if (t.pinned) {
-    titleEl.textContent = "📍 " + name;
-  } else {
-    titleEl.textContent = name;
-  }
+  titleEl.textContent = t.pinned ? "📍 " + name : name;
 
   const handle = document.createElement("div");
   handle.className = "handle";
@@ -437,10 +462,7 @@ function taskCard(t, isCompleted = false) {
   let startX = 0, dx = 0;
 
   wrap.addEventListener("touchstart", e => {
-    // ボタンをタップしている場合はスワイプ処理を起動しない
-    if (e.target.closest("button")) {
-      return;
-    }
+    if (e.target.closest("button")) return; // ボタンタップ時はスワイプ無効
     startX = e.touches[0].clientX;
     dx = 0;
     sl.style.transition = "none";
@@ -464,20 +486,13 @@ function taskCard(t, isCompleted = false) {
 
     // 強スワイプ → 完了 / 未完 / 削除
     if (dx > leftStrong) {
-      // 右へ強スワイプ
-      if (!isCompleted) {
-        // 未完タスク → 完了
-        action("complete", t.id);
-      } else {
-        // 達成タスク → 未完に戻す
-        action("uncomplete", t.id);
-      }
+      if (!isCompleted) action("complete", t.id);
+      else              action("uncomplete", t.id);
       wrap.classList.remove("open-left", "open-right");
       sl.style.transform = "translateX(0)";
       return;
     }
     if (dx < -rightStrong) {
-      // 左へ強スワイプ → 削除
       if (t.pinned) {
         alert("ピンを外してください！");
       } else {
@@ -488,7 +503,7 @@ function taskCard(t, isCompleted = false) {
       return;
     }
 
-    // 軽いスワイプ → 「開いた」状態にスナップ
+    // 軽いスワイプ → レール表示
     if (dx > SNAP_THRESHOLD) {
       wrap.classList.add("open-left");
       wrap.classList.remove("open-right");
@@ -502,6 +517,75 @@ function taskCard(t, isCompleted = false) {
       sl.style.transform = "translateX(0)";
     }
   });
+
+  /* ==========================
+      ☰ で並び替え（ドラッグ）
+  ========================== */
+  const startDrag = (startEvent) => {
+    startEvent.preventDefault();
+    startEvent.stopPropagation();
+
+    const card = wrap;
+    const list = card.parentElement;
+    if (!list) return;
+
+    card.classList.add("dragging");
+    document.body.style.userSelect = "none";
+
+    const pointerId = startEvent.pointerId;
+
+    const getY = (ev) => ev.clientY;
+
+    const onMove = (ev) => {
+      const y = getY(ev);
+      const siblings = Array.from(list.children);
+      const currentIndex = siblings.indexOf(card);
+      if (currentIndex === -1) return;
+
+      const prev = siblings[currentIndex - 1];
+      const next = siblings[currentIndex + 1];
+
+      if (prev) {
+        const rect = prev.getBoundingClientRect();
+        if (y < rect.top + rect.height / 2) {
+          list.insertBefore(card, prev);
+          return;
+        }
+      }
+      if (next) {
+        const rect = next.getBoundingClientRect();
+        if (y > rect.top + rect.height / 2) {
+          list.insertBefore(next, card);
+          return;
+        }
+      }
+    };
+
+    const onUp = (ev) => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      card.classList.remove("dragging");
+      document.body.style.userSelect = "";
+      saveSortOrder();
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  };
+
+  if (window.PointerEvent) {
+    handle.addEventListener("pointerdown", startDrag);
+  } else {
+    // pointer未対応ブラウザ用のフォールバック（必要なら）
+    handle.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // ここで同様のロジックを実装してもOK（簡略のため省略）
+    }, { passive:false });
+  }
+
+  // 並び替え用にタスク情報を紐付け
+  wrap.__taskData = t;
 
   return wrap;
 }
@@ -544,7 +628,6 @@ function mkBtn(label, onClick, cls) {
     onClick();
   };
 
-  // タッチデバイスでは touchend 優先
   if ("ontouchend" in window) {
     b.addEventListener("touchend", handler, { passive:false });
   } else {
@@ -582,7 +665,6 @@ async function action(kind, id, extra = {}) {
     console.error("[ACTION] fetch error:", e);
     alert("通信エラーで操作に失敗しました");
   } finally {
-    // 成功/失敗に関わらず一覧を取り直す
     loadList();
   }
 }
