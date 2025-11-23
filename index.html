@@ -416,7 +416,16 @@ function taskCard(t, isCompleted = false) {
   const handle = document.createElement("div");
   handle.className = "handle";
   handle.textContent = "☰";
-  
+
+  handle.addEventListener("touchstart", e => {
+    e.stopPropagation();
+  }, { passive:true });
+
+  handle.addEventListener("touchmove", e => {
+    e.preventDefault();   // ← スクロールを止める
+    e.stopPropagation();  // ← wrap までイベントが行かないようにする
+  }, { passive:false });
+
   sl.append(titleEl, handle);
   wrap.append(rail, sl);
 
@@ -610,69 +619,21 @@ function taskCard(t, isCompleted = false) {
     document.addEventListener("pointerup", onUp);
   };
 
-// ==========================
-// ☰ で並び替え（ドラッグ）
-// ==========================
-const startDrag = (startEvent) => {
-  startEvent.preventDefault();
-  startEvent.stopPropagation();
+  if (window.PointerEvent) {
+    handle.addEventListener("pointerdown", startDrag);
+  } else {
+    // pointer未対応ブラウザ用のフォールバック（必要なら）
+    handle.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // ここで同様のロジックを実装してもOK（簡略のため省略）
+    }, { passive:false });
+  }
 
-  const card = wrap;
-  const list = card.parentElement;
-  if (!list) return;
+  // 並び替え用にタスク情報を紐付け
+  wrap.__taskData = t;
 
-  card.classList.add("dragging");
-  document.body.style.userSelect = "none";
-
-  const getY = (ev) => ev.clientY;
-
-  const onMove = (ev) => {
-    const y = getY(ev);
-    const siblings = Array.from(list.children);
-    const currentIndex = siblings.indexOf(card);
-    if (currentIndex === -1) return;
-
-    const prev = siblings[currentIndex - 1];
-    const next = siblings[currentIndex + 1];
-
-    if (prev) {
-      const rect = prev.getBoundingClientRect();
-      if (y < rect.top + rect.height / 2) {
-        list.insertBefore(card, prev);
-        return;
-      }
-    }
-    if (next) {
-      const rect = next.getBoundingClientRect();
-      if (y > rect.top + rect.height / 2) {
-        list.insertBefore(next, card);
-        return;
-      }
-    }
-  };
-
-  const onUp = () => {
-    document.removeEventListener("pointermove", onMove);
-    document.removeEventListener("pointerup", onUp);
-    card.classList.remove("dragging");
-    document.body.style.userSelect = "";
-    saveSortOrder();
-  };
-
-  document.addEventListener("pointermove", onMove);
-  document.addEventListener("pointerup", onUp);
-};
-
-// ★ 長押し用タイマー
-let holdTimer = null;
-
-if (window.PointerEvent) {
-  // 0.5秒長押ししたら startDrag を発火
-  handle.addEventListener("pointerdown", (e) => {
-    holdTimer = setTimeout(() => startDrag(e), 500);
-  });
-  handle.addEventListener("pointerup", () => clearTimeout(holdTimer));
-  handle.addEventListener("pointerleave", () => clearTimeout(holdTimer));
+  return wrap;
 }
 
 /* ==========================
@@ -758,5 +719,3 @@ init();
 </script>
 </body>
 </html>
-
-
