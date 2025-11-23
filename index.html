@@ -422,10 +422,14 @@ function taskCard(t, isCompleted = false) {
   let startX = 0, dx = 0;
 
   wrap.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
-    dx = 0;
-    sl.style.transition = "none";
-  }, { passive:true });
+      // もしアクションボタン上をタッチしていたら、スワイプ処理は起動しない
+      if (e.target.closest("button")) {
+          return;
+      }
+      startX = e.touches[0].clientX;
+      dx = 0;
+      sl.style.transition = "none";
+  }, { passive: true });
 
   wrap.addEventListener("touchmove", e => {
     dx = e.touches[0].clientX - startX;
@@ -480,14 +484,21 @@ function openDetail(t) {
    BUTTON HELPER
 ========================== */
 function mkBtn(label, onClick, cls) {
-  const b = document.createElement("button");
-  b.textContent = label;
-  if (cls) b.className = cls;
-  b.onclick = e => {
-    e.stopPropagation();
-    onClick();
-  };
-  return b;
+    const b = document.createElement("button");
+    b.textContent = label;
+    if (cls) b.className = cls;
+     const handler = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        onClick();
+    };
+     // タッチデバイスでは touchend 優先
+    if ("ontouchend" in window) {
+        b.addEventListener("touchend", handler, { passive: false });
+    } else {
+        b.addEventListener("click", handler);
+    }
+     return b;
 }
 
 /* ==========================
@@ -527,7 +538,6 @@ init();
 </script>
 </body>
 </html>
-
 
 
 
