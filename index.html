@@ -19,7 +19,7 @@
     padding:10px;
     border-radius:8px;
     border:1px solid #ddd;
-    font-size:16px; /* ← iOSの勝手ズーム防止 */
+    font-size:16px; /* iOSの勝手ズーム防止 */
   }
 
   .list { display:flex; flex-direction:column; }
@@ -31,6 +31,7 @@
     height:60px;
     overflow:hidden;
     touch-action:pan-y;
+    box-sizing:border-box; /* ☰ の見切れ対策 */
   }
   .card.completed .title { color:#aaa; text-decoration:line-through; }
 
@@ -43,6 +44,7 @@
     transition:transform .15s ease;
     background:white;
     z-index:2;
+    box-sizing:border-box; /* ☰ の見切れ対策 */
   }
 
   .actions-rail {
@@ -57,15 +59,12 @@
     pointer-events: auto;
   }
 
-  :root { --rail-w:140px; }
-
   .actions-left, .actions-right {
-    width:var(--rail-w);
     height:100%;
     display:flex; align-items:center;
   }
-  .actions-left { background:#e8f7ee; justify-content:flex-start; }
-  .actions-right { background:#fdeeee; justify-content:flex-end; }
+  .actions-left { background:#e8f7ee; justify-content:flex-start; padding-left:0; }
+  .actions-right { background:#fdeeee; justify-content:flex-end; padding-right:0; }
 
   .actions-rail button {
     height:100%; min-width:64px; border:none; color:white; font-size:13px;
@@ -178,10 +177,9 @@ const API_BASE = "https://yamasho.xvps.jp/webhook";
 let userId = null;
 let currentDetailTask = null;
 
-const EXPOSE_W = 140;  // 左右のスナップ距離（ボタン幅と一致）
-const EXPOSE_X = 140;  // 右も同じにして揃える
-const SNAP_X   = 60;   // 軽いスワイプで「開く」しきい値
-const STRONG_SWIPE = 140; // 強スワイプで完了/削除発火
+// 強スワイプ判定の比率
+const STRONG_RATIO = 0.85;  // ボタン幅の約85%以上
+const SNAP_THRESHOLD = 40;  // このpx以上で「開く」スナップ
 
 // DOMキャッシュ
 const pinnedEl    = document.getElementById("pinned");
@@ -330,8 +328,8 @@ function renderList(payload) {
   const active    = Array.isArray(payload.active)    ? payload.active    : [];
   const completed = Array.isArray(payload.completed) ? payload.completed : [];
 
-  pinned.forEach(t    => pinnedEl.appendChild(taskCard(t)));
-  active.forEach(t    => activeEl.appendChild(taskCard(t)));
+  pinned.forEach(t    => pinnedEl.appendChild(taskCard(t, false)));
+  active.forEach(t    => activeEl.appendChild(taskCard(t, false)));
   completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
 }
 
@@ -351,11 +349,13 @@ function taskCard(t, isCompleted = false) {
   left.className = "actions-left";
 
   if (!isCompleted) {
+    // 未完了タスク：完了 & +2h
     left.append(
       mkBtn("完了", () => action("complete", t.id), "btn-complete"),
       mkBtn("+2h", () => action("remind_plus2h", t.id), "btn-plus2h")
     );
   } else {
+    // 達成タスク：未完に戻す
     left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
   }
 
@@ -394,6 +394,14 @@ function taskCard(t, isCompleted = false) {
   sl.append(titleEl, handle);
   wrap.append(rail, sl);
 
+  // ===== ボタン幅を測って data に保存（端を揃える用） =====
+  requestAnimationFrame(() => {
+    const lRect = left.getBoundingClientRect();
+    const rRect = right.getBoundingClientRect();
+    wrap.dataset.leftWidth  = lRect.width  || 140;
+    wrap.dataset.rightWidth = rRect.width || 140;
+  });
+
   /* ==========================
       PC版 クリックでスワイプ
   ========================== */
@@ -401,6 +409,9 @@ function taskCard(t, isCompleted = false) {
     sl.addEventListener("click", e => {
       const rect = sl.getBoundingClientRect();
       const x = e.clientX - rect.left;
+
+      const leftW  = Number(wrap.dataset.leftWidth)  || 140;
+      const rightW = Number(wrap.dataset.rightWidth) || 140;
 
       if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
         wrap.classList.remove("open-left", "open-right");
@@ -411,11 +422,11 @@ function taskCard(t, isCompleted = false) {
       if (x < rect.width / 2) {
         wrap.classList.add("open-left");
         wrap.classList.remove("open-right");
-        sl.style.transform = `translateX(${EXPOSE_W}px)`;
+        sl.style.transform = `translateX(${leftW}px)`;
       } else {
         wrap.classList.add("open-right");
         wrap.classList.remove("open-left");
-        sl.style.transform = `translateX(${-EXPOSE_W}px)`; // 右も幅を揃える
+        sl.style.transform = `translateX(${-rightW}px)`;
       }
     });
   }
@@ -445,16 +456,28 @@ function taskCard(t, isCompleted = false) {
   wrap.addEventListener("touchend", () => {
     sl.style.transition = "transform .15s";
 
-    // 強スワイプ → 完了 / 削除
-    if (dx > STRONG_SWIPE && !isCompleted) {
-      // 右に強くスワイプ → 完了
-      action("complete", t.id);
+    const leftW  = Number(wrap.dataset.leftWidth)  || 140;
+    const rightW = Number(wrap.dataset.rightWidth) || 140;
+
+    const leftStrong  = leftW  * STRONG_RATIO;
+    const rightStrong = rightW * STRONG_RATIO;
+
+    // 強スワイプ → 完了 / 未完 / 削除
+    if (dx > leftStrong) {
+      // 右へ強スワイプ
+      if (!isCompleted) {
+        // 未完タスク → 完了
+        action("complete", t.id);
+      } else {
+        // 達成タスク → 未完に戻す
+        action("uncomplete", t.id);
+      }
       wrap.classList.remove("open-left", "open-right");
       sl.style.transform = "translateX(0)";
       return;
     }
-    if (dx < -STRONG_SWIPE) {
-      // 左に強くスワイプ → 削除
+    if (dx < -rightStrong) {
+      // 左へ強スワイプ → 削除
       if (t.pinned) {
         alert("ピンを外してください！");
       } else {
@@ -466,14 +489,14 @@ function taskCard(t, isCompleted = false) {
     }
 
     // 軽いスワイプ → 「開いた」状態にスナップ
-    if (dx > SNAP_X) {
+    if (dx > SNAP_THRESHOLD) {
       wrap.classList.add("open-left");
       wrap.classList.remove("open-right");
-      sl.style.transform = `translateX(${EXPOSE_W}px)`;
-    } else if (dx < -SNAP_X) {
+      sl.style.transform = `translateX(${leftW}px)`;
+    } else if (dx < -SNAP_THRESHOLD) {
       wrap.classList.add("open-right");
       wrap.classList.remove("open-left");
-      sl.style.transform = `translateX(${-EXPOSE_W}px)`;
+      sl.style.transform = `translateX(${-rightW}px)`;
     } else {
       wrap.classList.remove("open-left", "open-right");
       sl.style.transform = "translateX(0)";
