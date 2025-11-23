@@ -1,877 +1,627 @@
 <!doctype html>
 <html lang="ja">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LIST｜タスク一覧</title>
-    <style>
-        body {
-            font-family: -apple-system, system-ui;
-            margin: 0;
-            background: #f7f7f8;
-        }
+  <meta charset="utf-8" />
+  <!-- iOSズーム対策 -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>LIST｜タスク一覧</title>
+  <style>
+    body { font-family: -apple-system, system-ui; margin:0; background:#f7f7f8; }
 
-        header {
-            position: sticky;
-            top: 0;
-            background: #fff;
-            border-bottom: 1px solid #eee;
-            z-index: 10;
-        }
+    header { position:sticky; top:0; background:#fff; border-bottom:1px solid #eee; z-index:10; }
+    .bar { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; }
 
-        .bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-        }
+    .tab { padding:6px 12px; border-radius:14px; border:1px solid #ddd; font-size:13px; cursor:pointer; }
+    .tab.active { background:#111; color:white; border-color:#111; }
 
-        .tab {
-            padding: 6px 12px;
-            border-radius: 14px;
-            border: 1px solid #ddd;
-            font-size: 13px;
-            cursor: pointer;
-        }
+    .add { display:flex; gap:8px; padding:12px 16px; }
+    .add input {
+      flex:1;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #ddd;
+      font-size:16px; /* iOS ズーム防止 */
+    }
 
-            .tab.active {
-                background: #111;
-                color: white;
-                border-color: #111;
-            }
+    .list { display:flex; flex-direction:column; }
 
-        .add {
-            display: flex;
-            gap: 8px;
-            padding: 12px 16px;
-        }
+    .card {
+      position:relative;
+      background:white;
+      border-bottom:1px solid #eee;
+      height:60px;
+      overflow:hidden;
+      touch-action:pan-y;
+    }
+    .card.completed .title { color:#aaa; text-decoration:line-through; }
 
-            .add input {
-                flex: 1;
-                padding: 10px;
-                border-radius: 8px;
-                border: 1px solid #ddd;
-                font-size: 16px; /* iOSの勝手ズーム防止 */
-            }
+    .sl {
+      position:relative;
+      height:100%; width:100%;
+      display:flex;
+      align-items:center;
+      padding:0 12px;
+      transition:transform .15s ease;
+      background:white;
+      z-index:2;
+    }
 
-        .list {
-            display: flex;
-            flex-direction: column;
-        }
+    .actions-rail {
+      position:absolute; inset:0;
+      display:flex; justify-content:space-between; align-items:center;
+      pointer-events:none; z-index:1;
+    }
 
-        .card {
-            position: relative;
-            background: white;
-            border-bottom: 1px solid #eee;
-            height: 60px;
-            overflow: hidden;
-            touch-action: pan-y;
-            box-sizing: border-box; /* ☰ の見切れ対策 */
-        }
+    /* スワイプで開いているときだけボタンを押せる */
+    .card.open-left .actions-rail,
+    .card.open-right .actions-rail {
+      pointer-events:auto;
+    }
 
-            .card.completed .title {
-                color: #aaa;
-                text-decoration: line-through;
-            }
+    .actions-left, .actions-right {
+      height:100%;
+      display:flex; align-items:center;
+    }
+    .actions-left { background:#e8f7ee; justify-content:flex-start; }
+    .actions-right { background:#fdeeee; justify-content:flex-end; }
 
-        .sl {
-            position: relative;
-            height: 100%;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
-            transition: transform .15s ease;
-            background: white;
-            z-index: 2;
-            box-sizing: border-box; /* ☰ の見切れ対策 */
-        }
+    .actions-rail button {
+      height:100%; min-width:64px;
+      border:none; color:white; font-size:13px;
+      border-radius:0; cursor:pointer;
+    }
 
-        .actions-rail {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            pointer-events: none;
-            z-index: 1;
-        }
+    .btn-complete { background:#7e6dff; }
+    .btn-plus2h   { background:#8012e2; }
+    .btn-detail   { background:#1e928b; }
+    .btn-pin      { background:#d97706; }
+    .btn-delete   { background:#f03d30; }
 
-        /* スワイプで開いているときだけボタンを押せるようにする */
-        .card.open-left .actions-rail,
-        .card.open-right .actions-rail {
-            pointer-events: auto;
-        }
+    .title { font-size:15px; }
 
-        .actions-left, .actions-right {
-            height: 100%;
-            display: flex;
-            align-items: center;
-        }
+    .handle {
+      margin-left:auto; cursor:grab; opacity:0.25;
+      -webkit-user-select:none; user-select:none;
+      padding:0 8px; font-size:20px;
+    }
 
-        .actions-left {
-            background: #e8f7ee;
-            justify-content: flex-start;
-            padding-left: 0;
-        }
+    .card.dragging {
+      opacity:0.9;
+      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    }
 
-        .actions-right {
-            background: #fdeeee;
-            justify-content: flex-end;
-            padding-right: 0;
-        }
+    .divider-label { text-align:center; color:#888; font-size:12px; padding:6px 0; }
 
-        .actions-rail button {
-            height: 100%;
-            min-width: 64px;
-            border: none;
-            color: white;
-            font-size: 13px;
-            border-radius: 0;
-            cursor: pointer;
-        }
+    /* 詳細モーダル */
+    .modal-root { position:fixed; inset:0; display:none; z-index:50; align-items:flex-end; justify-content:center; }
+    .modal-root.visible { display:flex; }
+    .modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.25); }
+    .modal-panel {
+      width:100%; max-width:480px; background:#fff;
+      border-radius:20px 20px 0 0; padding:16px;
+      animation:slideUp .18s ease-out;
+    }
+    @keyframes slideUp { from{ transform:translateY(40px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
 
-        .btn-complete {
-            background: #7e6dff;
-        }
+    .slider-group { margin:14px 0; }
+    .slider-label-row { display:flex; justify-content:space-between; font-size:12px; }
+    .slider-label-row span.value { font-size:13px; font-weight:600; }
 
-        .btn-plus2h {
-            background: #8012e2;
-        }
+    .modal-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+    .btn-secondary { padding:8px 14px; border:1px solid #ddd; border-radius:20px; background:#fafafa; cursor:pointer; }
+    .btn-primary-solid { padding:8px 16px; border-radius:20px; background:#7e6dff; color:white; border:none; cursor:pointer; }
+  </style>
 
-        .btn-detail {
-            background: #1e928b;
-        }
-
-        .btn-pin {
-            background: #d97706;
-        }
-
-        .btn-delete {
-            background: #f03d30;
-        }
-
-        .title {
-            font-size: 15px;
-        }
-
-        .handle {
-            margin-left: auto;
-            cursor: grab;
-            opacity: 0.1;
-            -webkit-user-select: none;
-            user-select: none;
-            padding: 0 12px;
-            font-size: 20px;
-        }
-
-        .divider-label {
-            text-align: center;
-            color: #888;
-            font-size: 12px;
-            padding: 6px 0;
-        }
-
-        /* 詳細モーダル */
-        .modal-root {
-            position: fixed;
-            inset: 0;
-            display: none;
-            z-index: 50;
-            align-items: flex-end;
-            justify-content: center;
-        }
-
-            .modal-root.visible {
-                display: flex;
-            }
-
-        .modal-backdrop {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,.25);
-        }
-
-        .modal-panel {
-            width: 100%;
-            max-width: 480px;
-            background: #fff;
-            border-radius: 20px 20px 0 0;
-            padding: 16px;
-            animation: slideUp .18s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(40px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .slider-group {
-            margin: 14px 0;
-        }
-
-        .slider-label-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-        }
-
-            .slider-label-row span.value {
-                font-size: 13px;
-                font-weight: 600;
-            }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: 14px;
-        }
-
-        .btn-secondary {
-            padding: 8px 14px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            background: #fafafa;
-            cursor: pointer;
-        }
-
-        .btn-primary-solid {
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: #7e6dff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-    </style>
-
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
 
-    <header>
-        <div class="bar">
-            <div style="font-weight:600">LIST</div>
-            <div class="tab active">タスク</div>
-            <div class="tab" id="refreshBtn">↻</div>
-        </div>
-    </header>
+<header>
+  <div class="bar">
+    <div style="font-weight:600">LIST</div>
+    <div class="tab active">タスク</div>
+    <div class="tab" id="refreshBtn">↻</div>
+  </div>
+</header>
 
-    <main>
-        <div class="add">
-            <input id="newTitle" placeholder="タスクを入力…" />
-            <button id="btnAdd" class="tab" style="background:#111;color:white;border-color:#111">追加</button>
-        </div>
+<main>
+  <div class="add">
+    <input id="newTitle" placeholder="タスクを入力…" />
+    <button id="btnAdd" class="tab" style="background:#111;color:white;border-color:#111">追加</button>
+  </div>
 
-        <div class="divider-label">未完了タスク</div>
-        <div id="pinned" class="list"></div>
-        <div id="active" class="list"></div>
+  <div class="divider-label">未完了タスク</div>
+  <div id="pinned" class="list"></div>
+  <div id="active" class="list"></div>
 
-        <div class="divider-label" style="margin-top:16px;">達成タスク</div>
-        <div id="completed" class="list"></div>
-    </main>
+  <div class="divider-label" style="margin-top:16px;">達成タスク</div>
+  <div id="completed" class="list"></div>
+</main>
 
-    <!-- 詳細モーダル -->
-    <div id="detailModal" class="modal-root">
-        <div id="detailBackdrop" class="modal-backdrop"></div>
-        <div class="modal-panel">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div style="font-weight:600">タスク詳細</div>
-                <button id="detailCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
-            </div>
-
-            <div id="detailTaskTitle" style="font-size:13px;color:#555;margin-bottom:8px;"></div>
-
-            <div class="slider-group">
-                <div class="slider-label-row"><span>優先度</span><span class="value" id="valPriority"></span></div>
-                <input id="inputPriority" type="range" min="0" max="10" step="1" />
-            </div>
-
-            <div class="slider-group">
-                <div class="slider-label-row"><span>ビジョン関連度</span><span class="value" id="valVision"></span></div>
-                <input id="inputVision" type="range" min="0" max="10" step="1" />
-            </div>
-
-            <div class="slider-group">
-                <div class="slider-label-row"><span>わくわく度</span><span class="value" id="valExcite"></span></div>
-                <input id="inputExcite" type="range" min="0" max="10" step="1" />
-            </div>
-
-            <div class="slider-group">
-                <div class="slider-label-row"><span>成長度</span><span class="value" id="valGrowth"></span></div>
-                <input id="inputGrowth" type="range" min="0" max="10" step="1" />
-            </div>
-
-            <div class="modal-footer">
-                <button id="detailCancelBtn" class="btn-secondary">キャンセル</button>
-                <button id="detailSaveBtn" class="btn-primary-solid">保存</button>
-            </div>
-        </div>
+<!-- 詳細モーダル -->
+<div id="detailModal" class="modal-root">
+  <div id="detailBackdrop" class="modal-backdrop"></div>
+  <div class="modal-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:600">タスク詳細</div>
+      <button id="detailCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
     </div>
 
-    <script>
-        const LIFF_ID = "2008372898-2q9qWmxv";
-        const API_BASE = "https://yamasho.xvps.jp/webhook";
-        let userId = null;
-        let currentDetailTask = null;
+    <div id="detailTaskTitle" style="font-size:13px;color:#555;margin-bottom:8px;"></div>
 
-        // 強スワイプ判定の比率
-        const STRONG_RATIO = 0.85;  // ボタン幅の約85%以上
-        const SNAP_THRESHOLD = 40;  // このpx以上で「開く」スナップ
+    <div class="slider-group">
+      <div class="slider-label-row"><span>優先度</span><span class="value" id="valPriority"></span></div>
+      <input id="inputPriority" type="range" min="0" max="10" step="1"/>
+    </div>
 
-        // DOMキャッシュ
-        const pinnedEl = document.getElementById("pinned");
-        const activeEl = document.getElementById("active");
-        const completedEl = document.getElementById("completed");
-        const refreshBtn = document.getElementById("refreshBtn");
-        const btnAdd = document.getElementById("btnAdd");
-        const newTitle = document.getElementById("newTitle");
+    <div class="slider-group">
+      <div class="slider-label-row"><span>ビジョン関連度</span><span class="value" id="valVision"></span></div>
+      <input id="inputVision" type="range" min="0" max="10" step="1"/>
+    </div>
 
-        // モーダル要素
-        const detailModal = document.getElementById("detailModal");
-        const detailBackdrop = document.getElementById("detailBackdrop");
-        const detailCloseBtn = document.getElementById("detailCloseBtn");
-        const detailCancelBtn = document.getElementById("detailCancelBtn");
-        const detailSaveBtn = document.getElementById("detailSaveBtn");
-        const detailTaskTitle = document.getElementById("detailTaskTitle");
+    <div class="slider-group">
+      <div class="slider-label-row"><span>わくわく度</span><span class="value" id="valExcite"></span></div>
+      <input id="inputExcite" type="range" min="0" max="10" step="1"/>
+    </div>
 
-        const inputPriority = document.getElementById("inputPriority");
-        const inputVision = document.getElementById("inputVision");
-        const inputExcite = document.getElementById("inputExcite");
-        const inputGrowth = document.getElementById("inputGrowth");
-        const valPriority = document.getElementById("valPriority");
-        const valVision = document.getElementById("valVision");
-        const valExcite = document.getElementById("valExcite");
-        const valGrowth = document.getElementById("valGrowth");
+    <div class="slider-group">
+      <div class="slider-label-row"><span>成長度</span><span class="value" id="valGrowth"></span></div>
+      <input id="inputGrowth" type="range" min="0" max="10" step="1"/>
+    </div>
 
-        /* ==========================
-           INIT
-        ========================== */
-        async function init() {
-            try {
-                await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                    return;
-                }
-                const profile = await liff.getProfile();
-                userId = profile.userId;
+    <div class="modal-footer">
+      <button id="detailCancelBtn" class="btn-secondary">キャンセル</button>
+      <button id="detailSaveBtn" class="btn-primary-solid">保存</button>
+    </div>
+  </div>
+</div>
 
-                bindUI();
-                bindModalUI();
-                await loadList();
-            } catch (e) {
-                console.error(e);
-                alert("LIFF初期化に失敗しました");
-            }
+<script>
+const LIFF_ID = "2008372898-2q9qWmxv";
+const API_BASE = "https://yamasho.xvps.jp/webhook";
+
+let userId = null;
+let currentDetailTask = null;
+
+// スワイプ用しきい値
+const OPEN_THRESHOLD   = 40;   // レールを開くしきい値
+const STRONG_THRESHOLD = 120;  // 強スワイプで完了/削除
+
+// DOMキャッシュ
+const pinnedEl    = document.getElementById("pinned");
+const activeEl    = document.getElementById("active");
+const completedEl = document.getElementById("completed");
+const refreshBtn  = document.getElementById("refreshBtn");
+const btnAdd      = document.getElementById("btnAdd");
+const newTitle    = document.getElementById("newTitle");
+
+// モーダル要素
+const detailModal      = document.getElementById("detailModal");
+const detailBackdrop   = document.getElementById("detailBackdrop");
+const detailCloseBtn   = document.getElementById("detailCloseBtn");
+const detailCancelBtn  = document.getElementById("detailCancelBtn");
+const detailSaveBtn    = document.getElementById("detailSaveBtn");
+const detailTaskTitle  = document.getElementById("detailTaskTitle");
+
+const inputPriority = document.getElementById("inputPriority");
+const inputVision   = document.getElementById("inputVision");
+const inputExcite   = document.getElementById("inputExcite");
+const inputGrowth   = document.getElementById("inputGrowth");
+const valPriority   = document.getElementById("valPriority");
+const valVision     = document.getElementById("valVision");
+const valExcite     = document.getElementById("valExcite");
+const valGrowth     = document.getElementById("valGrowth");
+
+/* ==========================
+   INIT
+========================== */
+async function init() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    const profile = await liff.getProfile();
+    userId = profile.userId;
+
+    bindUI();
+    bindModalUI();
+    await loadList();
+  } catch (e) {
+    console.error(e);
+    alert("LIFF初期化に失敗しました");
+  }
+}
+
+/* ==========================
+   bindUI
+========================== */
+function bindUI() {
+  refreshBtn.onclick = loadList;
+
+  btnAdd.onclick = async () => {
+    const title = newTitle.value.trim();
+    if (!title) return;
+    await action("create", null, { task_name: title });
+    newTitle.value = "";
+  };
+}
+
+/* ==========================
+  詳細モーダル UI
+========================== */
+function bindModalUI() {
+  const close = () => detailModal.classList.remove("visible");
+
+  detailBackdrop.onclick = close;
+  detailCloseBtn.onclick = close;
+  detailCancelBtn.onclick = close;
+
+  const bindSlider = (input, label) => {
+    input.addEventListener("input", () => { label.textContent = input.value; });
+  };
+  bindSlider(inputPriority, valPriority);
+  bindSlider(inputVision,   valVision);
+  bindSlider(inputExcite,   valExcite);
+  bindSlider(inputGrowth,   valGrowth);
+
+  detailSaveBtn.onclick = async () => {
+    if (!currentDetailTask) return;
+    const payload = {
+      priority:     Number(inputPriority.value),
+      vision_score: Number(inputVision.value),
+      excite_score: Number(inputExcite.value),
+      growth_score: Number(inputGrowth.value),
+    };
+    await action("update_detail", currentDetailTask.id, payload);
+    close();
+  };
+}
+
+/* ==========================
+  LIST API
+========================== */
+async function loadList() {
+  if (!userId) return;
+  const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
+  console.log("[LIST] request:", url);
+
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    console.log("[LIST] status:", res.status, "raw:", text);
+
+    if (!res.ok) {
+      alert("タスク一覧の取得に失敗しました");
+      return;
+    }
+    if (!text) {
+      renderList({ pinned: [], active: [], completed: [] });
+      return;
+    }
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("[LIST] JSON parse error:", e);
+      alert("サーバーからJSONが返ってきていません");
+      return;
+    }
+    renderList(data);
+  } catch (e) {
+    console.error("[LIST] fetch error:", e);
+    alert("タスク一覧の取得に失敗しました（通信エラー）");
+  }
+}
+
+function renderList(payload) {
+  pinnedEl.innerHTML    = "";
+  activeEl.innerHTML    = "";
+  completedEl.innerHTML = "";
+
+  const pinned    = Array.isArray(payload.pinned)    ? payload.pinned    : [];
+  const active    = Array.isArray(payload.active)    ? payload.active    : [];
+  const completed = Array.isArray(payload.completed) ? payload.completed : [];
+
+  pinned.forEach(t    => pinnedEl.appendChild(taskCard(t, false)));
+  active.forEach(t    => activeEl.appendChild(taskCard(t, false)));
+  completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
+}
+
+/* ==========================
+  並び順をサーバーへ保存
+========================== */
+async function saveSortOrder() {
+  if (!userId) return;
+
+  const orders = [];
+
+  pinnedEl.querySelectorAll(".card").forEach((card, index) => {
+    const t = card.__taskData;
+    if (!t) return;
+    orders.push({ id: t.id, sort_order: index, section: "pinned" });
+  });
+  activeEl.querySelectorAll(".card").forEach((card, index) => {
+    const t = card.__taskData;
+    if (!t) return;
+    orders.push({ id: t.id, sort_order: index, section: "active" });
+  });
+  completedEl.querySelectorAll(".card").forEach((card, index) => {
+    const t = card.__taskData;
+    if (!t) return;
+    orders.push({ id: t.id, sort_order: index, section: "completed" });
+  });
+
+  console.log("[SORT_UPDATE] orders:", orders);
+  await action("sort_update", null, { orders });
+}
+
+/* ==========================
+  TASK CARD
+========================== */
+function taskCard(t, isCompleted = false) {
+  const wrap = document.createElement("div");
+  wrap.className = "card";
+  if (isCompleted) wrap.classList.add("completed");
+
+  // 背面レール
+  const rail = document.createElement("div");
+  rail.className = "actions-rail";
+
+  const left = document.createElement("div");
+  left.className = "actions-left";
+
+  if (!isCompleted) {
+    left.append(
+      mkBtn("完了", () => action("complete", t.id), "btn-complete"),
+      mkBtn("+2h", () => action("remind_plus2h", t.id), "btn-plus2h")
+    );
+  } else {
+    left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
+  }
+
+  const right = document.createElement("div");
+  right.className = "actions-right";
+  right.append(
+    mkBtn("詳細", () => openDetail(t), "btn-detail"),
+    mkBtn(t.pinned ? "ピン解除" : "ピン", () => action("toggle_pin", t.id), "btn-pin"),
+    mkBtn("削除", () => {
+      if (t.pinned) return alert("ピンを外してください！");
+      action("delete", t.id);
+    }, "btn-delete")
+  );
+
+  rail.append(left, right);
+
+  // 前面
+  const sl = document.createElement("div");
+  sl.className = "sl";
+
+  const titleEl = document.createElement("div");
+  titleEl.className = "title";
+  const name = t.task_name || t.title || "(無題)";
+  titleEl.textContent = t.pinned ? "📍 " + name : name;
+
+  const handle = document.createElement("div");
+  handle.className = "handle";
+  handle.textContent = "☰";
+
+  sl.append(titleEl, handle);
+  wrap.append(rail, sl);
+
+  // ==== スワイプ処理 ====
+  let startX = 0, dx = 0;
+  let leftW = 0, rightW = 0;
+
+  function ensureWidths() {
+    if (!leftW)  leftW  = left.offsetWidth  || 140;
+    if (!rightW) rightW = right.offsetWidth || 140;
+  }
+
+  wrap.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+    dx = 0;
+    sl.style.transition = "none";
+  }, { passive:true });
+
+  wrap.addEventListener("touchmove", e => {
+    dx = e.touches[0].clientX - startX;
+    if (Math.abs(dx) > 8) e.preventDefault();
+    sl.style.transform = `translateX(${dx}px)`;
+  }, { passive:false });
+
+  wrap.addEventListener("touchend", () => {
+    sl.style.transition = "transform .15s";
+    ensureWidths();
+
+    // 強スワイプ（完了 / 未完 / 削除）
+    if (dx > STRONG_THRESHOLD) {
+      if (!isCompleted) {
+        action("complete", t.id);
+      } else {
+        action("uncomplete", t.id);
+      }
+      wrap.classList.remove("open-left", "open-right");
+      sl.style.transform = "translateX(0)";
+      return;
+    }
+    if (dx < -STRONG_THRESHOLD) {
+      if (!t.pinned) {
+        action("delete", t.id);
+      } else {
+        alert("ピンを外してください！");
+      }
+      wrap.classList.remove("open-left", "open-right");
+      sl.style.transform = "translateX(0)";
+      return;
+    }
+
+    // 通常のレールオープン
+    if (dx > OPEN_THRESHOLD) {
+      wrap.classList.add("open-left");
+      wrap.classList.remove("open-right");
+      sl.style.transform = `translateX(${leftW}px)`;
+    } else if (dx < -OPEN_THRESHOLD) {
+      wrap.classList.add("open-right");
+      wrap.classList.remove("open-left");
+      sl.style.transform = `translateX(${-rightW}px)`;
+    } else {
+      wrap.classList.remove("open-left", "open-right");
+      sl.style.transform = "translateX(0)";
+    }
+  });
+
+  // PCクリックでレール開閉
+  if (!/Mobi|Android/i.test(navigator.userAgent)) {
+    sl.addEventListener("click", e => {
+      const rect = sl.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      ensureWidths();
+
+      if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
+        wrap.classList.remove("open-left", "open-right");
+        sl.style.transform = "translateX(0)";
+        return;
+      }
+
+      if (x < rect.width / 2) {
+        wrap.classList.add("open-left");
+        wrap.classList.remove("open-right");
+        sl.style.transform = `translateX(${leftW}px)`;
+      } else {
+        wrap.classList.add("open-right");
+        wrap.classList.remove("open-left");
+        sl.style.transform = `translateX(${-rightW}px)`;
+      }
+    });
+  }
+
+  // ==== 並び替え（☰ハンドル） ====
+  handle.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    e.stopPropagation();  // スワイプと競合させない
+
+    const card = wrap;
+    const list = card.parentElement;
+    if (!list) return;
+
+    card.classList.add("dragging");
+    document.body.style.userSelect = "none";
+
+    const onMove = ev => {
+      const y = ev.clientY;
+      const siblings = Array.from(list.children);
+      const currentIndex = siblings.indexOf(card);
+      if (currentIndex === -1) return;
+
+      const prev = siblings[currentIndex - 1];
+      const next = siblings[currentIndex + 1];
+
+      if (prev) {
+        const prevRect = prev.getBoundingClientRect();
+        if (y < prevRect.top + prevRect.height / 2) {
+          list.insertBefore(card, prev);
+          return;
         }
-
-        /* ==========================
-           bindUI
-        ========================== */
-        function bindUI() {
-            refreshBtn.onclick = loadList;
-
-            btnAdd.onclick = async () => {
-                const title = newTitle.value.trim();
-                if (!title) return;
-                await action("create", null, { task_name: title });
-                newTitle.value = "";
-            };
+      }
+      if (next) {
+        const nextRect = next.getBoundingClientRect();
+        if (y > nextRect.top + nextRect.height / 2) {
+          list.insertBefore(next, card);
+          return;
         }
-
-        /* ==========================
-          詳細モーダル UI
-        ========================== */
-        function bindModalUI() {
-            const close = () => detailModal.classList.remove("visible");
-
-            detailBackdrop.onclick = close;
-            detailCloseBtn.onclick = close;
-            detailCancelBtn.onclick = close;
-
-            // スライダーのラベル更新
-            const bindSlider = (input, label) => {
-                input.addEventListener("input", () => { label.textContent = input.value; });
-            };
-            bindSlider(inputPriority, valPriority);
-            bindSlider(inputVision, valVision);
-            bindSlider(inputExcite, valExcite);
-            bindSlider(inputGrowth, valGrowth);
-
-            detailSaveBtn.onclick = async () => {
-                if (!currentDetailTask) return;
-                const payload = {
-                    priority: Number(inputPriority.value),
-                    vision_score: Number(inputVision.value),
-                    excite_score: Number(inputExcite.value),
-                    growth_score: Number(inputGrowth.value),
-                };
-                await action("update_detail", currentDetailTask.id, payload);
-                close();
-            };
-        }
-
-        /* ==========================
-          LIST API
-        ========================== */
-        async function loadList() {
-            const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
-            console.log("[LIST] request:", url);
-
-            try {
-                const res = await fetch(url);
-                console.log("[LIST] status:", res.status);
-
-                const text = await res.text();
-                console.log("[LIST] raw response:", JSON.stringify(text));
-
-                if (!res.ok) {
-                    console.error("[LIST] http error:", res.status, text);
-                    alert("タスク一覧の取得に失敗しました（HTTPエラー）");
-                    return;
-                }
-
-                if (!text) {
-                    console.warn("[LIST] 空レスポンスでした");
-                    renderList({ pinned: [], active: [], completed: [] });
-                    return;
-                }
-
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    console.error("[LIST] JSONパースエラー:", e);
-                    alert("サーバーからJSONが返ってきていません");
-                    return;
-                }
-
-                console.log("[LIST] parsed json:", data);
-                renderList(data);
-
-            } catch (e) {
-                console.error("[LIST] fetch error:", e);
-                alert("タスク一覧の取得に失敗しました（通信エラー）");
-            }
-        }
-
-
-        function renderList(payload) {
-            pinnedEl.innerHTML = "";
-            activeEl.innerHTML = "";
-            completedEl.innerHTML = "";
-
-            const pinned = Array.isArray(payload.pinned) ? payload.pinned : [];
-            const active = Array.isArray(payload.active) ? payload.active : [];
-            const completed = Array.isArray(payload.completed) ? payload.completed : [];
-
-            pinned.forEach(t => pinnedEl.appendChild(taskCard(t, false)));
-            active.forEach(t => activeEl.appendChild(taskCard(t, false)));
-            completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
-
-        }
-
-        /* ==========================
-          TASK CARD
-        ========================== */
-        function taskCard(t, isCompleted = false) {
-            const wrap = document.createElement("div");
-            wrap.className = "card";
-            if (isCompleted) wrap.classList.add("completed");
-
-            // 背面レール
-            const rail = document.createElement("div");
-            rail.className = "actions-rail";
-
-            const left = document.createElement("div");
-            left.className = "actions-left";
-
-            if (!isCompleted) {
-                // 未完了タスク：完了 & +2h
-                left.append(
-                    mkBtn("完了", () => action("complete", t.id), "btn-complete"),
-                    mkBtn("+2h", () => action("remind_plus2h", t.id), "btn-plus2h")
-                );
-            } else {
-                // 達成タスク：未完に戻す
-                left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
-            }
-
-            const right = document.createElement("div");
-            right.className = "actions-right";
-            right.append(
-                mkBtn("詳細", () => openDetail(t), "btn-detail"),
-                mkBtn(t.pinned ? "ピン解除" : "ピン", () => action("toggle_pin", t.id), "btn-pin"),
-                mkBtn("削除", () => {
-                    if (t.pinned) return alert("ピンを外してください！");
-                    action("delete", t.id);
-                }, "btn-delete")
-            );
-
-            rail.append(left, right);
-
-            // 前面
-            const sl = document.createElement("div");
-            sl.className = "sl";
-
-            const titleEl = document.createElement("div");
-            titleEl.className = "title";
-
-            const name = t.task_name || t.title || "(無題)";
-
-            if (t.pinned) {
-                titleEl.textContent = "📍 " + name;
-            } else {
-                titleEl.textContent = name;
-            }
-
-            const handle = document.createElement("div");
-            handle.className = "handle";
-            handle.textContent = "☰";
-
-            sl.append(titleEl, handle);
-            wrap.append(rail, sl);
-
-            // ===== ボタン幅を測って data に保存（端を揃える用） =====
-            requestAnimationFrame(() => {
-                const lRect = left.getBoundingClientRect();
-                const rRect = right.getBoundingClientRect();
-                wrap.dataset.leftWidth = lRect.width || 140;
-                wrap.dataset.rightWidth = rRect.width || 140;
-            });
-
-            /* ==========================
-                PC版 クリックでスワイプ
-            ========================== */
-            if (!/Mobi|Android/i.test(navigator.userAgent)) {
-                sl.addEventListener("click", e => {
-                    const rect = sl.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-
-                    const leftW = Number(wrap.dataset.leftWidth) || 140;
-                    const rightW = Number(wrap.dataset.rightWidth) || 140;
-
-                    if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
-                        wrap.classList.remove("open-left", "open-right");
-                        sl.style.transform = "translateX(0)";
-                        return;
-                    }
-
-                    if (x < rect.width / 2) {
-                        wrap.classList.add("open-left");
-                        wrap.classList.remove("open-right");
-                        sl.style.transform = `translateX(${leftW}px)`;
-                    } else {
-                        wrap.classList.add("open-right");
-                        wrap.classList.remove("open-left");
-                        sl.style.transform = `translateX(${-rightW}px)`;
-                    }
-                });
-            }
-
-            /* ==========================
-                スマホ版 スワイプ
-            ========================== */
-            let startX = 0, dx = 0;
-
-            wrap.addEventListener("touchstart", e => {
-                // ボタンをタップしている場合はスワイプ処理を起動しない
-                if (e.target.closest("button")) {
-                    return;
-                }
-                startX = e.touches[0].clientX;
-                dx = 0;
-                sl.style.transition = "none";
-            }, { passive: true });
-
-            wrap.addEventListener("touchmove", e => {
-                if (e.touches.length === 0) return;
-                dx = e.touches[0].clientX - startX;
-                if (Math.abs(dx) > 8) e.preventDefault();
-                sl.style.transform = `translateX(${dx}px)`;
-            }, { passive: false });
-
-            wrap.addEventListener("touchend", () => {
-                sl.style.transition = "transform .15s";
-
-                const leftW = Number(wrap.dataset.leftWidth) || 140;
-                const rightW = Number(wrap.dataset.rightWidth) || 140;
-
-                const leftStrong = leftW * STRONG_RATIO;
-                const rightStrong = rightW * STRONG_RATIO;
-
-                // 強スワイプ → 完了 / 未完 / 削除
-                if (dx > leftStrong) {
-                    // 右へ強スワイプ
-                    if (!isCompleted) {
-                        // 未完タスク → 完了
-                        action("complete", t.id);
-                    } else {
-                        // 達成タスク → 未完に戻す
-                        action("uncomplete", t.id);
-                    }
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-                if (dx < -rightStrong) {
-                    // 左へ強スワイプ → 削除
-                    if (t.pinned) {
-                        alert("ピンを外してください！");
-                    } else {
-                        action("delete", t.id);
-                    }
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-
-                // 軽いスワイプ → 「開いた」状態にスナップ
-                if (dx > SNAP_THRESHOLD) {
-                    wrap.classList.add("open-left");
-                    wrap.classList.remove("open-right");
-                    sl.style.transform = `translateX(${leftW}px)`;
-                } else if (dx < -SNAP_THRESHOLD) {
-                    wrap.classList.add("open-right");
-                    wrap.classList.remove("open-left");
-                    sl.style.transform = `translateX(${-rightW}px)`;
-                } else {
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                }
-            });
-
-            taskCard(t, isCompleted)
-            return wrap;
-        }
-
-        /* ==========================
-           MODAL OPEN
-        ========================== */
-        function openDetail(t) {
-            currentDetailTask = t;
-
-            const name = t.task_name || t.title || "(無題)";
-            detailTaskTitle.textContent = name;
-
-            inputPriority.value = t.priority ?? 0;
-            valPriority.textContent = inputPriority.value;
-
-            inputVision.value = t.vision_score ?? 0;
-            valVision.textContent = inputVision.value;
-
-            inputExcite.value = t.excite_score ?? 0;
-            valExcite.textContent = inputExcite.value;
-
-            inputGrowth.value = t.growth_score ?? 0;
-            valGrowth.textContent = inputGrowth.value;
-
-            detailModal.classList.add("visible");
-        }
-
-        /* ==========================
-           BUTTON HELPER
-        ========================== */
-        function mkBtn(label, onClick, cls) {
-            const b = document.createElement("button");
-            b.textContent = label;
-            if (cls) b.className = cls;
-
-            const handler = (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onClick();
-            };
-
-            // タッチデバイスでは touchend 優先
-            if ("ontouchend" in window) {
-                b.addEventListener("touchend", handler, { passive: false });
-            } else {
-                b.addEventListener("click", handler);
-            }
-
-            return b;
-        }
-
-        /* ==========================
-           API ACTION
-        ========================== */
-        async function action(kind, id, extra = {}) {
-            const url = `${API_BASE}/action`;
-            try {
-                const res = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        action: kind,
-                        task_id: id,
-                        ...extra
-                    })
-                });
-
-                const text = await res.text();
-                console.log("[ACTION]", kind, "status:", res.status, "resp:", text);
-
-                if (!res.ok) {
-                    alert("操作に失敗しました（" + res.status + "）");
-                    return;
-                }
-            } catch (e) {
-                console.error("[ACTION] fetch error:", e);
-                alert("通信エラーで操作に失敗しました");
-            } finally {
-                // 成功/失敗に関わらず一覧を取り直す
-                loadList();
-            }
-        }
-
-        init();
-
-        /* =========================================
-         並び替え（ドラッグ & ドロップ）
-        ========================================= */
-        let draggingCard = null;
-        let placeholder = null;
-        let dragStartY = 0;
-        let offsetY = 0;
-
-        document.addEventListener("pointerdown", (e) => {
-            const handle = e.target.closest(".handle");
-            if (!handle) return;
-
-            const card = handle.closest(".card");
-            if (!card) return;
-
-            // iOSテキスト選択の防止
-            document.body.style.userSelect = "none";
-            document.body.style.webkitUserSelect = "none";
-
-            // 長押し判定
-            const timer = setTimeout(() => {
-                startDrag(card, e.clientY);
-            }, 150);
-
-            const cancel = () => {
-                clearTimeout(timer);
-                document.removeEventListener("pointermove", move);
-                document.removeEventListener("pointerup", cancel);
-            };
-
-            const move = () => { }; // 何もしない（長押し以外は無視）
-
-            document.addEventListener("pointermove", move);
-            document.addEventListener("pointerup", cancel);
-        });
-
-        function startDrag(card, y) {
-            draggingCard = card;
-            dragStartY = y;
-
-            const rect = card.getBoundingClientRect();
-            offsetY = y - rect.top;
-
-            // プレースホルダ
-            placeholder = document.createElement("div");
-            placeholder.className = "card placeholder";
-            placeholder.style.height = rect.height + "px";
-            card.parentNode.insertBefore(placeholder, card.nextSibling);
-
-            // ドラッグ中スタイル
-            card.style.width = rect.width + "px";
-            card.style.position = "fixed";
-            card.style.left = rect.left + "px";
-            card.style.top = (y - offsetY) + "px";
-            card.style.zIndex = 999;
-            card.classList.add("dragging");
-
-            document.addEventListener("pointermove", dragMove);
-            document.addEventListener("pointerup", endDrag);
-        }
-
-        function dragMove(e) {
-            if (!draggingCard) return;
-            e.preventDefault();
-
-            draggingCard.style.top = (e.clientY - offsetY) + "px";
-
-            // どの list 上か調べる
-            const lists = [pinnedEl, activeEl, completedEl];
-            for (const list of lists) {
-                const children = [...list.querySelectorAll(".card:not(.dragging)")];
-
-                for (const c of children) {
-                    const rect = c.getBoundingClientRect();
-                    if (e.clientY < rect.top + rect.height / 2) {
-                        list.insertBefore(placeholder, c);
-                        return;
-                    }
-                }
-                list.appendChild(placeholder);
-            }
-        }
-
-        function endDrag() {
-            if (!draggingCard) return;
-
-            placeholder.parentNode.insertBefore(draggingCard, placeholder);
-            placeholder.remove();
-            placeholder = null;
-
-            draggingCard.style.position = "";
-            draggingCard.style.left = "";
-            draggingCard.style.top = "";
-            draggingCard.style.width = "";
-            draggingCard.style.zIndex = "";
-            draggingCard.classList.remove("dragging");
-
-            draggingCard = null;
-
-            // iOSテキスト選択解除
-            document.body.style.userSelect = "";
-            document.body.style.webkitUserSelect = "";
-
-            sendSortOrderUpdate();
-        }
-
-        /* =========================================
-           並び順を Supabase に送る
-           ========================================= */
-        function sendSortOrderUpdate() {
-            const all = [
-                ...pinnedEl.children,
-                ...activeEl.children,
-                ...completedEl.children
-            ];
-
-            const orders = [];
-
-            all.forEach((card, idx) => {
-                const t = card.__taskData; // カード生成時にセットする必要あり
-                if (!t) return;
-
-                orders.push({
-                    id: t.id,
-                    sort_order: idx + 1
-                });
-            });
-
-            console.log("[SORT UPDATE]", orders);
-
-            action("sort_update", null, { orders });
-        }
-
-    </script>
+      }
+    };
+
+    const onUp = ev => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      card.classList.remove("dragging");
+      document.body.style.userSelect = "";
+      saveSortOrder();
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  });
+
+  // この1行でタスク情報とDOMを紐付け（並び順保存に使用）
+  wrap.__taskData = t;
+
+  return wrap;
+}
+
+/* ==========================
+   MODAL OPEN
+========================== */
+function openDetail(t) {
+  currentDetailTask = t;
+  const name = t.task_name || t.title || "(無題)";
+  detailTaskTitle.textContent = name;
+
+  inputPriority.value = t.priority ?? 0;
+  valPriority.textContent = inputPriority.value;
+
+  inputVision.value = t.vision_score ?? 0;
+  valVision.textContent   = inputVision.value;
+
+  inputExcite.value = t.excite_score ?? 0;
+  valExcite.textContent   = inputExcite.value;
+
+  inputGrowth.value = t.growth_score ?? 0;
+  valGrowth.textContent   = inputGrowth.value;
+
+  detailModal.classList.add("visible");
+}
+
+/* ==========================
+   BUTTON HELPER
+========================== */
+function mkBtn(label, onClick, cls) {
+  const b = document.createElement("button");
+  b.textContent = label;
+  if (cls) b.className = cls;
+  b.onclick = e => {
+    e.stopPropagation();
+    onClick();
+  };
+  return b;
+}
+
+/* ==========================
+   API ACTION
+========================== */
+async function action(kind, id, extra = {}) {
+  const url = `${API_BASE}/action`;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        action: kind,
+        task_id: id,
+        ...extra
+      })
+    });
+    const text = await res.text();
+    console.log("[ACTION]", kind, "status:", res.status, "resp:", text);
+    if (!res.ok) {
+      alert("操作に失敗しました（" + res.status + "）");
+      return;
+    }
+  } catch (e) {
+    console.error("[ACTION] fetch error:", e);
+    alert("通信エラーで操作に失敗しました");
+  } finally {
+    // 成功/失敗に関わらず一覧を取り直す
+    loadList();
+  }
+}
+
+init();
+</script>
 </body>
 </html>
-
-taskCard
