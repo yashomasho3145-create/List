@@ -89,6 +89,7 @@
     margin-left:auto; cursor:grab; opacity:0.25;
     -webkit-user-select:none; user-select:none;
     padding:0 8px; font-size:20px;
+    touch-action: none;
   }
 
   .divider-label { text-align:center; color:#888; font-size:12px; padding:6px 0; }
@@ -416,6 +417,15 @@ function taskCard(t, isCompleted = false) {
   handle.className = "handle";
   handle.textContent = "☰";
 
+  handle.addEventListener("touchstart", e => {
+    e.stopPropagation();
+  }, { passive:true });
+
+  handle.addEventListener("touchmove", e => {
+    e.preventDefault();   // ← スクロールを止める
+    e.stopPropagation();  // ← wrap までイベントが行かないようにする
+  }, { passive:false });
+
   sl.append(titleEl, handle);
   wrap.append(rail, sl);
 
@@ -460,15 +470,32 @@ function taskCard(t, isCompleted = false) {
       スマホ版 スワイプ
   ========================== */
   let startX = 0, dx = 0;
+  let isHandleDrag = false;  // ← 追加：☰ から始まったかどうか
 
   wrap.addEventListener("touchstart", e => {
-    if (e.target.closest("button")) return; // ボタンタップ時はスワイプ無効
+    // ボタンをタップしている場合はスワイプ処理を起動しない
+    if (e.target.closest("button")) {
+      return;
+    }
+
+    // ☰（.handle）から始まったタッチなら、スワイプ処理は一切しない
+    if (e.target.closest(".handle")) {
+      isHandleDrag = true;
+      return;
+    } else {
+      isHandleDrag = false;
+    }
+
     startX = e.touches[0].clientX;
     dx = 0;
     sl.style.transition = "none";
   }, { passive:true });
 
   wrap.addEventListener("touchmove", e => {
+    if (isHandleDrag) {
+      // ☰ をドラッグしてるときは、ここ（横スワイプ）には入らない
+      return;
+    }
     if (e.touches.length === 0) return;
     dx = e.touches[0].clientX - startX;
     if (Math.abs(dx) > 8) e.preventDefault();
@@ -476,6 +503,14 @@ function taskCard(t, isCompleted = false) {
   }, { passive:false });
 
   wrap.addEventListener("touchend", () => {
+    // ☰ ドラッグだった場合は、スワイプの後処理をしない
+    if (isHandleDrag) {
+      isHandleDrag = false;
+      sl.style.transition = "";
+      sl.style.transform = "translateX(0)";
+      return;
+    }
+
     sl.style.transition = "transform .15s";
 
     const leftW  = Number(wrap.dataset.leftWidth)  || 140;
@@ -484,10 +519,13 @@ function taskCard(t, isCompleted = false) {
     const leftStrong  = leftW  * STRONG_RATIO;
     const rightStrong = rightW * STRONG_RATIO;
 
-    // 強スワイプ → 完了 / 未完 / 削除
+    // ここ以下は今のままの強スワイプ判定でOK
     if (dx > leftStrong) {
-      if (!isCompleted) action("complete", t.id);
-      else              action("uncomplete", t.id);
+      if (!isCompleted) {
+        action("complete", t.id);
+      } else {
+        action("uncomplete", t.id);
+      }
       wrap.classList.remove("open-left", "open-right");
       sl.style.transform = "translateX(0)";
       return;
@@ -503,7 +541,6 @@ function taskCard(t, isCompleted = false) {
       return;
     }
 
-    // 軽いスワイプ → レール表示
     if (dx > SNAP_THRESHOLD) {
       wrap.classList.add("open-left");
       wrap.classList.remove("open-right");
@@ -673,3 +710,4 @@ init();
 </script>
 </body>
 </html>
+
