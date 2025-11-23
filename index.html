@@ -132,7 +132,7 @@
     <button id="btnAdd" class="tab" style="background:#111;color:white;border-color:#111">追加</button>
   </div>
 
-  <div class="divider-label">未完了タスク</div>
+  <div class="divider-label">ToDoタスク</div>
   <div id="pinned" class="list"></div>
   <div id="active" class="list"></div>
 
@@ -394,7 +394,7 @@ function taskCard(t, isCompleted = false) {
   right.className = "actions-right";
   right.append(
     mkBtn("詳細", () => openDetail(t), "btn-detail"),
-    mkBtn(t.pinned ? "ピン解除" : "ピン", () => action("toggle_pin", t.id), "btn-pin"),
+    mkBtn(t.pinned ? "📍解除" : "ピン", () => action("toggle_pin", t.id), "btn-pin"),
     mkBtn("削除", () => {
       if (t.pinned) return alert("ピンを外してください！");
       action("delete", t.id);
@@ -719,3 +719,4 @@ init();
 </script>
 </body>
 </html>
+
