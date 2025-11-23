@@ -437,6 +437,15 @@ function taskCard(t, isCompleted = false) {
     wrap.dataset.rightWidth = rRect.width || 140;
   });
 
+  let holdTimer = null;
+  handle.addEventListener("pointerdown", e => {
+    holdTimer = setTimeout(() => startDrag(e), 500);
+  });
+
+  handle.addEventListener("pointerup", () => clearTimeout(holdTimer));
+  handle.addEventListener("pointerleave", () => clearTimeout(holdTimer));
+
+
   /* ==========================
       PC版 クリックでスワイプ
   ========================== */
@@ -710,3 +719,4 @@ init();
 </script>
 </body>
 </html>
+
