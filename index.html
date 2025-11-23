@@ -34,11 +34,11 @@
             cursor: pointer;
         }
 
-        .tab.active {
-            background: #111;
-            color: white;
-            border-color: #111;
-        }
+            .tab.active {
+                background: #111;
+                color: white;
+                border-color: #111;
+            }
 
         .add {
             display: flex;
@@ -46,58 +46,51 @@
             padding: 12px 16px;
         }
 
-        .add input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 16px;
-        }
-
-        main {
-            padding: 8px 0 24px;
-        }
+            .add input {
+                flex: 1;
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid #ddd;
+                font-size: 16px; /* iOSの勝手ズーム防止 */
+            }
 
         .list {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            padding: 0 12px;
         }
 
         .card {
             position: relative;
+            background: white;
+            border-bottom: 1px solid #eee;
+            height: 60px;
             overflow: hidden;
-            border-radius: 14px;
-            background: #fff;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+            touch-action: pan-y;
+            box-sizing: border-box;
         }
 
-        .card.completed .title {
-            text-decoration: line-through;
-            color: #aaa;
-        }
+            .card.completed .title {
+                color: #aaa;
+                text-decoration: line-through;
+            }
 
-        .card.completed {
-            opacity: 0.7;
-        }
+            .card.dragging {
+                opacity: 0.9;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+                z-index: 5;
+            }
 
-        .card .sl {
+        .sl {
             position: relative;
-            z-index: 2;
+            height: 100%;
+            width: 100%;
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 12px;
+            padding: 0 12px;
+            transition: transform .15s ease;
             background: white;
-            transform: translateX(0);
-            transition: transform 0.15s ease-out;
-            touch-action: pan-y;
-        }
-
-        .card.open-left .sl,
-        .card.open-right .sl {
-            transition: transform 0.15s ease-out;
+            z-index: 2;
+            box-sizing: border-box;
         }
 
         .actions-rail {
@@ -105,25 +98,36 @@
             inset: 0;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
             z-index: 1;
         }
 
-        .actions-left,
-        .actions-right {
-            display: flex;
+        /* スワイプで開いているときだけボタンを押せるようにする */
+        .card.open-left .actions-rail,
+        .card.open-right .actions-rail {
+            pointer-events: auto;
+        }
+
+        .actions-left, .actions-right {
             height: 100%;
+            display: flex;
+            align-items: center;
         }
 
         .actions-left {
-            flex-direction: row-reverse;
+            background: #e8f7ee;
+            justify-content: flex-start;
+            padding-left: 0;
         }
 
         .actions-right {
-            flex-direction: row;
+            background: #fdeeee;
+            justify-content: flex-end;
+            padding-right: 0;
         }
 
-        .actions-left button,
-        .actions-right button {
+        .actions-rail button {
             height: 100%;
             min-width: 64px;
             border: none;
@@ -137,7 +141,7 @@
             background: #7e6dff;
         }
 
-        .btn-remind {
+        .btn-plus2h {
             background: #8012e2;
         }
 
@@ -155,13 +159,6 @@
 
         .title {
             font-size: 15px;
-            flex: 1;
-        }
-
-        .remind-info {
-            font-size: 11px;
-            color: #666;
-            margin-right: 8px;
         }
 
         .handle {
@@ -182,7 +179,7 @@
             padding: 6px 0;
         }
 
-        /* モーダル共通 */
+        /* 詳細モーダル */
         .modal-root {
             position: fixed;
             inset: 0;
@@ -192,37 +189,63 @@
             justify-content: center;
         }
 
-        .modal-root.visible {
-            display: flex;
-        }
+            .modal-root.visible {
+                display: flex;
+            }
 
         .modal-backdrop {
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, .25);
+            background: rgba(0,0,0,.25);
         }
 
         .modal-panel {
-            position: relative;
             width: 100%;
             max-width: 480px;
             background: #fff;
-            border-radius: 16px 16px 0 0;
-            padding: 16px 16px 20px;
-            box-shadow: 0 -4px 20px rgba(15, 23, 42, .2);
+            border-radius: 20px 20px 0 0;
+            padding: 16px;
+            animation: slideUp .18s ease-out;
         }
 
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .slider-group {
+            margin: 14px 0;
+        }
+
+        .slider-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+            .slider-label-row span.value {
+                font-size: 13px;
+                font-weight: 600;
+            }
+
         .modal-footer {
-            margin-top: 16px;
             display: flex;
             justify-content: flex-end;
             gap: 8px;
+            margin-top: 14px;
         }
 
         .btn-secondary {
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 8px 14px;
             border: 1px solid #ddd;
+            border-radius: 20px;
             background: #fafafa;
             cursor: pointer;
         }
@@ -234,27 +257,6 @@
             color: white;
             border: none;
             cursor: pointer;
-        }
-
-        .slider-group {
-            margin-top: 12px;
-        }
-
-        .slider-label-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            color: #444;
-        }
-
-        .slider-label-row .value {
-            font-weight: 600;
-            min-width: 24px;
-            text-align: right;
-        }
-
-        .slider-group input[type=range] {
-            width: 100%;
         }
     </style>
 
@@ -280,7 +282,7 @@
         <div id="pinned" class="list"></div>
         <div id="active" class="list"></div>
 
-        <div class="divider-label" style="margin-top:16px;">----...-------------------------------------------------<br>達成タスク</div>
+        <div class="divider-label" style="margin-top:16px;">--------------------------------------------------------------------<br>達成タスク</div>
         <div id="completed" class="list"></div>
     </main>
 
@@ -322,29 +324,11 @@
         </div>
     </div>
 
-    <!-- リマインドモーダル -->
-    <div id="remindModal" class="modal-root">
-        <div id="remindBackdrop" class="modal-backdrop"></div>
-        <div class="modal-panel">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                <div style="font-weight:600">通知を設定</div>
-            </div>
-            <div id="remindTaskTitle" style="font-size:13px;color:#555;margin-bottom:12px;"></div>
-            <label for="remindDatetime" style="font-size:13px;color:#444;display:block;margin-bottom:4px;">通知する日時</label>
-            <input id="remindDatetime" type="datetime-local" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px;box-sizing:border-box;" />
-            <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;">
-                <button id="remindCancelBtn" class="btn-secondary">キャンセル</button>
-                <button id="remindSaveBtn" class="btn-primary-solid">設定</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const LIFF_ID = "2008372898-2q9qWmxv";
         const API_BASE = "https://yamasho.xvps.jp/webhook";
         let userId = null;
         let currentDetailTask = null;
-        let currentRemindTask = null;
 
         // 強スワイプ判定の比率
         const STRONG_RATIO = 0.85;  // ボタン幅の約85%以上
@@ -370,21 +354,13 @@
         const inputVision = document.getElementById("inputVision");
         const inputExcite = document.getElementById("inputExcite");
         const inputGrowth = document.getElementById("inputGrowth");
-
-        const remindModal = document.getElementById("remindModal");
-        const remindBackdrop = document.getElementById("remindBackdrop");
-        const remindTaskTitle = document.getElementById("remindTaskTitle");
-        const remindDatetime = document.getElementById("remindDatetime");
-        const remindCancelBtn = document.getElementById("remindCancelBtn");
-        const remindSaveBtn = document.getElementById("remindSaveBtn");
-
         const valPriority = document.getElementById("valPriority");
         const valVision = document.getElementById("valVision");
         const valExcite = document.getElementById("valExcite");
         const valGrowth = document.getElementById("valGrowth");
 
         /* ==========================
-          初期化
+           INIT
         ========================== */
         async function init() {
             try {
@@ -398,7 +374,6 @@
 
                 bindUI();
                 bindModalUI();
-                bindRemindModalUI();
                 await loadList();
             } catch (e) {
                 console.error(e);
@@ -407,7 +382,7 @@
         }
 
         /* ==========================
-          イベントバインド
+           bindUI
         ========================== */
         function bindUI() {
             refreshBtn.onclick = loadList;
@@ -451,73 +426,6 @@
             };
         }
 
-        function bindRemindModalUI() {
-            const close = () => {
-                remindModal.classList.remove("visible");
-                currentRemindTask = null;
-            };
-
-            remindBackdrop.onclick = close;
-            remindCancelBtn.onclick = close;
-
-            remindSaveBtn.onclick = async () => {
-                if (!currentRemindTask) return;
-                const value = remindDatetime.value;
-                if (!value) {
-                    alert("通知する日時を選択してください");
-                    return;
-                }
-                const iso = new Date(value).toISOString();
-                await action("remind_custom", currentRemindTask.id, { remind_at: iso });
-                close();
-                await loadList();
-            };
-        }
-
-        function openDetail(task) {
-            currentDetailTask = task;
-
-            const name = task.task_name || task.title || "(無題)";
-            detailTaskTitle.textContent = name;
-
-            inputPriority.value = Number(task.priority ?? 0);
-            inputVision.value = Number(task.vision_score ?? 0);
-            inputExcite.value = Number(task.excite_score ?? 0);
-            inputGrowth.value = Number(task.growth_score ?? 0);
-
-            valPriority.textContent = inputPriority.value;
-            valVision.textContent = inputVision.value;
-            valExcite.textContent = inputExcite.value;
-            valGrowth.textContent = inputGrowth.value;
-
-            detailModal.classList.add("visible");
-        }
-
-        function openRemindModal(task) {
-            currentRemindTask = task;
-            const name = task.task_name || task.title || "(無題)";
-            remindTaskTitle.textContent = name;
-
-            let baseDate;
-            if (task.remind_at) {
-                baseDate = new Date(task.remind_at);
-            } else {
-                baseDate = new Date();
-                baseDate.setHours(baseDate.getHours() + 2);
-            }
-
-            const pad = (n) => String(n).padStart(2, "0");
-            const yyyy = baseDate.getFullYear();
-            const mm = pad(baseDate.getMonth() + 1);
-            const dd = pad(baseDate.getDate());
-            const hh = pad(baseDate.getHours());
-            const mi = pad(baseDate.getMinutes());
-
-            remindDatetime.value = `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-
-            remindModal.classList.add("visible");
-        }
-
         /* ==========================
           LIST API
         ========================== */
@@ -548,65 +456,38 @@
                 try {
                     data = JSON.parse(text);
                 } catch (e) {
-                    console.error("[LIST] JSON パースエラー:", e);
-                    alert("タスク一覧の取得に失敗しました（JSONエラー）");
+                    console.error("[LIST] JSONパースエラー:", e);
+                    alert("サーバーからJSONが返ってきていません");
                     return;
                 }
 
+                console.log("[LIST] parsed json:", data);
                 renderList(data);
-            } catch (err) {
-                console.error("[LIST] fetch error:", err);
-                alert("タスク一覧の取得に失敗しました（ネットワークエラー）");
+
+            } catch (e) {
+                console.error("[LIST] fetch error:", e);
+                alert("タスク一覧の取得に失敗しました（通信エラー）");
             }
         }
 
-        function renderList(data) {
+        function renderList(payload) {
             pinnedEl.innerHTML = "";
             activeEl.innerHTML = "";
             completedEl.innerHTML = "";
 
-            (data.pinned || []).forEach(t => pinnedEl.appendChild(taskCard(t, false)));
-            (data.active || []).forEach(t => activeEl.appendChild(taskCard(t, false)));
-            (data.completed || []).forEach(t => completedEl.appendChild(taskCard(t, true)));
+            const pinned = Array.isArray(payload.pinned) ? payload.pinned : [];
+            const active = Array.isArray(payload.active) ? payload.active : [];
+            const completed = Array.isArray(payload.completed) ? payload.completed : [];
+
+            pinned.forEach(t => pinnedEl.appendChild(taskCard(t, false)));
+            active.forEach(t => activeEl.appendChild(taskCard(t, false)));
+            completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
         }
 
         /* ==========================
-          アクション共通
+          並び順をサーバーへ保存
         ========================== */
-        async function action(kind, id, extra = {}) {
-            const url = `${API_BASE}/action`;
-            try {
-                const res = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        action: kind,
-                        task_id: id,
-                        ...extra
-                    })
-                });
-
-                const text = await res.text();
-                console.log("[ACTION]", kind, "status:", res.status, "resp:", text);
-
-                if (!res.ok) {
-                    console.error("[ACTION] http error:", res.status, text);
-                    alert("操作に失敗しました");
-                    return;
-                }
-
-                await loadList();
-            } catch (err) {
-                console.error("[ACTION] fetch error:", err);
-                alert("操作に失敗しました（ネットワークエラー）");
-            }
-        }
-
-        /* ==========================
-          並び順更新
-        ========================== */
-        async function updateSort() {
+        async function saveSortOrder() {
             if (!userId) return;
 
             const orders = [];
@@ -649,7 +530,7 @@
             if (!isCompleted) {
                 left.append(
                     mkBtn("完了", () => action("complete", t.id), "btn-complete"),
-                    mkBtn("通知", () => openRemindModal(t), "btn-remind")
+                    mkBtn("+2h", () => action("remind_plus2h", t.id), "btn-plus2h")
                 );
             } else {
                 left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
@@ -678,18 +559,6 @@
             const name = t.task_name || t.title || "(無題)";
             titleEl.textContent = t.pinned ? "📍 " + name : name;
 
-            const remindInfo = document.createElement("div");
-            remindInfo.className = "remind-info";
-            if (t.remind_at) {
-                const d = new Date(t.remind_at);
-                const y = d.getFullYear();
-                const m = d.getMonth() + 1;
-                const day = d.getDate();
-                const hh = String(d.getHours()).padStart(2, "0");
-                const mm = String(d.getMinutes()).padStart(2, "0");
-                remindInfo.textContent = `🔔 ${y}/${m}/${day} ${hh}:${mm}`;
-            }
-
             const handle = document.createElement("div");
             handle.className = "handle";
             handle.textContent = "☰";
@@ -703,7 +572,7 @@
                 e.stopPropagation();  // ← wrap までイベントが行かないようにする
             }, { passive: false });
 
-            sl.append(titleEl, remindInfo, handle);
+            sl.append(titleEl, handle);
             wrap.append(rail, sl);
 
             // ===== ボタン幅を測って data に保存（端を揃える用） =====
@@ -716,19 +585,20 @@
 
             let holdTimer = null;
             handle.addEventListener("pointerdown", e => {
-                holdTimer = setTimeout(() => startDrag(e, wrap), 500);
+                holdTimer = setTimeout(() => startDrag(e), 500);
             });
 
             handle.addEventListener("pointerup", () => clearTimeout(holdTimer));
             handle.addEventListener("pointerleave", () => clearTimeout(holdTimer));
 
+
             /* ==========================
                 PC版 クリックでスワイプ
             ========================== */
             if (!/Mobi|Android/i.test(navigator.userAgent)) {
-                sl.addEventListener("click", () => {
+                sl.addEventListener("click", e => {
                     const rect = sl.getBoundingClientRect();
-                    const x = event.clientX - rect.left;
+                    const x = e.clientX - rect.left;
 
                     const leftW = Number(wrap.dataset.leftWidth) || 140;
                     const rightW = Number(wrap.dataset.rightWidth) || 140;
@@ -746,147 +616,259 @@
                     } else {
                         wrap.classList.add("open-right");
                         wrap.classList.remove("open-left");
-                        sl.style.transform = `translateX(-${rightW}px)`;
+                        sl.style.transform = `translateX(${-rightW}px)`;
                     }
                 });
             }
 
-            // ==========================
-            // スワイプ処理（タッチ）
-            // ==========================
-            let startX = 0;
-            let currentX = 0;
-            let isSwiping = false;
+            /* ==========================
+                スマホ版 スワイプ
+            ========================== */
+            let startX = 0, dx = 0;
+            let isHandleDrag = false;  // ← 追加：☰ から始まったかどうか
 
-            const onTouchStart = (e) => {
-                const touch = e.touches[0];
-                startX = touch.clientX;
-                currentX = startX;
-                isSwiping = true;
-                sl.style.transition = "none";
-            };
-
-            const onTouchMove = (e) => {
-                if (!isSwiping) return;
-                const touch = e.touches[0];
-                currentX = touch.clientX;
-                const deltaX = currentX - startX;
-                const leftW = Number(wrap.dataset.leftWidth) || 140;
-                const rightW = Number(wrap.dataset.rightWidth) || 140;
-
-                if (deltaX > 0) {
-                    const d = Math.min(deltaX, leftW);
-                    sl.style.transform = `translateX(${d}px)`;
-                } else {
-                    const d = Math.max(deltaX, -rightW);
-                    sl.style.transform = `translateX(${d}px)`;
+            wrap.addEventListener("touchstart", e => {
+                // ボタンをタップしている場合はスワイプ処理を起動しない
+                if (e.target.closest("button")) {
+                    return;
                 }
-            };
 
-            const onTouchEnd = () => {
-                if (!isSwiping) return;
-                isSwiping = false;
+                // ☰（.handle）から始まったタッチなら、スワイプ処理は一切しない
+                if (e.target.closest(".handle")) {
+                    isHandleDrag = true;
+                    return;
+                } else {
+                    isHandleDrag = false;
+                }
 
-                sl.style.transition = "transform 0.15s ease-out";
+                startX = e.touches[0].clientX;
+                dx = 0;
+                sl.style.transition = "none";
+            }, { passive: true });
 
-                const deltaX = currentX - startX;
+            wrap.addEventListener("touchmove", e => {
+                if (isHandleDrag) {
+                    // ☰ をドラッグしてるときは、ここ（横スワイプ）には入らない
+                    return;
+                }
+                if (e.touches.length === 0) return;
+                dx = e.touches[0].clientX - startX;
+                if (Math.abs(dx) > 8) e.preventDefault();
+                sl.style.transform = `translateX(${dx}px)`;
+            }, { passive: false });
+
+            wrap.addEventListener("touchend", () => {
+                // ☰ ドラッグだった場合は、スワイプの後処理をしない
+                if (isHandleDrag) {
+                    isHandleDrag = false;
+                    sl.style.transition = "";
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+
+                sl.style.transition = "transform .15s";
+
                 const leftW = Number(wrap.dataset.leftWidth) || 140;
                 const rightW = Number(wrap.dataset.rightWidth) || 140;
 
-                if (deltaX > SNAP_THRESHOLD) {
+                const leftStrong = leftW * STRONG_RATIO;
+                const rightStrong = rightW * STRONG_RATIO;
+
+                // ここ以下は今のままの強スワイプ判定でOK
+                if (dx > leftStrong) {
+                    if (!isCompleted) {
+                        action("complete", t.id);
+                    } else {
+                        action("uncomplete", t.id);
+                    }
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+                if (dx < -rightStrong) {
+                    if (t.pinned) {
+                        alert("ピンを外してください！");
+                    } else {
+                        action("delete", t.id);
+                    }
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+
+                if (dx > SNAP_THRESHOLD) {
                     wrap.classList.add("open-left");
                     wrap.classList.remove("open-right");
                     sl.style.transform = `translateX(${leftW}px)`;
-                } else if (deltaX < -SNAP_THRESHOLD) {
+                } else if (dx < -SNAP_THRESHOLD) {
                     wrap.classList.add("open-right");
                     wrap.classList.remove("open-left");
-                    sl.style.transform = `translateX(-${rightW}px)`;
+                    sl.style.transform = `translateX(${-rightW}px)`;
                 } else {
                     wrap.classList.remove("open-left", "open-right");
                     sl.style.transform = "translateX(0)";
                 }
+            });
+
+            /* ==========================
+                ☰ で並び替え（ドラッグ）
+            ========================== */
+            const startDrag = (startEvent) => {
+                startEvent.preventDefault();
+                startEvent.stopPropagation();
+
+                const card = wrap;
+                const list = card.parentElement;
+                if (!list) return;
+
+                card.classList.add("dragging");
+                document.body.style.userSelect = "none";
+
+                const pointerId = startEvent.pointerId;
+
+                const getY = (ev) => ev.clientY;
+
+                const onMove = (ev) => {
+                    const y = getY(ev);
+                    const siblings = Array.from(list.children);
+                    const currentIndex = siblings.indexOf(card);
+                    if (currentIndex === -1) return;
+
+                    const prev = siblings[currentIndex - 1];
+                    const next = siblings[currentIndex + 1];
+
+                    if (prev) {
+                        const rect = prev.getBoundingClientRect();
+                        if (y < rect.top + rect.height / 2) {
+                            list.insertBefore(card, prev);
+                            return;
+                        }
+                    }
+                    if (next) {
+                        const rect = next.getBoundingClientRect();
+                        if (y > rect.top + rect.height / 2) {
+                            list.insertBefore(next, card);
+                            return;
+                        }
+                    }
+                };
+
+                const onUp = (ev) => {
+                    document.removeEventListener("pointermove", onMove);
+                    document.removeEventListener("pointerup", onUp);
+                    card.classList.remove("dragging");
+                    document.body.style.userSelect = "";
+                    saveSortOrder();
+                };
+
+                document.addEventListener("pointermove", onMove);
+                document.addEventListener("pointerup", onUp);
             };
 
-            sl.addEventListener("touchstart", onTouchStart, { passive: true });
-            sl.addEventListener("touchmove", onTouchMove, { passive: true });
-            sl.addEventListener("touchend", onTouchEnd);
-            sl.addEventListener("touchcancel", onTouchEnd);
+            if (window.PointerEvent) {
+                handle.addEventListener("pointerdown", startDrag);
+            } else {
+                // pointer未対応ブラウザ用のフォールバック（必要なら）
+                handle.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // ここで同様のロジックを実装してもOK（簡略のため省略）
+                }, { passive: false });
+            }
 
-            // カードオブジェクトを保持（並び替え用）
+            // 並び替え用にタスク情報を紐付け
             wrap.__taskData = t;
 
             return wrap;
         }
 
-        function mkBtn(label, onClick, className) {
-            const btn = document.createElement("button");
-            btn.textContent = label;
-            btn.className = className;
-            btn.onclick = (e) => {
-                e.stopPropagation();
-                onClick();
-            };
-            return btn;
+        /* ==========================
+           MODAL OPEN
+        ========================== */
+        function openDetail(t) {
+            currentDetailTask = t;
+
+            const name = t.task_name || t.title || "(無題)";
+            detailTaskTitle.textContent = name;
+
+            inputPriority.value = t.priority ?? 0;
+            valPriority.textContent = inputPriority.value;
+
+            inputVision.value = t.vision_score ?? 0;
+            valVision.textContent = inputVision.value;
+
+            inputExcite.value = t.excite_score ?? 0;
+            valExcite.textContent = inputExcite.value;
+
+            inputGrowth.value = t.growth_score ?? 0;
+            valGrowth.textContent = inputGrowth.value;
+
+            detailModal.classList.add("visible");
         }
 
         /* ==========================
-            ☰ で並び替え（ドラッグ）
+           BUTTON HELPER
         ========================== */
-        function startDrag(startEvent, card) {
-            startEvent.preventDefault();
-            startEvent.stopPropagation();
+        function mkBtn(label, onClick, cls) {
+            const b = document.createElement("button");
+            b.textContent = label;
+            if (cls) b.className = cls;
 
-            const list = card.parentElement;
-            if (!list) return;
-
-            card.classList.add("dragging");
-            document.body.style.userSelect = "none";
-
-            const pointerId = startEvent.pointerId;
-            const getY = (ev) => ev.clientY;
-
-            const onMove = (ev) => {
-                if (ev.pointerId !== pointerId) return;
-                const y = getY(ev);
-                const siblings = Array.from(list.children);
-                const currentIndex = siblings.indexOf(card);
-                if (currentIndex === -1) return;
-
-                const prev = siblings[currentIndex - 1];
-                const next = siblings[currentIndex + 1];
-
-                if (prev) {
-                    const rect = prev.getBoundingClientRect();
-                    if (y < rect.top + rect.height / 2) {
-                        list.insertBefore(card, prev);
-                        updateSort();
-                        return;
-                    }
-                }
-
-                if (next) {
-                    const rect = next.getBoundingClientRect();
-                    if (y > rect.top + rect.height / 2) {
-                        list.insertBefore(next, card);
-                        updateSort();
-                        return;
-                    }
-                }
+            const handler = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onClick();
             };
 
-            const onUp = (ev) => {
-                if (ev.pointerId !== pointerId) return;
-                document.removeEventListener("pointermove", onMove);
-                document.removeEventListener("pointerup", onUp);
-                card.classList.remove("dragging");
-                document.body.style.userSelect = "";
-            };
+            if ("ontouchend" in window) {
+                b.addEventListener("touchend", handler, { passive: false });
+            } else {
+                b.addEventListener("click", handler);
+            }
 
-            document.addEventListener("pointermove", onMove);
-            document.addEventListener("pointerup", onUp);
+            return b;
+        }
+
+        /* ==========================
+           API ACTION
+        ========================== */
+        async function action(kind, id, extra = {}) {
+            const url = `${API_BASE}/action`;
+            try {
+                const res = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        action: kind,
+                        task_id: id,
+                        ...extra
+                    })
+                });
+
+                const text = await res.text();
+                console.log("[ACTION]", kind, "status:", res.status, "resp:", text);
+
+                if (!res.ok) {
+                    alert("操作に失敗しました（" + res.status + "）");
+                    return;
+                }
+            } catch (e) {
+                console.error("[ACTION] fetch error:", e);
+                alert("通信エラーで操作に失敗しました");
+            } finally {
+                loadList();
+            }
         }
 
         init();
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
