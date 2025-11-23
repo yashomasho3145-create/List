@@ -394,7 +394,7 @@ function taskCard(t, isCompleted = false) {
   right.className = "actions-right";
   right.append(
     mkBtn("詳細", () => openDetail(t), "btn-detail"),
-    mkBtn(t.pinned ? "📍解除" : "ピン", () => action("toggle_pin", t.id), "btn-pin"),
+    mkBtn(t.pinned ? "ピン\n解除" : "ピン", () => action("toggle_pin", t.id), "btn-pin"),
     mkBtn("削除", () => {
       if (t.pinned) return alert("ピンを外してください！");
       action("delete", t.id);
@@ -719,4 +719,5 @@ init();
 </script>
 </body>
 </html>
+
 
