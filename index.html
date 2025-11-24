@@ -745,8 +745,9 @@
             /* ==========================
                 スマホ版 スワイプ
             ========================== */
-            let startX = 0, dx = 0;
-            let isHandleDrag = false;  // ← 追加：☰ から始まったかどうか
+            let startX = 0, startY = 0, dx = 0, dy = 0;
+            let isHandleDrag = false;      // ☰ から始まったかどうか
+            let isHorizontalSwipe = false; // このタッチで横スワイプをするかどうか
 
             wrap.addEventListener("touchstart", e => {
                 // ボタンをタップしている場合はスワイプ処理を起動しない
@@ -762,8 +763,14 @@
                     isHandleDrag = false;
                 }
 
-                startX = e.touches[0].clientX;
-                dx = 0;
+                if (e.touches.length === 0) return;
+
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                dx = dy = 0;
+                isHorizontalSwipe = false;
+
                 sl.style.transition = "none";
             }, { passive: true });
 
@@ -773,8 +780,29 @@
                     return;
                 }
                 if (e.touches.length === 0) return;
-                dx = e.touches[0].clientX - startX;
-                if (Math.abs(dx) > 8) e.preventDefault();
+
+                const touch = e.touches[0];
+                dx = touch.clientX - startX;
+                dy = touch.clientY - startY;
+
+                // まだ方向が決まっていないとき
+                if (!isHorizontalSwipe) {
+                    // 指がほとんど動いていない → 何もしない（スクロールも妨げない）
+                    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
+                        return;
+                    }
+
+                    // 縦方向の移動の方が大きい → 縦スクロールとして扱い、以降もスワイプしない
+                    if (Math.abs(dy) > Math.abs(dx)) {
+                        return;
+                    }
+
+                    // ここに来たら「横方向のスワイプ」と判断
+                    isHorizontalSwipe = true;
+                }
+
+                // 横スワイプ中だけブラウザのスクロールを止めて横に動かす
+                e.preventDefault();
                 sl.style.transform = `translateX(${dx}px)`;
             }, { passive: false });
 
@@ -782,6 +810,13 @@
                 // ☰ ドラッグだった場合は、スワイプの後処理をしない
                 if (isHandleDrag) {
                     isHandleDrag = false;
+                    sl.style.transition = "";
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+
+                // 横スワイプにならなかった（＝縦スクロールだった）場合は、元の位置に戻すだけ
+                if (!isHorizontalSwipe) {
                     sl.style.transition = "";
                     sl.style.transform = "translateX(0)";
                     return;
@@ -795,32 +830,21 @@
                 const leftStrong = leftW * STRONG_RATIO;
                 const rightStrong = rightW * STRONG_RATIO;
 
-                // ここ以下は今のままの強スワイプ判定でOK
+                // ここから下は今のままのロジックそのままでOK
                 if (dx > leftStrong) {
                     if (!isCompleted) {
                         action("complete", t.id);
+                        sl.style.transform = `translateX(${leftW}px)`;
                     } else {
-                        action("uncomplete", t.id);
+                        sl.style.transform = "translateX(0)";
                     }
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-                if (dx < -rightStrong) {
-                    if (t.pinned) {
-                        alert("ピンを外してください！");
-                    } else {
-                        action("delete", t.id);
-                    }
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-
-                if (dx > SNAP_THRESHOLD) {
+                } else if (dx > SNAP_THRESHOLD) {
                     wrap.classList.add("open-left");
                     wrap.classList.remove("open-right");
                     sl.style.transform = `translateX(${leftW}px)`;
+                } else if (dx < -rightStrong) {
+                    action("delete", t.id);
+                    sl.style.transform = `translateX(${-rightW}px)`;
                 } else if (dx < -SNAP_THRESHOLD) {
                     wrap.classList.add("open-right");
                     wrap.classList.remove("open-left");
@@ -830,6 +854,7 @@
                     sl.style.transform = "translateX(0)";
                 }
             });
+
 
             /* ==========================
                 ☰ で並び替え（ドラッグ）
