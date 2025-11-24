@@ -258,6 +258,14 @@
             border: none;
             cursor: pointer;
         }
+
+        .remindAt {
+            font-size: 11px;
+            color: #666;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
     </style>
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -317,10 +325,19 @@
                 <input id="inputGrowth" type="range" min="0" max="10" step="1" />
             </div>
 
+            <div class="slider-group">
+                <div class="slider-label-row">
+                    <span>リマインド日時</span>
+                    <span class="value" id="valRemindAt"></span>
+                </div>
+                <input id="inputRemindAt" type="datetime-local" />
+            </div>
+
             <div class="modal-footer">
                 <button id="detailCancelBtn" class="btn-secondary">キャンセル</button>
                 <button id="detailSaveBtn" class="btn-primary-solid">保存</button>
             </div>
+
         </div>
     </div>
 
@@ -329,6 +346,7 @@
         const API_BASE = "https://yamasho.xvps.jp/webhook";
         let userId = null;
         let currentDetailTask = null;
+        let modalMode = "detail"; // "detail" or "remind"
 
         // 強スワイプ判定の比率
         const STRONG_RATIO = 0.85;  // ボタン幅の約85%以上
@@ -358,6 +376,33 @@
         const valVision = document.getElementById("valVision");
         const valExcite = document.getElementById("valExcite");
         const valGrowth = document.getElementById("valGrowth");
+
+        const inputRemindAt = document.getElementById("inputRemindAt"); // ★追加
+        const valRemindAt = document.getElementById("valRemindAt");     // ★追加
+
+
+        function toLocalDatetimeValue(iso) {
+            if (!iso) return "";
+            const d = new Date(iso);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mi = String(d.getMinutes()).padStart(2, "0");
+            return `${yyyy}-${mm}-${dd}T${hh}:${mi}`; // datetime-local 用
+        }
+
+        /*ここでいいのかな...?👇*/
+        function formatRemindLabel(iso) {
+            if (!iso) return "";
+            const d = new Date(iso);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mi = String(d.getMinutes()).padStart(2, "0");
+            return `${yyyy}/${mm}/${dd} ${hh}:${mi}`; // 表示用
+        }
 
         /* ==========================
            INIT
@@ -413,17 +458,48 @@
             bindSlider(inputExcite, valExcite);
             bindSlider(inputGrowth, valGrowth);
 
+            // ★ リマインド日時が変更されたら右側のラベル更新
+            inputRemindAt.addEventListener("change", () => {
+                if (inputRemindAt.value) {
+                    const d = new Date(inputRemindAt.value);
+                    valRemindAt.textContent = formatRemindLabel(d.toISOString());
+                } else {
+                    valRemindAt.textContent = "";
+                }
+            });
+
+
             detailSaveBtn.onclick = async () => {
                 if (!currentDetailTask) return;
-                const payload = {
-                    priority: Number(inputPriority.value),
-                    vision_score: Number(inputVision.value),
-                    excite_score: Number(inputExcite.value),
-                    growth_score: Number(inputGrowth.value),
-                };
-                await action("update_detail", currentDetailTask.id, payload);
+
+                if (modalMode === "detail") {
+                    // ★ 通常の「詳細」モード → スコアだけ更新
+                    const payload = {
+                        priority: Number(inputPriority.value),
+                        vision_score: Number(inputVision.value),
+                        excite_score: Number(inputExcite.value),
+                        growth_score: Number(inputGrowth.value),
+                    };
+                    await action("update_detail", currentDetailTask.id, payload);
+
+                } else if (modalMode === "remind") {
+                    // ★ 「通知」モード → リマインド日時だけ送る
+                    if (!inputRemindAt.value) {
+                        alert("リマインド日時を選択してください");
+                        return;
+                    }
+                    const d = new Date(inputRemindAt.value);
+                    const remind_at = d.toISOString();  // n8n に渡すISO文字列
+
+                    await action("remind_custom", currentDetailTask.id, {
+                        remind_at,
+                        kind: "custom_datetime",
+                    });
+                }
+
                 close();
             };
+
         }
 
         /* ==========================
@@ -530,7 +606,8 @@
             if (!isCompleted) {
                 left.append(
                     mkBtn("完了", () => action("complete", t.id), "btn-complete"),
-                    mkBtn("+2h", () => action("remind_plus2h", t.id), "btn-plus2h")
+                    // ★ 「通知」ボタンを押したら openRemind(t) を呼ぶ
+                    mkBtn("通知", () => openRemind(t), "btn-plus2h")
                 );
             } else {
                 left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
@@ -559,21 +636,32 @@
             const name = t.task_name || t.title || "(無題)";
             titleEl.textContent = t.pinned ? "📍 " + name : name;
 
+            // 左（タイトル）と右（リマインド＋ハンドル）に分割
+            const leftBox = document.createElement("div");
+            leftBox.style.flex = "1";
+            leftBox.appendChild(titleEl);
+
+            const rightBox = document.createElement("div");
+            rightBox.style.display = "flex";
+            rightBox.style.alignItems = "center";
+
+            if (t.remind_at) {
+                const remindEl = document.createElement("div");
+                remindEl.className = "remindAt";
+                remindEl.textContent = formatRemindLabel(t.remind_at);
+                rightBox.appendChild(remindEl);
+            }
+
             const handle = document.createElement("div");
             handle.className = "handle";
             handle.textContent = "☰";
+            handle.style.marginLeft = "8px";
 
-            handle.addEventListener("touchstart", e => {
-                e.stopPropagation();
-            }, { passive: true });
+            rightBox.appendChild(handle);
 
-            handle.addEventListener("touchmove", e => {
-                e.preventDefault();   // ← スクロールを止める
-                e.stopPropagation();  // ← wrap までイベントが行かないようにする
-            }, { passive: false });
-
-            sl.append(titleEl, handle);
+            sl.append(leftBox, rightBox);
             wrap.append(rail, sl);
+
 
             // ===== ボタン幅を測って data に保存（端を揃える用） =====
             requestAnimationFrame(() => {
@@ -786,6 +874,7 @@
            MODAL OPEN
         ========================== */
         function openDetail(t) {
+            modalMode = "detail";       // ★ ここでモード指定
             currentDetailTask = t;
 
             const name = t.task_name || t.title || "(無題)";
@@ -803,7 +892,48 @@
             inputGrowth.value = t.growth_score ?? 0;
             valGrowth.textContent = inputGrowth.value;
 
+            // 「詳細」から開いたときは日時は触らない／表示もしなくてOKならクリアしておく
+            inputRemindAt.value = "";
+            valRemindAt.textContent = "";
+
             detailModal.classList.add("visible");
+
+            inputRemindAt.disabled = true;
+        }
+
+        function openRemind(t) {
+            modalMode = "remind";        // ★ 通知モード
+            currentDetailTask = t;
+
+            const name = t.task_name || t.title || "(無題)";
+            detailTaskTitle.textContent = name + " の通知設定";
+
+            // スコアは参照用に入れておいてもいいし、省略してもOK
+            inputPriority.value = t.priority ?? 0;
+            valPriority.textContent = inputPriority.value;
+
+            inputVision.value = t.vision_score ?? 0;
+            valVision.textContent = inputVision.value;
+
+            inputExcite.value = t.excite_score ?? 0;
+            valExcite.textContent = inputExcite.value;
+
+            inputGrowth.value = t.growth_score ?? 0;
+            valGrowth.textContent = inputGrowth.value;
+
+            // 既にremind_atがあれば初期値として入れる
+            if (t.remind_at) {
+                inputRemindAt.value = toLocalDatetimeValue(t.remind_at);
+                valRemindAt.textContent = formatRemindLabel(t.remind_at);
+            } else {
+                inputRemindAt.value = "";
+                valRemindAt.textContent = "";
+            }
+
+            detailModal.classList.add("visible");
+
+            inputRemindAt.disabled = false;
+
         }
 
         /* ==========================
@@ -865,10 +995,6 @@
     </script>
 </body>
 </html>
-
-
-
-
 
 
 
