@@ -268,7 +268,6 @@
             margin-left: 8px;
             white-space: nowrap;
         }
-
     </style>
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -485,20 +484,44 @@
                     };
                     await action("update_detail", currentDetailTask.id, payload);
 
-                } else if (modalMode === "remind") {
-                    // ★ 「通知」モード → リマインド日時だけ送る
-                    if (!inputRemindAt.value) {
-                        alert("リマインド日時を選択してください");
-                        return;
-                    }
-                    const d = new Date(inputRemindAt.value);
-                    const remind_at = d.toISOString();  // n8n に渡すISO文字列
-
-                    await action("remind_custom", currentDetailTask.id, {
-                        remind_at,
-                        kind: "custom_datetime",
-                    });
                 }
+            } else if (modalMode === "remind") {
+                // ★ 「通知」モード → リマインド日時だけ送る
+                if (!inputRemindAt.value) {
+                    alert("リマインド日時を選択してください");
+                    return;
+                }
+                const d = new Date(inputRemindAt.value);
+                const remind_at = d.toISOString();  // n8n に渡すISO文字列
+
+                // ★ 1) ローカルのタスクオブジェクトも更新
+                currentDetailTask.remind_at = remind_at;
+
+                // ★ 2) 対応するカードの右側ラベルを即時更新
+                const card = document.querySelector(`.card[data-task-id="${currentDetailTask.id}"]`);
+                if (card) {
+                    const rightBox = card.querySelector(".rightBox");
+                    if (rightBox) {
+                        // 既にラベルがあるなら再利用、なければ作成
+                        let label = rightBox.querySelector(".remindAt");
+                        if (!label) {
+                            label = document.createElement("div");
+                            label.className = "remindAt";
+                            // ハンドルの前に差し込む
+                            const handleEl = rightBox.querySelector(".handle");
+                            rightBox.insertBefore(label, handleEl || null);
+                        }
+                        label.textContent = formatRemindLabel(remind_at);
+                    }
+                }
+
+                // ★ 3) サーバー側にも保存（今まで通り）
+                await action("remind_custom", currentDetailTask.id, {
+                    remind_at,
+                    kind: "custom_datetime",
+                });
+            }
+
 
                 close();
             };
@@ -645,6 +668,7 @@
             leftBox.appendChild(titleEl);
 
             const rightBox = document.createElement("div");
+            rightBox.className = "rightBox";           // ★ 追加
             rightBox.style.display = "flex";
             rightBox.style.alignItems = "center";
 
@@ -868,9 +892,12 @@
             }
 
             // 並び替え用にタスク情報を紐付け
+            // 並び替え用にタスク情報を紐付け
             wrap.__taskData = t;
+            wrap.dataset.taskId = t.id;   // ★ 追加：DOMから逆引きする用
 
             return wrap;
+
         }
 
         /* ==========================
@@ -999,4 +1026,4 @@
 
 
 
-
+detailSaveBtn.onclick = async () => {
