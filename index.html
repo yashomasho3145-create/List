@@ -484,13 +484,14 @@
                     await action("update_detail", currentDetailTask.id, payload);
 
                 } else if (modalMode === "remind") {
-                    // ★ 「通知」モード → リマインド日時だけ送る
-                    if (!inputRemindAt.value) {
-                        alert("リマインド日時を選択してください");
-                        return;
+                    // ★ 「通知」モード → 入力が空なら NULL にリセット
+                    let remind_at = null;
+
+                    if (inputRemindAt.value) {
+                        // 日時が入っているときだけ ISO に変換
+                        const d = new Date(inputRemindAt.value);
+                        remind_at = d.toISOString();
                     }
-                    const d = new Date(inputRemindAt.value);
-                    const remind_at = d.toISOString();  // n8n に渡すISO文字列
 
                     // ★ 1) ローカルのタスクオブジェクトも更新
                     currentDetailTask.remind_at = remind_at;
@@ -500,25 +501,33 @@
                     if (card) {
                         const rightBox = card.querySelector(".rightBox");
                         if (rightBox) {
-                            // 既にラベルがあるなら再利用、なければ作成
                             let label = rightBox.querySelector(".remindAt");
-                            if (!label) {
-                                label = document.createElement("div");
-                                label.className = "remindAt";
-                                // ハンドルの前に差し込む
-                                const handleEl = rightBox.querySelector(".handle");
-                                rightBox.insertBefore(label, handleEl || null);
+
+                            if (remind_at) {
+                                // 日時あり → ラベルを作る/更新
+                                if (!label) {
+                                    label = document.createElement("div");
+                                    label.className = "remindAt";
+                                    const handleEl = rightBox.querySelector(".handle");
+                                    rightBox.insertBefore(label, handleEl || null);
+                                }
+                                label.textContent = formatRemindLabel(remind_at);
+                            } else {
+                                // 日時なし（リセット）→ ラベルを消す
+                                if (label) {
+                                    label.remove();
+                                }
                             }
-                            label.textContent = formatRemindLabel(remind_at);
                         }
                     }
 
-                    // ★ 3) サーバー側にも保存（今まで通り）
+                    // ★ 3) サーバー側にも保存
                     await action("remind_custom", currentDetailTask.id, {
-                        remind_at,
-                        kind: "custom_datetime",
+                        remind_at,                             // null もそのまま送る
+                        kind: remind_at ? "custom_datetime" : "clear",
                     });
                 }
+
 
                 // 最後にモーダル閉じる
                 close();
@@ -1023,7 +1032,6 @@
     </script>
 </body>
 </html>
-
 
 
 
