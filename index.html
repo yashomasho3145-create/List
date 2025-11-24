@@ -460,7 +460,7 @@
             bindSlider(inputExcite, valExcite);
             bindSlider(inputGrowth, valGrowth);
 
-            // ★ リマインド日時が変更されたら右側のラベル更新
+            // ★ リマインド日時が変更されたら右側のラベル更新（モーダル内）
             inputRemindAt.addEventListener("change", () => {
                 if (inputRemindAt.value) {
                     const d = new Date(inputRemindAt.value);
@@ -469,7 +469,6 @@
                     valRemindAt.textContent = "";
                 }
             });
-
 
             detailSaveBtn.onclick = async () => {
                 if (!currentDetailTask) return;
@@ -524,14 +523,7 @@
                 // 最後にモーダル閉じる
                 close();
             };
-
-
-
-
-            close();
-        };
-
-            }
+        }
 
         /* ==========================
           LIST API
@@ -1029,3 +1021,5 @@
 </html>
 
 
+
+detailSaveBtn.onclick = async () => {
