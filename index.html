@@ -1011,9 +1011,13 @@
                 console.error("[ACTION] fetch error:", e);
                 alert("通信エラーで操作に失敗しました");
             } finally {
-                loadList();
+                // ★ 通知設定のときはフロントで直接ラベル更新しているので再読み込みはしない
+                if (kind !== "remind_custom") {
+                    loadList();
+                }
             }
         }
+
 
         init();
     </script>
