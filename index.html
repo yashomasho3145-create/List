@@ -1,3434 +1,1039 @@
-{
-  "nodes": [
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "line-webhook",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [
-        280,
-        1357
-      ],
-      "id": "2fbe58a4-4499-4a96-a933-8e25fe0e420e",
-      "name": "Webhook",
-      "webhookId": "52d32775-a371-4acd-a253-58387bf26dcc"
-    },
-    {
-      "parameters": {
-        "jsCode": "// LINE webhook 正規化：{ user_id, text, replyToken, body }\nconst raw = $json.body ?? $json;\nlet payload;\nif (typeof raw === 'string') {\n  try { payload = JSON.parse(raw); } catch { payload = {}; }\n} else {\n  payload = raw || {};\n}\nconst ev = (payload.events && payload.events[0]) || {};\nconst src = ev.source || {};\nconst msg = ev.message || {};\nconst text = (msg.type === 'text' ? (msg.text || '') : '').trim();\nconst replyToken = ev.replyToken || '';\nreturn [{ json: { user_id: src.userId || '', text, replyToken, body: payload } }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        500,
-        1520
-      ],
-      "id": "e6683b67-27f7-40b9-ac47-99cba464a50e",
-      "name": "Code - Normalize LINE"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "f4628f88-a2cd-481f-9bc1-824f2b987f40",
-              "name": "text",
-              "value": "={{ $json.text }}",
-              "type": "string"
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LIST｜タスク一覧</title>
+    <style>
+        body {
+            font-family: -apple-system, system-ui;
+            margin: 0;
+            background: #f7f7f8;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            z-index: 10;
+        }
+
+        .bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+        }
+
+        .tab {
+            padding: 6px 12px;
+            border-radius: 14px;
+            border: 1px solid #ddd;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+            .tab.active {
+                background: #111;
+                color: white;
+                border-color: #111;
             }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        720,
-        1520
-      ],
-      "id": "dabd7394-0418-476e-9cf9-fd8005c0ae87",
-      "name": "Set Agent Input"
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $('Webhook').item.json.body.events[0].message.text }}",
-                    "rightValue": "リスト",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "e4b7c548-906b-4528-a0db-f24d20ca3622"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "List"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "e0194044-848b-4e99-8997-a10219319c18",
-                    "leftValue": "={{ $('Webhook').item.json.body.events[0].message.text }}",
-                    "rightValue": "ステータス",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+
+        .add {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+        }
+
+            .add input {
+                flex: 1;
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid #ddd;
+                font-size: 16px; /* iOSの勝手ズーム防止 */
+            }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card {
+            position: relative;
+            background: white;
+            border-bottom: 1px solid #eee;
+            height: 60px;
+            overflow: hidden;
+            touch-action: pan-y;
+            box-sizing: border-box;
+        }
+
+            .card.completed .title {
+                color: #aaa;
+                text-decoration: line-through;
+            }
+
+            .card.dragging {
+                opacity: 0.9;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+                z-index: 5;
+            }
+
+        .sl {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            transition: transform .15s ease;
+            background: white;
+            z-index: 2;
+            box-sizing: border-box;
+        }
+
+        .actions-rail {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* スワイプで開いているときだけボタンを押せるようにする */
+        .card.open-left .actions-rail,
+        .card.open-right .actions-rail {
+            pointer-events: auto;
+        }
+
+        .actions-left, .actions-right {
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .actions-left {
+            background: #e8f7ee;
+            justify-content: flex-start;
+            padding-left: 0;
+        }
+
+        .actions-right {
+            background: #fdeeee;
+            justify-content: flex-end;
+            padding-right: 0;
+        }
+
+        .actions-rail button {
+            height: 100%;
+            min-width: 64px;
+            border: none;
+            color: white;
+            font-size: 13px;
+            border-radius: 0;
+            cursor: pointer;
+        }
+
+        .btn-complete {
+            background: #7e6dff;
+        }
+
+        .btn-plus2h {
+            background: #8012e2;
+        }
+
+        .btn-detail {
+            background: #1e928b;
+        }
+
+        .btn-pin {
+            background: #d97706;
+        }
+
+        .btn-delete {
+            background: #f03d30;
+        }
+
+        .title {
+            font-size: 15px;
+        }
+
+        .handle {
+            margin-left: auto;
+            cursor: grab;
+            opacity: 0.25;
+            -webkit-user-select: none;
+            user-select: none;
+            padding: 0 8px;
+            font-size: 20px;
+            touch-action: none;
+        }
+
+        .divider-label {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            padding: 6px 0;
+        }
+
+        /* 詳細モーダル */
+        .modal-root {
+            position: fixed;
+            inset: 0;
+            display: none;
+            z-index: 50;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+            .modal-root.visible {
+                display: flex;
+            }
+
+        .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,.25);
+            z-index: 0;
+        }
+
+        .modal-panel {
+            width: 100%;
+            max-width: 480px;
+            background: #fff;
+            border-radius: 20px 20px 0 0;
+            padding: 16px;
+            animation: slideUp .18s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .slider-group {
+            margin: 14px 0;
+        }
+
+        .slider-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+            .slider-label-row span.value {
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .btn-secondary {
+            padding: 8px 14px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: #fafafa;
+            cursor: pointer;
+        }
+
+        .btn-primary-solid {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #7e6dff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .remindAt {
+            font-size: 11px;
+            color: #666;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+    </style>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+
+    <header>
+        <div class="bar">
+            <div style="font-weight:600">LIST</div>
+            <div class="tab active">タスク</div>
+            <div class="tab" id="refreshBtn">↻</div>
+        </div>
+    </header>
+
+    <main>
+        <div class="add">
+            <input id="newTitle" placeholder="タスクを入力…" />
+            <button id="btnAdd" class="tab" style="background:#111;color:white;border-color:#111">追加</button>
+        </div>
+
+        <div class="divider-label">ToDoタスク</div>
+        <div id="pinned" class="list"></div>
+        <div id="active" class="list"></div>
+
+        <div class="divider-label" style="margin-top:16px;">--------------------------------------------------------------------<br>達成タスク</div>
+        <div id="completed" class="list"></div>
+    </main>
+
+    <!-- 詳細モーダル -->
+    <div id="detailModal" class="modal-root">
+        <div id="detailBackdrop" class="modal-backdrop"></div>
+        <div class="modal-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-weight:600">タスク詳細</div>
+                <button id="detailCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+            </div>
+
+            <div id="detailTaskTitle" style="font-size:13px;color:#555;margin-bottom:8px;"></div>
+
+            <!-- スコア設定グループ（詳細モード用） -->
+            <div id="scoreGroup">
+                <div class="slider-group">
+                    <div class="slider-label-row"><span>優先度</span><span class="value" id="valPriority"></span></div>
+                    <input id="inputPriority" type="range" min="0" max="10" step="1" />
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-row"><span>ビジョン関連度</span><span class="value" id="valVision"></span></div>
+                    <input id="inputVision" type="range" min="0" max="10" step="1" />
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-row"><span>わくわく度</span><span class="value" id="valExcite"></span></div>
+                    <input id="inputExcite" type="range" min="0" max="10" step="1" />
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-row"><span>成長度</span><span class="value" id="valGrowth"></span></div>
+                    <input id="inputGrowth" type="range" min="0" max="10" step="1" />
+                </div>
+            </div>
+
+            <!-- リマインド日時グループ（通知モード用） -->
+            <div id="remindGroup" class="slider-group">
+                <div class="slider-label-row">
+                    <span>リマインド日時</span>
+                    <span class="value" id="valRemindAt"></span>
+                </div>
+                <input id="inputRemindAt" type="datetime-local" />
+            </div>
+
+            <div class="modal-footer">
+                <button id="detailCancelBtn" class="btn-secondary">キャンセル</button>
+                <button id="detailSaveBtn" class="btn-primary-solid">保存</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const LIFF_ID = "2008372898-2q9qWmxv";
+        const API_BASE = "https://yamasho.xvps.jp/webhook";
+        let userId = null;
+        let currentDetailTask = null;
+        let modalMode = "detail"; // "detail" or "remind"
+
+        // 強スワイプ判定の比率
+        const STRONG_RATIO = 0.85;  // ボタン幅の約85%以上
+        const SNAP_THRESHOLD = 40;  // このpx以上で「開く」スナップ
+
+        // DOMキャッシュ
+        const pinnedEl = document.getElementById("pinned");
+        const activeEl = document.getElementById("active");
+        const completedEl = document.getElementById("completed");
+        const refreshBtn = document.getElementById("refreshBtn");
+        const btnAdd = document.getElementById("btnAdd");
+        const newTitle = document.getElementById("newTitle");
+
+        // モーダル要素
+        const detailModal = document.getElementById("detailModal");
+        const detailBackdrop = document.getElementById("detailBackdrop");
+        const detailCloseBtn = document.getElementById("detailCloseBtn");
+        const detailCancelBtn = document.getElementById("detailCancelBtn");
+        const detailSaveBtn = document.getElementById("detailSaveBtn");
+        const detailTaskTitle = document.getElementById("detailTaskTitle");
+
+        const inputPriority = document.getElementById("inputPriority");
+        const inputVision = document.getElementById("inputVision");
+        const inputExcite = document.getElementById("inputExcite");
+        const inputGrowth = document.getElementById("inputGrowth");
+        const valPriority = document.getElementById("valPriority");
+        const valVision = document.getElementById("valVision");
+        const valExcite = document.getElementById("valExcite");
+        const valGrowth = document.getElementById("valGrowth");
+
+        const inputRemindAt = document.getElementById("inputRemindAt"); // ★追加
+        const valRemindAt = document.getElementById("valRemindAt");     // ★追加
+
+        // ★ グループ要素（表示切り替え用）
+        const scoreGroup = document.getElementById("scoreGroup");
+        const remindGroup = document.getElementById("remindGroup");
+        const modalTitle = document.querySelector("#detailModal .modal-panel > div:first-child > div:first-child");
+
+
+        function toLocalDatetimeValue(iso) {
+            if (!iso) return "";
+            const d = new Date(iso);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mi = String(d.getMinutes()).padStart(2, "0");
+            return `${yyyy}-${mm}-${dd}T${hh}:${mi}`; // datetime-local 用
+        }
+
+        /*ここでいいのかな...?👇*/
+        function formatRemindLabel(iso) {
+            if (!iso) return "";
+            const d = new Date(iso);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mi = String(d.getMinutes()).padStart(2, "0");
+            return `🔔${yyyy}/${mm}/${dd} ${hh}:${mi}`; // 表示用
+        }
+
+        /* ==========================
+           INIT
+        ========================== */
+        async function init() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+                const profile = await liff.getProfile();
+                userId = profile.userId;
+
+                bindUI();
+                bindModalUI();
+                await loadList();
+            } catch (e) {
+                console.error(e);
+                alert("LIFF初期化に失敗しました");
+            }
+        }
+
+        /* ==========================
+           bindUI
+        ========================== */
+        function bindUI() {
+            refreshBtn.onclick = loadList;
+
+            btnAdd.onclick = async () => {
+                const title = newTitle.value.trim();
+                if (!title) return;
+                await action("create", null, { task_name: title });
+                newTitle.value = "";
+            };
+        }
+
+        /* ==========================
+          詳細モーダル UI
+        ========================== */
+        function bindModalUI() {
+            const close = () => detailModal.classList.remove("visible");
+
+            detailBackdrop.onclick = close;
+            detailCloseBtn.onclick = close;
+            detailCancelBtn.onclick = close;
+
+            const bindSlider = (input, label) => {
+                input.addEventListener("input", () => { label.textContent = input.value; });
+            };
+            bindSlider(inputPriority, valPriority);
+            bindSlider(inputVision, valVision);
+            bindSlider(inputExcite, valExcite);
+            bindSlider(inputGrowth, valGrowth);
+
+            // ★ リマインド日時が変更されたら右側のラベル更新（モーダル内）
+            inputRemindAt.addEventListener("change", () => {
+                if (inputRemindAt.value) {
+                    const d = new Date(inputRemindAt.value);
+                    valRemindAt.textContent = formatRemindLabel(d.toISOString());
+                } else {
+                    valRemindAt.textContent = "";
+                }
+            });
+
+            detailSaveBtn.onclick = async () => {
+                if (!currentDetailTask) return;
+
+                if (modalMode === "detail") {
+                    // ★ 通常の「詳細」モード → スコアだけ更新
+                    const payload = {
+                        priority: Number(inputPriority.value),
+                        vision_score: Number(inputVision.value),
+                        excite_score: Number(inputExcite.value),
+                        growth_score: Number(inputGrowth.value),
+                    };
+                    await action("update_detail", currentDetailTask.id, payload);
+
+                } else if (modalMode === "remind") {
+                    // ★ 「通知」モード → 入力が空なら NULL にリセット
+                    let remind_at = null;
+
+                    if (inputRemindAt.value) {
+                        // 日時が入っているときだけ ISO に変換
+                        const d = new Date(inputRemindAt.value);
+                        remind_at = d.toISOString();
                     }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Status"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "1c1335f6-ca5b-4940-92e6-018673c094a6",
-                    "leftValue": "={{ $('Webhook').item.json.body.events[0].message.text }}",
-                    "rightValue": "ジャーナル",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+
+                    // ★ 1) ローカルのタスクオブジェクトも更新
+                    currentDetailTask.remind_at = remind_at;
+
+                    // ★ 2) 対応するカードの右側ラベルを即時更新
+                    const card = document.querySelector(`.card[data-task-id="${currentDetailTask.id}"]`);
+                    if (card) {
+                        const rightBox = card.querySelector(".rightBox");
+                        if (rightBox) {
+                            let label = rightBox.querySelector(".remindAt");
+
+                            if (remind_at) {
+                                // 日時あり → ラベルを作る/更新
+                                if (!label) {
+                                    label = document.createElement("div");
+                                    label.className = "remindAt";
+                                    const handleEl = rightBox.querySelector(".handle");
+                                    rightBox.insertBefore(label, handleEl || null);
+                                }
+                                label.textContent = formatRemindLabel(remind_at);
+                            } else {
+                                // 日時なし（リセット）→ ラベルを消す
+                                if (label) {
+                                    label.remove();
+                                }
+                            }
+                        }
                     }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Journal"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "cd335660-5e4b-4b24-b1f0-3bd7d441a18e",
-                    "leftValue": "={{ $('Webhook').item.json.body.events[0].message.text }}",
-                    "rightValue": "天気",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+
+                    // ★ 3) サーバー側にも保存
+                    await action("remind_custom", currentDetailTask.id, {
+                        remind_at,                             // null もそのまま送る
+                        kind: remind_at ? "custom_datetime" : "clear",
+                    });
+                }
+
+
+                // 最後にモーダル閉じる
+                close();
+            };
+        }
+
+        /* ==========================
+          LIST API
+        ========================== */
+        async function loadList() {
+            const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
+            console.log("[LIST] request:", url);
+
+            try {
+                const res = await fetch(url);
+                console.log("[LIST] status:", res.status);
+
+                const text = await res.text();
+                console.log("[LIST] raw response:", JSON.stringify(text));
+
+                if (!res.ok) {
+                    console.error("[LIST] http error:", res.status, text);
+                    alert("タスク一覧の取得に失敗しました（HTTPエラー）");
+                    return;
+                }
+
+                if (!text) {
+                    console.warn("[LIST] 空レスポンスでした");
+                    renderList({ pinned: [], active: [], completed: [] });
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    console.error("[LIST] JSONパースエラー:", e);
+                    alert("サーバーからJSONが返ってきていません");
+                    return;
+                }
+
+                console.log("[LIST] parsed json:", data);
+                renderList(data);
+
+            } catch (e) {
+                console.error("[LIST] fetch error:", e);
+                alert("タスク一覧の取得に失敗しました（通信エラー）");
+            }
+        }
+
+        function renderList(payload) {
+            pinnedEl.innerHTML = "";
+            activeEl.innerHTML = "";
+            completedEl.innerHTML = "";
+
+            const pinned = Array.isArray(payload.pinned) ? payload.pinned : [];
+            const active = Array.isArray(payload.active) ? payload.active : [];
+            const completed = Array.isArray(payload.completed) ? payload.completed : [];
+
+            pinned.forEach(t => pinnedEl.appendChild(taskCard(t, false)));
+            active.forEach(t => activeEl.appendChild(taskCard(t, false)));
+            completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
+        }
+
+        /* ==========================
+          並び順をサーバーへ保存
+        ========================== */
+        async function saveSortOrder() {
+            if (!userId) return;
+
+            const orders = [];
+
+            pinnedEl.querySelectorAll(".card").forEach((card, index) => {
+                const t = card.__taskData;
+                if (!t) return;
+                orders.push({ id: t.id, sort_order: index, section: "pinned" });
+            });
+            activeEl.querySelectorAll(".card").forEach((card, index) => {
+                const t = card.__taskData;
+                if (!t) return;
+                orders.push({ id: t.id, sort_order: index, section: "active" });
+            });
+            completedEl.querySelectorAll(".card").forEach((card, index) => {
+                const t = card.__taskData;
+                if (!t) return;
+                orders.push({ id: t.id, sort_order: index, section: "completed" });
+            });
+
+            console.log("[SORT_UPDATE] orders:", orders);
+            await action("sort_update", null, { orders });
+        }
+
+        /* ==========================
+          TASK CARD
+        ========================== */
+        function taskCard(t, isCompleted = false) {
+            const wrap = document.createElement("div");
+            wrap.className = "card";
+            if (isCompleted) wrap.classList.add("completed");
+
+            // 背面レール
+            const rail = document.createElement("div");
+            rail.className = "actions-rail";
+
+            const left = document.createElement("div");
+            left.className = "actions-left";
+
+            if (!isCompleted) {
+                left.append(
+                    mkBtn("完了", () => action("complete", t.id), "btn-complete"),
+                    // ★ 「通知」ボタンを押したら openRemind(t) を呼ぶ
+                    mkBtn("通知", () => openRemind(t), "btn-plus2h")
+                );
+            } else {
+                left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
+            }
+
+            const right = document.createElement("div");
+            right.className = "actions-right";
+            right.append(
+                mkBtn("詳細", () => openDetail(t), "btn-detail"),
+                mkBtn(t.pinned ? "📍解除" : "📍ピン", () => action("toggle_pin", t.id), "btn-pin"),
+                mkBtn("削除", () => {
+                    if (t.pinned) return alert("ピンを外してください！");
+                    action("delete", t.id);
+                }, "btn-delete")
+            );
+
+            rail.append(left, right);
+
+            // 前面
+            const sl = document.createElement("div");
+            sl.className = "sl";
+
+            const titleEl = document.createElement("div");
+            titleEl.className = "title";
+
+            const name = t.task_name || t.title || "(無題)";
+            titleEl.textContent = t.pinned ? "📍 " + name : name;
+
+            // 左（タイトル）と右（リマインド＋ハンドル）に分割
+            const leftBox = document.createElement("div");
+            leftBox.style.flex = "1";
+            leftBox.appendChild(titleEl);
+
+            const rightBox = document.createElement("div");
+            rightBox.className = "rightBox";           // ★ 追加
+            rightBox.style.display = "flex";
+            rightBox.style.alignItems = "center";
+
+            if (t.remind_at) {
+                const remindEl = document.createElement("div");
+                remindEl.className = "remindAt";
+                remindEl.textContent = formatRemindLabel(t.remind_at);
+                rightBox.appendChild(remindEl);
+            }
+
+            const handle = document.createElement("div");
+            handle.className = "handle";
+            handle.textContent = "☰";
+            handle.style.marginLeft = "8px";
+
+            rightBox.appendChild(handle);
+
+            sl.append(leftBox, rightBox);
+            wrap.append(rail, sl);
+
+
+            // ===== ボタン幅を測って data に保存（端を揃える用） =====
+            requestAnimationFrame(() => {
+                const lRect = left.getBoundingClientRect();
+                const rRect = right.getBoundingClientRect();
+                wrap.dataset.leftWidth = lRect.width || 140;
+                wrap.dataset.rightWidth = rRect.width || 140;
+            });
+
+            let holdTimer = null;
+            handle.addEventListener("pointerdown", e => {
+                holdTimer = setTimeout(() => startDrag(e), 500);
+            });
+
+            handle.addEventListener("pointerup", () => clearTimeout(holdTimer));
+            handle.addEventListener("pointerleave", () => clearTimeout(holdTimer));
+
+
+            /* ==========================
+                PC版 クリックでスワイプ
+            ========================== */
+            if (!/Mobi|Android/i.test(navigator.userAgent)) {
+                sl.addEventListener("click", e => {
+                    const rect = sl.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+
+                    const leftW = Number(wrap.dataset.leftWidth) || 140;
+                    const rightW = Number(wrap.dataset.rightWidth) || 140;
+
+                    if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
+                        wrap.classList.remove("open-left", "open-right");
+                        sl.style.transform = "translateX(0)";
+                        return;
                     }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Wether"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "5c243a96-35fe-4a8a-ab3f-ccfd7a6a49d6",
-                    "leftValue": "={{ $('Webhook').item.json.body.events[0].message.text }}",
-                    "rightValue": "ニュース",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+
+                    if (x < rect.width / 2) {
+                        wrap.classList.add("open-left");
+                        wrap.classList.remove("open-right");
+                        sl.style.transform = `translateX(${leftW}px)`;
+                    } else {
+                        wrap.classList.add("open-right");
+                        wrap.classList.remove("open-left");
+                        sl.style.transform = `translateX(${-rightW}px)`;
                     }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "News"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "e6a4f791-6790-4bec-af1a-6eb7e6bc492f",
-                    "leftValue": "={{ $('Webhook').item.json.body.events[0].message.text }}",
-                    "rightValue": "ムキムキ",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                });
+            }
+
+            /* ==========================
+                スマホ版 スワイプ
+            ========================== */
+            let startX = 0, dx = 0;
+            let isHandleDrag = false;  // ← 追加：☰ から始まったかどうか
+
+            wrap.addEventListener("touchstart", e => {
+                // ボタンをタップしている場合はスワイプ処理を起動しない
+                if (e.target.closest("button")) {
+                    return;
+                }
+
+                // ☰（.handle）から始まったタッチなら、スワイプ処理は一切しない
+                if (e.target.closest(".handle")) {
+                    isHandleDrag = true;
+                    return;
+                } else {
+                    isHandleDrag = false;
+                }
+
+                startX = e.touches[0].clientX;
+                dx = 0;
+                sl.style.transition = "none";
+            }, { passive: true });
+
+            wrap.addEventListener("touchmove", e => {
+                if (isHandleDrag) {
+                    // ☰ をドラッグしてるときは、ここ（横スワイプ）には入らない
+                    return;
+                }
+                if (e.touches.length === 0) return;
+                dx = e.touches[0].clientX - startX;
+                if (Math.abs(dx) > 8) e.preventDefault();
+                sl.style.transform = `translateX(${dx}px)`;
+            }, { passive: false });
+
+            wrap.addEventListener("touchend", () => {
+                // ☰ ドラッグだった場合は、スワイプの後処理をしない
+                if (isHandleDrag) {
+                    isHandleDrag = false;
+                    sl.style.transition = "";
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+
+                sl.style.transition = "transform .15s";
+
+                const leftW = Number(wrap.dataset.leftWidth) || 140;
+                const rightW = Number(wrap.dataset.rightWidth) || 140;
+
+                const leftStrong = leftW * STRONG_RATIO;
+                const rightStrong = rightW * STRONG_RATIO;
+
+                // ここ以下は今のままの強スワイプ判定でOK
+                if (dx > leftStrong) {
+                    if (!isCompleted) {
+                        action("complete", t.id);
+                    } else {
+                        action("uncomplete", t.id);
                     }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "Muscle"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "6d7893a5-dde9-4381-b8dd-caec4fca73ed",
-                    "leftValue": "={{ $('Webhook').item.json.body.events[0].message.text }}",
-                    "rightValue": "カレンダー",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+                if (dx < -rightStrong) {
+                    if (t.pinned) {
+                        alert("ピンを外してください！");
+                    } else {
+                        action("delete", t.id);
                     }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "calendar"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "e8f04826-8443-45f3-a12c-3598b0c4a6b1",
-                    "leftValue": "={{ $('Webhook').item.json.body.events[0].message.text }}",
-                    "rightValue": "完了👍",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+
+                if (dx > SNAP_THRESHOLD) {
+                    wrap.classList.add("open-left");
+                    wrap.classList.remove("open-right");
+                    sl.style.transform = `translateX(${leftW}px)`;
+                } else if (dx < -SNAP_THRESHOLD) {
+                    wrap.classList.add("open-right");
+                    wrap.classList.remove("open-left");
+                    sl.style.transform = `translateX(${-rightW}px)`;
+                } else {
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                }
+            });
+
+            /* ==========================
+                ☰ で並び替え（ドラッグ）
+            ========================== */
+            const startDrag = (startEvent) => {
+                startEvent.preventDefault();
+                startEvent.stopPropagation();
+
+                const card = wrap;
+                const list = card.parentElement;
+                if (!list) return;
+
+                card.classList.add("dragging");
+                document.body.style.userSelect = "none";
+
+                const pointerId = startEvent.pointerId;
+
+                const getY = (ev) => ev.clientY;
+
+                const onMove = (ev) => {
+                    const y = getY(ev);
+                    const siblings = Array.from(list.children);
+                    const currentIndex = siblings.indexOf(card);
+                    if (currentIndex === -1) return;
+
+                    const prev = siblings[currentIndex - 1];
+                    const next = siblings[currentIndex + 1];
+
+                    if (prev) {
+                        const rect = prev.getBoundingClientRect();
+                        if (y < rect.top + rect.height / 2) {
+                            list.insertBefore(card, prev);
+                            return;
+                        }
                     }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "筋トレ完了"
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra",
-          "ignoreCase": false
-        }
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        940,
-        1394
-      ],
-      "id": "5e2363dc-b9d4-4d3e-be09-091827db8d43",
-      "name": "Switch"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "=replyToken",
-              "value": "={{ $('Code - Normalize LINE').item.json.replyToken }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\": \"リストはこちらから👇\"\n  },\n  {\n    \"type\": \"text\",\n    \"text\": \"https://liff.line.me/2008372898-2q9qWmxv\",\n    \"quickReply\": {\n      \"items\": [\n        {\n          \"type\": \"action\",\n          \"action\": {\n            \"type\": \"uri\",\n            \"label\": \"リスト\",\n            \"uri\": \"https://liff.line.me/2008372898-2q9qWmxv\"\n          }\n        }\n      ]\n    }\n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1238,
-        620
-      ],
-      "id": "23685fea-62f0-40ee-9899-b8cfc7580810",
-      "name": "List"
-    },
-    {
-      "parameters": {
-        "tableId": "タスク一覧",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "user_id",
-              "fieldValue": "={{ $('Webhook').item.json.body.events[0].source.userId }}"
-            },
-            {
-              "fieldId": "task_name",
-              "fieldValue": "={{ $json.text }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1238,
-        2620
-      ],
-      "id": "ea5bc3b9-324d-42c2-8862-e8486eac5dea",
-      "name": "Create a row",
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "path": "list",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "999ec68f-bbd9-4b34-9fa6-6d8b0fa0a068",
-      "name": "Webhook - LIST (GET)",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [
-        280,
-        5490
-      ],
-      "webhookId": "8a0b0109-e196-4ff8-ba47-ee625631d618"
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "タスク一覧",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "user_id",
-              "condition": "eq",
-              "keyValue": "={{ $json.query.user_id }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        500,
-        5490
-      ],
-      "name": "Supabase: Select rows1",
-      "id": "c83cde5f-e4dd-47a8-a5a7-c38d12c592a8",
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "functionCode": "const rows = Array.isArray(items) ? items.map(i => i.json) : [];\n\nconst toTask = r => ({\n  id: r.id,\n  title: r.task_name || '(無題)',\n  pinned: Boolean(r.pinned),\n  priority: r.priority ?? 0,\n  vision_score: r.vision_score ?? 0,\n  excite_score: r.excite_score ?? 0,\n  growth_score: r.growth_score ?? 0,\n  complete_at: Number(r.complete_at) || 0,\n  sort_order: Number(r.sort_order) ?? 99999,\n  remind_at: r.remind_at || null, \n});\n\n// 分類\nconst pinned = [];\nconst active = [];\nconst completed = [];\n\nfor (const r of rows) {\n  const t = toTask(r);\n\n  if (t.pinned) {\n    pinned.push(t);\n  } else if (t.complete_at === 1) {\n    completed.push(t);\n  } else {\n    active.push(t);\n  }\n}\n\n// sort_order があればそれで並び替え\nconst bySort = (a, b) => (a.sort_order ?? 99999) - (b.sort_order ?? 99999);\n\npinned.sort(bySort);\nactive.sort(bySort);\ncompleted.sort(bySort);\n\nreturn [{ json: { pinned, active, completed } }];\n"
-      },
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        720,
-        5490
-      ],
-      "name": "Adapt → {pinned,active,completed}1",
-      "id": "f27dc641-607d-4db6-ae0a-859ed9c1b6fc"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        940,
-        5490
-      ],
-      "name": "Respond JSON1",
-      "id": "72dea05a-526d-4c06-975a-769152b79992"
-    },
-    {
-      "parameters": {
-        "content": "メッセージをキャッチ\n↓\n・List表示\n・Status表示\n・Journal表示\n・supabaseにタスク保存",
-        "height": 2220,
-        "width": 1892
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        122,
-        560
-      ],
-      "typeVersion": 1,
-      "id": "08cc3268-6916-4ded-8116-2238b4d13f65",
-      "name": "Sticky Note"
-    },
-    {
-      "parameters": {
-        "content": "supabase - LIFF(List)に反映\n・「更新」（リフレッシュ）",
-        "height": 216,
-        "width": 1096
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        122,
-        5434
-      ],
-      "typeVersion": 1,
-      "id": "41e6eac6-9eda-4dcf-97bd-b060d4693ae1",
-      "name": "Sticky Note1"
-    },
-    {
-      "parameters": {
-        "content": "LIFF(List)のアクション - supabase反映\n↓\n・完了\n・リマインド\n・ピン\n・削除",
-        "height": 2496,
-        "width": 2244
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        138,
-        2894
-      ],
-      "typeVersion": 1,
-      "id": "a60317b8-7c2a-491b-a5e1-9772541c1a08",
-      "name": "Sticky Note2"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "=replyToken",
-              "value": "={{ $('Code - Normalize LINE').item.json.replyToken }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\": \"ジャーナルはこちらから👇\"\n  },\n  {\n    \"type\": \"text\",\n    \"quickReply\": {\n      \"items\": [\n        {\n          \"type\": \"action\",\n          \"action\": {\n            \"type\": \"uri\",\n            \"label\": \"ジャーナル\",\n            \"uri\": \"https://liff.line.me/2008372898-2q9qWmxv\"\n          }\n        }\n      ]\n    }\n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1238,
-        1020
-      ],
-      "id": "b8f53ccd-4e4c-4a74-806f-071ed2ebcb47",
-      "name": "Journal"
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "LINEユーザーID一覧",
-        "limit": 1,
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "user_id",
-              "condition": "eq",
-              "keyValue": "={{ $json.body.events[0].source.userId }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        500,
-        1194
-      ],
-      "id": "af36b4ce-7e8e-4d7a-9118-56d63d516d19",
-      "name": "Supabase Check User",
-      "alwaysOutputData": true,
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "191e0572-e64a-4e35-8485-08c4660e52c7",
-              "leftValue": "={{ $json.user_id }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        720,
-        1194
-      ],
-      "id": "ee349eef-fe3c-4b55-bb2e-b78f7a693b7e",
-      "name": "If New User?"
-    },
-    {
-      "parameters": {
-        "tableId": "LINEユーザーID一覧",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "user_id",
-              "fieldValue": "={{ $('Webhook').item.json.body.events[0].source.userId }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        940,
-        1194
-      ],
-      "id": "7944b13d-47af-4402-ab99-c5746560af68",
-      "name": "Supabase Create User",
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "content": "定刻に一斉送信",
-        "height": 788,
-        "width": 1948
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        120,
-        5720
-      ],
-      "typeVersion": 1,
-      "id": "84a31f55-55df-4199-859a-56048e39a816",
-      "name": "Sticky Note3"
-    },
-    {
-      "parameters": {
-        "functionCode": "// 複数の名言からランダムで1件を選択\n// items は [{json: {...}}, {json: {...}}, ...] の形\nif (!items.length) {\n  return [];\n}\nconst picked = items[Math.floor(Math.random() * items.length)];\n// 1件だけを返す\nreturn [picked];"
-      },
-      "id": "01b20ce9-d6f4-446a-9a6f-3d30fdf5f224",
-      "name": "名言1件だけ選択",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        720,
-        5750
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "名言集",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "sent_at",
-              "condition": "eq",
-              "keyValue": "0"
-            }
-          ]
-        }
-      },
-      "id": "aa0d1ed3-7d66-4746-bec9-9b1c87bace5e",
-      "name": "今日の名言取得1",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        500,
-        5750
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "LINEユーザーID一覧"
-      },
-      "id": "78a9ff15-b586-4353-909f-27815b4ddee1",
-      "name": "LINEユーザー一覧取得1",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        940,
-        5950
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "名言集",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.id }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "sent_at",
-              "fieldValue": "1"
-            }
-          ]
-        }
-      },
-      "id": "bd09b60a-c246-4503-a244-f8052df02491",
-      "name": "名言を送信済みに更新1",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        940,
-        5750
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "triggerTimes": {
-          "item": [
-            {
-              "hour": 22,
-              "minute": 30
-            }
-          ]
-        }
-      },
-      "id": "69e0475d-3f9f-444d-895a-5dcdb522e6bb",
-      "name": "Cron - 毎日22:30",
-      "type": "n8n-nodes-base.cron",
-      "typeVersion": 1,
-      "position": [
-        280,
-        5850
-      ]
-    },
-    {
-      "parameters": {
-        "functionCode": "// 名言とユーザーを組み合わせる（他ノードの出力を直接参照する版）\n\n// 「名言1件だけ選択」ノードの出力（1件だけ想定）\nconst quoteItems = $items(\"名言1件だけ選択\");\nif (!quoteItems.length) {\n  return [];\n}\nconst quote = quoteItems[0].json; // { kakugen, jinbutsu, id, ... }\n\n// 「LINEユーザー一覧取得1」ノードの出力（複数件）\nconst userItems = $items(\"LINEユーザー一覧取得1\");\nif (!userItems.length) {\n  return [];\n}\n\n// user_id が入っているユーザーだけに絞る\nconst validUsers = userItems.filter(item => {\n  const id = item.json.user_id;\n  return typeof id === \"string\" && id.trim() !== \"\";\n});\n\n// 誰もいなければ終了\nif (!validUsers.length) {\n  return [];\n}\n\n// 各ユーザーごとに1アイテム生成\nreturn validUsers.map(item => ({\n  json: {\n    to: item.json.user_id,    // LINEのユーザーID\n    kakugen: quote.kakugen,   // 名言\n    jinbutsu: quote.jinbutsu, // 人物名\n    id: quote.id              // 名言ID（更新用）\n  }\n}));\n"
-      },
-      "id": "2533721a-763a-47d9-bc7a-d86934729835",
-      "name": "ユーザー×名言 結合3",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        1160,
-        5950
-      ]
-    },
-    {
-      "parameters": {
-        "content": "LINEのユーザーIDをsupabaseに保存",
-        "height": 200,
-        "width": 540,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        500,
-        1154
-      ],
-      "typeVersion": 1,
-      "id": "cd688e4a-3494-4543-b102-ea1337ff93c7",
-      "name": "Sticky Note5"
-    },
-    {
-      "parameters": {
-        "text": "={{ $json.text }}",
-        "additionalFields": {}
-      },
-      "id": "359156f9-b693-4d75-9cd7-2e96a5b42aab",
-      "name": "Create Tweet2",
-      "type": "n8n-nodes-base.twitter",
-      "position": [
-        1600,
-        5900
-      ],
-      "typeVersion": 2,
-      "credentials": {
-        "twitterOAuth2Api": {
-          "id": "Yjbn7uiOysu8FUed",
-          "name": "X account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "https://weather.tsukumijima.net/api/forecast/city/170010",
-        "options": {}
-      },
-      "name": "天気予報API1",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        1238,
-        1220
-      ],
-      "id": "0b8dd667-f0e6-4795-9daa-1a3d0f2f059b"
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $input.item.json;\nconst today = data.forecasts[0];\nconst tomorrow = data.forecasts[1];\n\nconst message = `【${data.location.city}の天気予報】\n\n■今日（${today.date}）\n天気: ${today.telop}\n最高気温: ${today.temperature.max?.celsius || '不明'}℃\n最低気温: ${today.temperature.min?.celsius || '不明'}℃\n\n■明日（${tomorrow.date}）\n天気: ${tomorrow.telop}\n最高気温: ${tomorrow.temperature.max?.celsius || '不明'}℃\n最低気温: ${tomorrow.temperature.min?.celsius || '不明'}℃\n\n詳細: ${data.link}`;\n\nreturn {\n  json: {\n    location: data.location.city,\n    today_weather: today.telop,\n    today_temp_max: today.temperature.max?.celsius,\n    today_temp_min: today.temperature.min?.celsius,\n    tomorrow_weather: tomorrow.telop,\n    tomorrow_temp_max: tomorrow.temperature.max?.celsius,\n    tomorrow_temp_min: tomorrow.temperature.min?.celsius,\n    message: message,\n    link: data.link\n  }\n};"
-      },
-      "name": "天気データ整形1",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1536,
-        1220
-      ],
-      "id": "a23d83cd-1bee-4f90-b9fd-3304901f4d6c"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "=replyToken",
-              "value": "={{ $('Code - Normalize LINE').item.json.replyToken }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\":  $json.message  \n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1756,
-        1220
-      ],
-      "id": "30cfff35-aecf-4509-b67c-998569bd9e3b",
-      "name": "List1"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "=replyToken",
-              "value": "={{ $('Code - Normalize LINE').item.json.replyToken }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\":  $json.message  \n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1976,
-        1620
-      ],
-      "id": "93897430-a5e3-4094-b9c8-441c6afec712",
-      "name": "List2",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "url": "https://news.google.com/rss/search?q=AI+テクノロジー+株価&hl=ja&gl=JP&ceid=JP:ja",
-        "options": {}
-      },
-      "name": "Google News RSS取得1",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        1238,
-        1620
-      ],
-      "id": "79f00138-6d0e-4957-8147-7c65fdba2f74",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "name": "XML Parse1",
-      "type": "n8n-nodes-base.xml",
-      "typeVersion": 1,
-      "position": [
-        1536,
-        1620
-      ],
-      "id": "4b5071ed-850f-4f10-b835-4f7de171902c",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\nconst rssData = items[0].json.rss.channel.item;\n\n// 最新5件を取得\nconst top5 = rssData.slice(0, 5);\n\n// LINEメッセージ用にコンパクトに整形（タイトルとURLのみ）\nconst newsText = '📰 本日の注目ニュース\\n\\n' + \n  top5.map((article, index) => \n    `${index + 1}. ${article.title}\\n${article.link}`\n  ).join('\\n\\n');\n\n// 1つの出力にまとめる\nreturn [{\n  json: {\n    message: newsText,\n    newsCount: top5.length\n  }\n}];"
-      },
-      "name": "ニュースデータ整形1",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1756,
-        1620
-      ],
-      "id": "c297348e-bbc5-4a57-8d89-20e205d11b8f",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "jsCode": "// ユーザー×名言 結合3 から来た items から\n// 先頭の1件を使ってツイート用テキストを作成する\n\nif (!items.length) {\n  return [];\n}\n\nconst { kakugen, jinbutsu } = items[0].json;\n\n// 好きなフォーマットに整形（jinbutsuにハッシュタグを付ける）\nconst text = `『${kakugen}』\n─ ${jinbutsu}\\n\\n#${jinbutsu}`;\n\nreturn [\n  {\n    json: {\n      text,\n    },\n  },\n];\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1380,
-        5900
-      ],
-      "id": "8adea4c7-5ae9-4941-bff5-d119e5a17581",
-      "name": "Code2"
-    },
-    {
-      "parameters": {
-        "functionCode": "// 複数の名言からランダムで1件を選択\n// items は [{json: {...}}, {json: {...}}, ...] の形\nif (!items.length) {\n  return [];\n}\nconst picked = items[Math.floor(Math.random() * items.length)];\n// 1件だけを返す\nreturn [picked];"
-      },
-      "id": "b28bc752-449c-48fd-9d95-fe863575fd35",
-      "name": "名言1件だけ選択1",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        1536,
-        1820
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "筋トレ一覧"
-      },
-      "id": "5f9db85f-d3d3-441c-94c5-a9bb5bf271bf",
-      "name": "今日の名言取得",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1238,
-        1820
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "=replyToken",
-              "value": "={{ $('Code - Normalize LINE').item.json.replyToken }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\": $json.ainote + \"\\n\" + $json.url  \n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1756,
-        1820
-      ],
-      "id": "785f9ef9-5867-4fab-854a-a8ed66ec3d50",
-      "name": "List4"
-    },
-    {
-      "parameters": {
-        "content": "位置情報で天気予報",
-        "height": 180,
-        "width": 880,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        1107,
-        1600
-      ],
-      "typeVersion": 1,
-      "id": "84b2daa4-c223-43ff-b258-d35838fd2044",
-      "name": "Sticky Note6"
-    },
-    {
-      "parameters": {
-        "functionCode": "const b = $json.body || $json;\nconst action = (b.action || '').trim();\nconst userId = (b.user_id || '').trim();\nconst taskId = b.task_id ?? null;\n\n// sort_update 用に orders も通す\nconst orders = Array.isArray(b.orders) ? b.orders : [];\n\nreturn [{\n  json: {\n    action,\n    user_id: userId,\n    task_id: taskId,\n\n    task_name: b.task_name || '',\n    priority: b.priority ?? 0,\n    vision_score: b.vision_score ?? 0,\n    excite_score: b.excite_score ?? 0,\n    growth_score: b.growth_score ?? 0,\n    orders,\n\n    // ★★ 追加ここから ★★\n    kind: b.kind || '',\n    remind_at: b.remind_at || null,\n    // ★★ 追加ここまで ★★\n  }\n}];\n"
-      },
-      "id": "f4bb03f2-a0d0-4598-a378-c8cdd118e0d5",
-      "name": "Parse & Validate",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        500,
-        4080
-      ]
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "create",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "rule-create"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "create"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "delete",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "rule-delete"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "delete"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "complete",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "rule-complete"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "complete"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "uncomplete",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "rule-uncomplete"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "uncomplete"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "toggle_pin",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "rule-toggle-pin"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "toggle_pin"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "update_detail",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "rule-update-detail"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "update_detail"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "remind_plus2h",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "rule-remind-plus2h"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "remind_plus2h"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "9713aa48-5100-4d49-aea5-8e408504cc74",
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "sort_update",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                    if (next) {
+                        const rect = next.getBoundingClientRect();
+                        if (y > rect.top + rect.height / 2) {
+                            list.insertBefore(next, card);
+                            return;
+                        }
                     }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "sort_update"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "4eaf278a-a791-4504-be23-d29f716d4d6b",
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "remind_custom",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "remind_custom"
+                };
+
+                const onUp = (ev) => {
+                    document.removeEventListener("pointermove", onMove);
+                    document.removeEventListener("pointerup", onUp);
+                    card.classList.remove("dragging");
+                    document.body.style.userSelect = "";
+                    saveSortOrder();
+                };
+
+                document.addEventListener("pointermove", onMove);
+                document.addEventListener("pointerup", onUp);
+            };
+
+            if (window.PointerEvent) {
+                handle.addEventListener("pointerdown", startDrag);
+            } else {
+                // pointer未対応ブラウザ用のフォールバック（必要なら）
+                handle.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // ここで同様のロジックを実装してもOK（簡略のため省略）
+                }, { passive: false });
             }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra",
-          "ignoreCase": false
+
+            // 並び替え用にタスク情報を紐付け
+            // 並び替え用にタスク情報を紐付け
+            wrap.__taskData = t;
+            wrap.dataset.taskId = t.id;   // ★ 追加：DOMから逆引きする用
+
+            return wrap;
+
         }
-      },
-      "id": "11ebfc10-e8ee-4587-ac93-03de2a8e9654",
-      "name": "Switch - action",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        720,
-        3954
-      ]
-    },
-    {
-      "parameters": {
-        "tableId": "タスク一覧",
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "user_id",
-              "fieldValue": "={{ $json.user_id }}"
-            },
-            {
-              "fieldId": "task_name",
-              "fieldValue": "={{ $json.task_name }}"
-            },
-            {
-              "fieldId": "complete_at",
-              "fieldValue": "0"
-            },
-            {
-              "fieldId": "pinned",
-              "fieldValue": "0"
-            },
-            {
-              "fieldId": "priority",
-              "fieldValue": "={{ $json.priority }}"
-            },
-            {
-              "fieldId": "vision_score",
-              "fieldValue": "={{ $json.vision_score }}"
-            },
-            {
-              "fieldId": "excite_score",
-              "fieldValue": "={{ $json.excite_score }}"
-            },
-            {
-              "fieldId": "growth_score",
-              "fieldValue": "={{ $json.growth_score }}"
-            }
-          ]
+
+        /* ==========================
+           MODAL OPEN
+        ========================== */
+        function openDetail(t) {
+            modalMode = "detail";       // ★ ここでモード指定
+            currentDetailTask = t;
+
+            const name = t.task_name || t.title || "(無題)";
+            detailTaskTitle.textContent = name;
+            modalTitle.textContent = "タスク詳細";  // ★ モーダルタイトル
+
+            // ★ 表示切り替え：スコアのみ表示、リマインドは非表示
+            scoreGroup.style.display = "block";
+            remindGroup.style.display = "none";
+
+            inputPriority.value = t.priority ?? 0;
+            valPriority.textContent = inputPriority.value;
+
+            inputVision.value = t.vision_score ?? 0;
+            valVision.textContent = inputVision.value;
+
+            inputExcite.value = t.excite_score ?? 0;
+            valExcite.textContent = inputExcite.value;
+
+            inputGrowth.value = t.growth_score ?? 0;
+            valGrowth.textContent = inputGrowth.value;
+
+            detailModal.classList.add("visible");
+
         }
-      },
-      "id": "5310e739-4256-4b88-b5fe-c79a81dd787d",
-      "name": "Supabase - Create Task",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        2880
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
+
+        function openRemind(t) {
+            modalMode = "remind";        // ★ 通知モード
+            currentDetailTask = t;
+
+            const name = t.task_name || t.title || "(無題)";
+            detailTaskTitle.textContent = name;
+            modalTitle.textContent = "通知設定";  // ★ モーダルタイトル
+
+            // ★ 表示切り替え：リマインドのみ表示、スコアは非表示
+            scoreGroup.style.display = "none";
+            remindGroup.style.display = "block";
+
+            // 既にremind_atがあれば初期値として入れる
+            if (t.remind_at) {
+                inputRemindAt.value = toLocalDatetimeValue(t.remind_at);
+                valRemindAt.textContent = formatRemindLabel(t.remind_at);
+            } else {
+                inputRemindAt.value = "";
+                valRemindAt.textContent = "";
+            }
+
+            detailModal.classList.add("visible");
+
         }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "delete",
-        "tableId": "タスク一覧",
-        "matchType": "allFilters",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.task_id }}"
-            },
-            {
-              "keyName": "user_id",
-              "condition": "eq",
-              "keyValue": "={{ $json.user_id }}"
+
+        /* ==========================
+           BUTTON HELPER
+        ========================== */
+        function mkBtn(label, onClick, cls) {
+            const b = document.createElement("button");
+            b.textContent = label;
+            if (cls) b.className = cls;
+
+            const handler = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onClick();
+            };
+
+            if ("ontouchend" in window) {
+                b.addEventListener("touchend", handler, { passive: false });
+            } else {
+                b.addEventListener("click", handler);
             }
-          ]
+
+            return b;
         }
-      },
-      "id": "2cb7503e-29fc-481a-a732-f3656c40c3c3",
-      "name": "Supabase - Delete Task",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        3080
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
+
+        /* ==========================
+           API ACTION
+        ========================== */
+        async function action(kind, id, extra = {}) {
+            const url = `${API_BASE}/action`;
+            try {
+                const res = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        action: kind,
+                        task_id: id,
+                        ...extra
+                    })
+                });
+
+                const text = await res.text();
+                console.log("[ACTION]", kind, "status:", res.status, "resp:", text);
+
+                if (!res.ok) {
+                    alert("操作に失敗しました（" + res.status + "）");
+                    return;
+                }
+            } catch (e) {
+                console.error("[ACTION] fetch error:", e);
+                alert("通信エラーで操作に失敗しました");
+            } finally {
+                // ★ 通知設定のときはフロントで直接ラベル更新しているので再読み込みはしない
+                if (kind !== "remind_custom") {
+                    loadList();
+                }
+            }
         }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "タスク一覧",
-        "matchType": "allFilters",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.task_id }}"
-            },
-            {
-              "keyName": "user_id",
-              "condition": "eq",
-              "keyValue": "={{ $json.user_id }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "complete_at",
-              "fieldValue": "0"
-            }
-          ]
-        }
-      },
-      "id": "aabd2c68-8607-46da-a8a4-4cdbf91904d5",
-      "name": "Supabase - Uncomplete Task",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        3480
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "get",
-        "tableId": "タスク一覧",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "keyValue": "={{ $json.task_id }}"
-            },
-            {
-              "keyName": "user_id",
-              "keyValue": "={{ $json.user_id }}"
-            }
-          ]
-        }
-      },
-      "id": "f734646e-6e1f-4b5e-a71e-9191922ceef0",
-      "name": "Supabase - Get Task",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        940,
-        3780
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "タスク一覧",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.id }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "pinned",
-              "fieldValue": "=1"
-            }
-          ]
-        }
-      },
-      "id": "1ca8ab55-eb92-48fd-89ae-4bafe47cf92f",
-      "name": "Supabase - Toggle Pin",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        3680
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "タスク一覧",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.task_id }}"
-            },
-            {
-              "keyName": "user_id",
-              "condition": "eq",
-              "keyValue": "={{ $json.user_id }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "priority",
-              "fieldValue": "={{ $json.priority }}"
-            },
-            {
-              "fieldId": "vision_score",
-              "fieldValue": "={{ $json.vision_score }}"
-            },
-            {
-              "fieldId": "excite_score",
-              "fieldValue": "={{ $json.excite_score }}"
-            },
-            {
-              "fieldId": "growth_score",
-              "fieldValue": "={{ $json.growth_score }}"
-            }
-          ]
-        }
-      },
-      "id": "269c3962-7ab3-4211-8ac5-2cf176cd0306",
-      "name": "Supabase - Update Detail",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        4080
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "functionCode": "return [{ json: { ok: true, message: 'remind_plus2h stub' } }];"
-      },
-      "id": "fc565623-514e-4daf-991d-51ffa6688430",
-      "name": "Stub - Remind Plus 2h",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        4280
-      ]
-    },
-    {
-      "parameters": {
-        "functionCode": "return [{ json: { ok: false, message: `unknown action: ${$json.action}` } }];"
-      },
-      "id": "8945e4f0-5a99-4f0c-8b96-63e8c8c68722",
-      "name": "Unknown Action",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        5230
-      ],
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "id": "77279b44-beb1-4b0f-a90b-cdf53401af6e",
-      "name": "Respond to Webhook",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        2040,
-        3900
-      ]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "action",
-        "responseMode": "responseNode",
-        "options": {
-          "responseHeaders": {
-            "entries": [
-              {
-                "name": "Access-Control-Allow-Origin",
-                "value": "*"
-              },
-              {
-                "name": "Access-Control-Allow-Methods",
-                "value": "POST, OPTIONS"
-              },
-              {
-                "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type"
-              }
-            ]
-          }
-        }
-      },
-      "id": "4f72170e-b9dc-4a1d-ab93-17b69b54aa62",
-      "name": "Webhook - ACTION (POST)1",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [
-        280,
-        4080
-      ],
-      "webhookId": "action-endpoint-id"
-    },
-    {
-      "parameters": {
-        "functionCode": "const rows = Array.isArray(items) ? items.map(i => i.json) : [];\n\nconst toTask = r => ({\n  id: r.id,\n  task_name: r.task_name || r.title || \"(無題)\",\n  pinned: Boolean(r.pinned),\n  priority: r.priority ?? 0,\n  vision_score: r.vision_score ?? 0,\n  excite_score: r.excite_score ?? 0,\n  growth_score: r.growth_score ?? 0,\n  complete_at: Number(r.complete_at) || 0,\n  sort_order: Number(r.sort_order) ?? 99999,\n  remind_at: r.remind_at || null, \n});\n\n// 分類\nconst pinned = [];\nconst active = [];\nconst completed = [];\n\nfor (const r of rows) {\n  const t = toTask(r);\n\n  if (t.pinned) {\n    pinned.push(t);\n  } else if (t.complete_at === 1) {\n    completed.push(t);\n  } else {\n    active.push(t);\n  }\n}\n\n// sort_order で並べ替え\nconst bySort = (a, b) => (a.sort_order ?? 99999) - (b.sort_order ?? 99999);\n\npinned.sort(bySort);\nactive.sort(bySort);\ncompleted.sort(bySort);\n\nreturn [{ json: { pinned, active, completed } }];\n;"
-      },
-      "id": "a450ef6f-f678-44f5-898e-bd5b7378c007",
-      "name": "Build OK6",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        1820,
-        3900
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "タスク一覧",
-        "matchType": "allFilters",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json[\"task_id\"] }}"
-            },
-            {
-              "keyName": "user_id",
-              "condition": "eq",
-              "keyValue": "={{ $json[\"user_id\"] }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "complete_at",
-              "fieldValue": "1"
-            }
-          ]
-        }
-      },
-      "id": "a9e36919-b327-4d70-ae1d-b4958be45b3c",
-      "name": "Supabase - Complete Task1",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        3280
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.pinned }}",
-                    "rightValue": 0,
-                    "operator": {
-                      "type": "number",
-                      "operation": "equals"
-                    },
-                    "id": "e20b9d2a-470b-4fa4-9d70-7d48cb10402c"
-                  }
-                ],
-                "combinator": "and"
-              }
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "7368e2e6-0b97-45d6-bc32-c5f78e3b2bd2",
-                    "leftValue": "={{ $json.pinned }}",
-                    "rightValue": 1,
-                    "operator": {
-                      "type": "number",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        1160,
-        3780
-      ],
-      "id": "d1445a3c-e477-4b5d-b7c0-507ae424c5f4",
-      "name": "Switch1"
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "タスク一覧",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.id }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "pinned",
-              "fieldValue": "=0"
-            }
-          ]
-        }
-      },
-      "id": "282de796-6060-4c05-969f-2d8a1525a236",
-      "name": "Supabase - Toggle Pin1",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        3880
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "functionCode": "const orders = Array.isArray($json.orders) ? $json.orders : [];\nconst userId = $json.user_id;\n\nif (!userId || orders.length === 0) {\n  // 何もなければそのまま返してもOK（Build OKでそのまま200返す想定）\n  return [{ json: { user_id: userId || null, orders: [], skipped: true } }];\n}\n\nreturn orders\n  .filter(o => o && o.id != null)\n  .map((o, idx) => ({\n    json: {\n      user_id: userId,\n      id: o.id,\n      sort_order: Number(o.sort_order ?? idx),\n      section: o.section || null\n    }\n  }));"
-      },
-      "id": "cce43c60-3146-48eb-ab48-79ea988afbae",
-      "name": "Spread Orders",
-      "type": "n8n-nodes-base.function",
-      "typeVersion": 1,
-      "position": [
-        1160,
-        4680
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "タスク一覧",
-        "matchType": "allFilters",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.id }}"
-            },
-            {
-              "keyName": "user_id",
-              "condition": "eq",
-              "keyValue": "={{ $json.user_id }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "sort_order",
-              "fieldValue": "={{ $json.sort_order }}"
-            }
-          ]
-        }
-      },
-      "id": "b98cd995-e0cd-4b0b-811d-946374593018",
-      "name": "Supabase - Update SortOrder",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        4680
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "value": "7eudgpDWoCoIjWPb",
-          "mode": "list",
-          "cachedResultName": "Task Reminder"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {},
-          "matchingColumns": [],
-          "schema": [],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true
-        },
-        "options": {
-          "waitForSubWorkflow": false
-        }
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        1160,
-        4880
-      ],
-      "id": "98e2abcc-66b7-45bf-a3af-5f20939ae2b0",
-      "name": "Execute Workflow"
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "タスク一覧",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.task_id }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "remind_at",
-              "fieldValue": "={{ $json.remind_at }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        940,
-        4880
-      ],
-      "id": "e4be9152-ff45-45ce-ab7f-40c5a19103f0",
-      "name": "Supabase1",
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        940,
-        4480
-      ],
-      "id": "88ebfab2-3d5b-47b3-82aa-40cd54a22b15",
-      "name": "Wait",
-      "webhookId": "0f70a475-9ef9-46a1-9b3b-60bce91f36ea"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/push",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "to",
-              "value": "={{ $json.user_id }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [ {\n  \"type\": \"text\",\n  \"text\": \"リマインドだよ！👇\\n『\" + $json.task_name + \"』\"\n} ] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "782919ea-d968-4418-8292-7b056c23f18c",
-      "name": "LINE通知送信1",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        1380,
-        4480
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "タスク一覧",
-        "matchType": "allFilters",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.task_id }}"
-            },
-            {
-              "keyName": "complete_at",
-              "condition": "eq",
-              "keyValue": "0"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "id",
-              "fieldValue": "={{ $json.task_id }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1160,
-        4480
-      ],
-      "id": "5181cde3-edc7-4c8e-ad33-062849aeca7a",
-      "name": "Supabase",
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "タスク一覧",
-        "matchType": "allFilters",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.task_id }}"
-            }
-          ]
-        },
-        "fieldsUi": {
-          "fieldValues": [
-            {
-              "fieldId": "remind_at",
-              "fieldValue": "={{ $json.remind_at }}"
-            }
-          ]
-        }
-      },
-      "id": "d8795ea3-5f25-4d84-a719-5ae26f348150",
-      "name": "Supabase - Uncomplete Task1",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        1380,
-        5030
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "=replyToken",
-              "value": "={{ $('Code - Normalize LINE').item.json.replyToken }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\": \"今日のニュースはこちらから！💁‍♂️\\nhttps://newspicks.com/\"\n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1238,
-        1420
-      ],
-      "id": "3f2f513f-67e2-4210-b764-ceb24b30f7be",
-      "name": "List5"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "=replyToken",
-              "value": "={{ $('Code - Normalize LINE').item.json.replyToken }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\": \"ステータスはこちらから👇\"\n  },\n  {\n    \"type\": \"text\",\n    \"text\": \"https://liff.line.me/2008544549-mDb15VqZ\",\n    \"quickReply\": {\n      \"items\": [\n        {\n          \"type\": \"action\",\n          \"action\": {\n            \"type\": \"uri\",\n            \"label\": \"ステータス\",\n            \"uri\": \"https://liff.line.me/2008544549-mDb15VqZ\"\n          }\n        }\n      ]\n    }\n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1238,
-        820
-      ],
-      "id": "5a682e44-3bbc-450a-b845-38392266c427",
-      "name": "List3"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "=replyToken",
-              "value": "={{ $('Code - Normalize LINE').item.json.replyToken }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\": \"カレンダーはこちらから👇\"\n  },\n  {\n    \"type\": \"text\",\n    \"text\": \"https://calendar.google.com/calendar/u/0/r\",\n    \"quickReply\": {\n      \"items\": [\n        {\n          \"type\": \"action\",\n          \"action\": {\n            \"type\": \"uri\",\n            \"label\": \"カレンダー\",\n            \"uri\": \"https://calendar.google.com/calendar/u/0/r\"\n          }\n        }\n      ]\n    }\n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1238,
-        2020
-      ],
-      "id": "f98b6c97-1053-4d95-838d-acbce61f515b",
-      "name": "List6"
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "名言集",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "sent_at",
-              "condition": "eq",
-              "keyValue": "1"
-            }
-          ]
-        }
-      },
-      "id": "e477fab4-0168-4238-ab16-51589d8d7198",
-      "name": "今日の名言取得2",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        720,
-        6200
-      ],
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "f92bd6f1-6fcf-4a54-9524-affbe2b3cdf9",
-              "name": "sent_at",
-              "value": "={{ $json.sent_at }}",
-              "type": "number"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        940,
-        6200
-      ],
-      "id": "75a64eb5-13da-45e5-9625-0e99fc615d91",
-      "name": "Edit Fields"
-    },
-    {
-      "parameters": {
-        "fieldsToSummarize": {
-          "values": [
-            {
-              "field": "sent_at"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.summarize",
-      "typeVersion": 1.1,
-      "position": [
-        1160,
-        6200
-      ],
-      "id": "1227e818-8125-4278-83ee-ef4bcad99d5b",
-      "name": "Summarize"
-    },
-    {
-      "parameters": {
-        "mode": "chooseBranch"
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.1,
-      "position": [
-        1380,
-        6150
-      ],
-      "id": "93a94043-429e-4a97-b6cd-db26e7a20c3e",
-      "name": "Merge"
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.count_sent_at % 10}}",
-                    "rightValue": 0,
-                    "operator": {
-                      "type": "number",
-                      "operation": "equals"
-                    },
-                    "id": "f79b2305-68b5-4dcc-bd94-62060c3753d2"
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "10の倍数"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "3a525e62-2ba6-499f-b051-68b9de0e2cf8",
-                    "leftValue": "={{ $json.count_sent_at % 10}}",
-                    "rightValue": 5,
-                    "operator": {
-                      "type": "number",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "5の倍数"
-            }
-          ]
-        },
-        "looseTypeValidation": true,
-        "options": {
-          "fallbackOutput": "extra"
-        }
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        1600,
-        6150
-      ],
-      "id": "87582402-6ad5-4a8d-89ed-009fec7aa3f6",
-      "name": "Switch2"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "あなたはムキムキタスくんという明るく前向きなパーソナルトレーナーとして話す。\n今日の筋トレを達成した人に向けて、50字程度の短いねぎらいの掛け声を作ること。\nボディビル大会のコールのようにユーモアを入れた一言にする。\n例：固定資産税かかってるよ、肩にちっちゃいジープ乗せてんのかい 等。\n掛け声は1つだけ返す。\nため口で話す。\n記号 ** は使わず、‼は使ってよい。\n自分の名前は名乗らない。",
-        "batching": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1.7,
-      "position": [
-        1160,
-        2220
-      ],
-      "id": "293a70c2-c22a-4205-85f6-1ef61171d4f4",
-      "name": "Basic LLM Chain"
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-2.5-flash-lite",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        1248,
-        2440
-      ],
-      "id": "c0443645-5051-49d6-b8ee-095ea071af76",
-      "name": "Google Gemini Chat Model",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "kF2BDLykZp4bVOlM",
-          "name": "Google Gemini(PaLM) Api account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "replyToken",
-              "value": "={{ $('Code - Normalize LINE').item.json.replyToken }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [ {\n  \"type\": \"text\",\n  \"text\": $json.text\n} ] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "b5f55b94-a68b-48c8-9f64-642215a97ac3",
-      "name": "LINE通知送信4",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        1540,
-        2220
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/push",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "to",
-              "value": "={{ $json.to }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\": \"ムキムキタスくんだよ！💪\\n\\n『\" + $json.kakugen + \"』\\n─ \" + $json.jinbutsu + \"\\n\\nさあ、準備はいいか？🔥\",\n    \"quickReply\": {\n      \"items\": [\n        {\n          \"type\": \"action\",\n          \"action\": {\n            \"type\": \"message\",\n            \"label\": \"今日の筋トレ完了👍\",\n            \"text\": \"完了👍\"\n          }\n        }\n      ]\n    }\n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1820,
-        6250
-      ],
-      "id": "3f9f88dc-f20a-4e81-8cd9-e6faf54a9149",
-      "name": "List11"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/push",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "to",
-              "value": "={{ $json.to }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\": \"今日で\" + $json.count_sent_at + \"日目‼😎\\n\\n『\" +  $json.kakugen  + \"』\\n─ \" +  $json.jinbutsu   + \"\\n\\nさあ、いこか？🔥\",\n    \"quickReply\": {\n      \"items\": [\n        {\n          \"type\": \"action\",\n          \"action\": {\n            \"type\": \"message\",\n            \"label\": \"今日の筋トレ完了👍\",\n            \"text\": \"完了👍\"\n          }\n        }\n      ]\n    }\n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1820,
-        6050
-      ],
-      "id": "eb8927bb-51ff-48d0-998d-8c02c94d54f1",
-      "name": "List12"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/push",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "to",
-              "value": "={{ $json.to }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [\n  {\n    \"type\": \"text\",\n    \"text\": \"素晴らしい‼\" + $json.count_sent_at + \"日達成‼🥳ここまで続けられるのはすごい‼\\n\\n『\" +  $json.kakugen  + \"』\\n─ \" +  $json.jinbutsu   + \"\\n\\nさあ、もっと高みを目指そう🔥\",\n    \"quickReply\": {\n      \"items\": [\n        {\n          \"type\": \"action\",\n          \"action\": {\n            \"type\": \"message\",\n            \"label\": \"今日の筋トレ完了👍\",\n            \"text\": \"完了👍\"\n          }\n        }\n      ]\n    }\n  }\n] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1820,
-        5850
-      ],
-      "id": "8e1975a8-52f7-494f-9482-de1aa0bb1310",
-      "name": "List13"
-    }
-  ],
-  "connections": {
-    "Webhook": {
-      "main": [
-        [
-          {
-            "node": "Code - Normalize LINE",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Supabase Check User",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code - Normalize LINE": {
-      "main": [
-        [
-          {
-            "node": "Set Agent Input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Agent Input": {
-      "main": [
-        [
-          {
-            "node": "Switch",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch": {
-      "main": [
-        [
-          {
-            "node": "List",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "List3",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Journal",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "天気予報API1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Google News RSS取得1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "List5",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "今日の名言取得",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "List6",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Basic LLM Chain",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Create a row",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Webhook - LIST (GET)": {
-      "main": [
-        [
-          {
-            "node": "Supabase: Select rows1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase: Select rows1": {
-      "main": [
-        [
-          {
-            "node": "Adapt → {pinned,active,completed}1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Adapt → {pinned,active,completed}1": {
-      "main": [
-        [
-          {
-            "node": "Respond JSON1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase Check User": {
-      "main": [
-        [
-          {
-            "node": "If New User?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If New User?": {
-      "main": [
-        [
-          {
-            "node": "Supabase Create User",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "名言1件だけ選択": {
-      "main": [
-        [
-          {
-            "node": "名言を送信済みに更新1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "LINEユーザー一覧取得1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "今日の名言取得1": {
-      "main": [
-        [
-          {
-            "node": "名言1件だけ選択",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "LINEユーザー一覧取得1": {
-      "main": [
-        [
-          {
-            "node": "ユーザー×名言 結合3",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Cron - 毎日22:30": {
-      "main": [
-        [
-          {
-            "node": "今日の名言取得1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "今日の名言取得2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "ユーザー×名言 結合3": {
-      "main": [
-        [
-          {
-            "node": "Code2",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "天気予報API1": {
-      "main": [
-        [
-          {
-            "node": "天気データ整形1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "天気データ整形1": {
-      "main": [
-        [
-          {
-            "node": "List1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google News RSS取得1": {
-      "main": [
-        [
-          {
-            "node": "XML Parse1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "XML Parse1": {
-      "main": [
-        [
-          {
-            "node": "ニュースデータ整形1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "ニュースデータ整形1": {
-      "main": [
-        [
-          {
-            "node": "List2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code2": {
-      "main": [
-        [
-          {
-            "node": "Create Tweet2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "名言1件だけ選択1": {
-      "main": [
-        [
-          {
-            "node": "List4",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "今日の名言取得": {
-      "main": [
-        [
-          {
-            "node": "名言1件だけ選択1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse & Validate": {
-      "main": [
-        [
-          {
-            "node": "Switch - action",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch - action": {
-      "main": [
-        [
-          {
-            "node": "Supabase - Create Task",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Supabase - Delete Task",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Supabase - Complete Task1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Supabase - Uncomplete Task",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Supabase - Get Task",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Supabase - Update Detail",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Stub - Remind Plus 2h",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Wait",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Spread Orders",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Supabase1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Supabase - Uncomplete Task1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Create Task": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Delete Task": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Uncomplete Task": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Get Task": {
-      "main": [
-        [
-          {
-            "node": "Switch1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Toggle Pin": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Update Detail": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Stub - Remind Plus 2h": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Unknown Action": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Webhook - ACTION (POST)1": {
-      "main": [
-        [
-          {
-            "node": "Parse & Validate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build OK6": {
-      "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Complete Task1": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch1": {
-      "main": [
-        [
-          {
-            "node": "Supabase - Toggle Pin",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Supabase - Toggle Pin1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Toggle Pin1": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Spread Orders": {
-      "main": [
-        [
-          {
-            "node": "Supabase - Update SortOrder",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Update SortOrder": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Execute Workflow": {
-      "main": [
-        []
-      ]
-    },
-    "Supabase1": {
-      "main": [
-        [
-          {
-            "node": "Execute Workflow",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Wait": {
-      "main": [
-        [
-          {
-            "node": "Supabase",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase": {
-      "main": [
-        [
-          {
-            "node": "LINE通知送信1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase - Uncomplete Task1": {
-      "main": [
-        [
-          {
-            "node": "Build OK6",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "今日の名言取得2": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Edit Fields": {
-      "main": [
-        [
-          {
-            "node": "Summarize",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Summarize": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Switch2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch2": {
-      "main": [
-        [
-          {
-            "node": "List13",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "List12",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "List11",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Basic LLM Chain": {
-      "main": [
-        [
-          {
-            "node": "LINE通知送信4",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Gemini Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Basic LLM Chain",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
-  "pinData": {},
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "77d31c6417b7f4a97ff32b52b2f93e93f53e0a0f52d46951827b8caaa26002b2"
-  }
-}
+
+
+        init();
+    </script>
+</body>
+</html>
 
 
 
-{
-  "nodes": [
-    {
-      "parameters": {
-        "resume": "specificTime",
-        "dateTime": "={{ $json.remind_at }}"
-      },
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        620,
-        40
-      ],
-      "id": "abee861e-c735-46b1-b6da-7221ed3b12f3",
-      "name": "Wait",
-      "webhookId": "0f70a475-9ef9-46a1-9b3b-60bce91f36ea"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/push",
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Authorization\": \"Bearer m+vt4JTVz5nC9grUAfL7nZg56123rt0NXoOJ1m6O5e79nCuLrYgUzxGYc+pWxUHU6qyNVFY90x8JO2QnkybyendzkFmSlfDah/piEIa++P/KNa2nfrPHmB4RlrguRJ1ft6Qoxz6pQchWPGL0FuXztAdB04t89/1O/w1cDnyilFU=\",\n  \"Content-Type\": \"application/json\"\n}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "to",
-              "value": "={{ $json.user_id }}"
-            },
-            {
-              "name": "messages",
-              "value": "={{ [ {\n  \"type\": \"text\",\n  \"text\": \"👇リマインドだよ！\\n『\" + $json.task_name + \"』\"\n} ] }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "19394566-1574-4592-a358-7735291e53e5",
-      "name": "LINE通知送信1",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [
-        1500,
-        40
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "タスク一覧",
-        "matchType": "allFilters",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "id",
-              "condition": "eq",
-              "keyValue": "={{ $json.id }}"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        840,
-        40
-      ],
-      "id": "32eb321d-3629-4965-a205-fa9cd24fd160",
-      "name": "Supabase",
-      "credentials": {
-        "supabaseApi": {
-          "id": "tLBH1Fj0NZ4rIzKG",
-          "name": "yamasho-supabase"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "inputSource": "passthrough"
-      },
-      "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1.1,
-      "position": [
-        -40,
-        40
-      ],
-      "id": "5f07d418-beb8-4049-a8db-5ec44ff1347a",
-      "name": "When Executed by Another Workflow"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "4b47b621-0e4f-4dec-8521-25dd0a1aee67",
-              "leftValue": "={{ $json.complete_at }}",
-              "rightValue": 0,
-              "operator": {
-                "type": "number",
-                "operation": "equals"
-              }
-            },
-            {
-              "id": "ad3940ce-90bd-4cdc-bc4e-e9190135276f",
-              "leftValue": "={{ $json.pinned }}",
-              "rightValue": 1,
-              "operator": {
-                "type": "number",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "or"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1280,
-        40
-      ],
-      "id": "8447ef07-ad5f-4cda-abb7-b3c01bd2a43d",
-      "name": "If"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "86df5c5f-6611-4ae3-ac1d-3d05219fb375",
-              "leftValue": "={{ $json.remind_at}}",
-              "rightValue": "[null]",
-              "operator": {
-                "type": "dateTime",
-                "operation": "exists",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        180,
-        40
-      ],
-      "id": "74e04fac-50d1-4688-8d89-1665c6bd1671",
-      "name": "If1"
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ new Date().toISOString() }}",
-                    "rightValue": "={{ $json.remind_at }}",
-                    "operator": {
-                      "type": "dateTime",
-                      "operation": "before"
-                    },
-                    "id": "07229099-9327-4859-aafa-fe3e6268c6b2"
-                  }
-                ],
-                "combinator": "and"
-              }
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra",
-          "ignoreCase": false
-        }
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        400,
-        40
-      ],
-      "id": "f84589bf-c3b9-4275-8ccb-ec605910e13e",
-      "name": "Switch"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "6b5ceba4-10ac-4403-8f08-13c9eb89a21e",
-              "leftValue": "={{ $json.remind_at }}",
-              "rightValue": "={{ $('Wait').item.json.remind_at }}",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1060,
-        40
-      ],
-      "id": "42d0b491-27f7-492d-b502-26fa87bab86a",
-      "name": "If2"
-    }
-  ],
-  "connections": {
-    "Wait": {
-      "main": [
-        [
-          {
-            "node": "Supabase",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase": {
-      "main": [
-        [
-          {
-            "node": "If2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "When Executed by Another Workflow": {
-      "main": [
-        [
-          {
-            "node": "If1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If": {
-      "main": [
-        [
-          {
-            "node": "LINE通知送信1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If1": {
-      "main": [
-        [
-          {
-            "node": "Switch",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
-      ]
-    },
-    "Switch": {
-      "main": [
-        [
-          {
-            "node": "Wait",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
-      ]
-    },
-    "If2": {
-      "main": [
-        [
-          {
-            "node": "If",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
-  "pinData": {},
-  "meta": {
-    "instanceId": "77d31c6417b7f4a97ff32b52b2f93e93f53e0a0f52d46951827b8caaa26002b2"
-  }
-}
