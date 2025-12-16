@@ -2,422 +2,984 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LIST｜タスク一覧</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>ムキムキタスくん</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body {
-            font-family: -apple-system, system-ui;
+        * {
+            box-sizing: border-box;
             margin: 0;
-            background: #f7f7f8;
+            padding: 0;
         }
 
-        header {
+        body {
+            font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        /* ========== タブナビゲーション（バインダーインデックス風） ========== */
+        .tab-container {
             position: sticky;
             top: 0;
-            background: #fff;
-            border-bottom: 1px solid #eee;
-            z-index: 10;
+            z-index: 100;
+            background: transparent;
+            padding: 12px 16px 0;
         }
 
-        .bar {
+        .tab-nav {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
+            justify-content: center;
+            gap: 0;
         }
 
-        .tab {
-            padding: 6px 12px;
-            border-radius: 14px;
-            border: 1px solid #ddd;
+        .tab-item {
+            position: relative;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-bottom: none;
+            border-radius: 12px 12px 0 0;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.2s ease;
+            margin: 0 2px;
+            transform: translateY(4px);
+        }
+
+        .tab-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .tab-item.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: #1a1a2e;
+            transform: translateY(0);
+            z-index: 2;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .tab-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        /* ========== コンテンツエリア ========== */
+        .content-area {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px 20px 0 0;
+            min-height: calc(100vh - 60px);
+            padding: 0;
+            margin-top: -1px;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 16px;
+            color: #333;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ========== ミッションバナー ========== */
+        .mission-banner {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .mission-banner-icon {
+            font-size: 20px;
+        }
+
+        /* ========== ミッションタスクカード ========== */
+        .mission-card {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border: 2px solid #f7931e;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mission-card::before {
+            content: 'MISSION';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 10px;
+        }
+
+        .mission-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .mission-icon {
+            font-size: 24px;
+        }
+
+        .mission-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .mission-desc {
             font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .mission-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .mission-btn.completed {
+            background: #43e97b;
+        }
+
+        /* ========== タスク追加エリア ========== */
+        .add-task-area {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .add-task-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .add-task-input:focus {
+            border-color: #667eea;
+        }
+
+        .add-task-btn {
+            background: #111;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
         }
 
-            .tab.active {
-                background: #111;
-                color: white;
-                border-color: #111;
-            }
-
-        .add {
-            display: flex;
-            gap: 8px;
-            padding: 12px 16px;
+        /* ========== タスクリスト ========== */
+        .section-label {
+            font-size: 12px;
+            color: #888;
+            margin: 16px 0 8px;
+            padding-left: 4px;
         }
 
-            .add input {
-                flex: 1;
-                padding: 10px;
-                border-radius: 8px;
-                border: 1px solid #ddd;
-                font-size: 16px; /* iOSの勝手ズーム防止 */
-            }
-
-        .list {
+        .task-list {
             display: flex;
             flex-direction: column;
+            gap: 8px;
         }
 
-        .card {
-            position: relative;
+        .task-card {
             background: white;
-            border-bottom: 1px solid #eee;
-            height: 60px;
-            overflow: hidden;
-            touch-action: pan-y;
-            box-sizing: border-box;
-        }
-
-            .card.completed .title {
-                color: #aaa;
-                text-decoration: line-through;
-            }
-
-            .card.dragging {
-                opacity: 0.9;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-                z-index: 5;
-            }
-
-        .sl {
-            position: relative;
-            height: 100%;
-            width: 100%;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 14px 16px;
             display: flex;
             align-items: center;
-            padding: 0 12px;
-            transition: transform .15s ease;
-            background: white;
-            z-index: 2;
-            box-sizing: border-box;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .actions-rail {
-            position: absolute;
-            inset: 0;
+        .task-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+        }
+
+        .task-card.completed {
+            opacity: 0.6;
+        }
+
+        .task-card.completed .task-title {
+            text-decoration: line-through;
+            color: #aaa;
+        }
+
+        .task-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .task-card.completed .task-checkbox {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .task-title {
+            flex: 1;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .task-remind {
+            font-size: 11px;
+            color: #888;
+        }
+
+        /* ========== デイリータスク（習慣トラッカー） ========== */
+        .daily-task-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .daily-task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .daily-task-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            pointer-events: none;
-            z-index: 1;
         }
 
-        /* スワイプで開いているときだけボタンを押せるようにする */
-        .card.open-left .actions-rail,
-        .card.open-right .actions-rail {
-            pointer-events: auto;
-        }
-
-        .actions-left, .actions-right {
-            height: 100%;
+        .daily-task-title {
+            font-size: 16px;
+            font-weight: 700;
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
-        .actions-left {
-            background: #e8f7ee;
-            justify-content: flex-start;
-            padding-left: 0;
+        .daily-task-arrow {
+            font-size: 20px;
+            transition: transform 0.3s;
         }
 
-        .actions-right {
-            background: #fdeeee;
-            justify-content: flex-end;
-            padding-right: 0;
+        .daily-task-card.expanded .daily-task-arrow {
+            transform: rotate(180deg);
         }
 
-        .actions-rail button {
-            height: 100%;
-            min-width: 64px;
+        .daily-task-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .daily-task-card.expanded .daily-task-content {
+            max-height: 500px;
+        }
+
+        .habit-list {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .habit-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+
+        .habit-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .habit-checkbox.checked {
+            background: white;
+            border-color: white;
+            color: #667eea;
+        }
+
+        .habit-name {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .habit-icon {
+            font-size: 18px;
+        }
+
+        .daily-task-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .daily-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
             border: none;
+        }
+
+        .daily-btn-cancel {
+            background: rgba(255, 255, 255, 0.2);
             color: white;
+        }
+
+        .daily-btn-save {
+            background: white;
+            color: #667eea;
+        }
+
+        /* ========== 週間ビュー（習慣トラッカー表） ========== */
+        .week-view-section {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+            overflow-x: auto;
+        }
+
+        .week-view-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .week-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 400px;
+        }
+
+        .week-table th,
+        .week-table td {
+            padding: 8px 4px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .week-table th {
+            color: #888;
+            font-weight: 500;
+        }
+
+        .week-table th:first-child,
+        .week-table td:first-child {
+            text-align: left;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .week-table td.checked::after {
+            content: '✓';
+            color: #43e97b;
+            font-weight: 700;
+        }
+
+        .week-table td.unchecked::after {
+            content: '-';
+            color: #ddd;
+        }
+
+        .week-table tr:last-child td {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        /* ========== 分析セクション ========== */
+        .analysis-section {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+        }
+
+        .analysis-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .progress-bar-container {
+            margin-bottom: 16px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
             font-size: 13px;
-            border-radius: 0;
+            margin-bottom: 6px;
+        }
+
+        .progress-label-name {
+            color: #666;
+        }
+
+        .progress-label-value {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .progress-bar-bg {
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .chart-container-small {
+            height: 200px;
+            margin-top: 16px;
+        }
+
+        /* ========== ジャーナル入力フォーム ========== */
+        .journal-form {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+        }
+
+        .journal-form-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-textarea:focus {
+            border-color: #667eea;
+        }
+
+        .journal-submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
         }
 
-        .btn-complete {
-            background: #7e6dff;
+        /* ========== ジャーナルカード ========== */
+        .journal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        .btn-plus2h {
-            background: #8012e2;
+        .journal-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .btn-detail {
-            background: #1e928b;
+        .journal-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
         }
 
-        .btn-pin {
-            background: #d97706;
+        .journal-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
         }
 
-        .btn-delete {
-            background: #f03d30;
-        }
-
-        .title {
-            font-size: 15px;
-        }
-
-        .handle {
-            margin-left: auto;
-            cursor: grab;
-            opacity: 0.25;
-            -webkit-user-select: none;
-            user-select: none;
-            padding: 0 8px;
-            font-size: 20px;
-            touch-action: none;
-        }
-
-        .divider-label {
-            text-align: center;
+        .journal-date {
+            font-size: 13px;
             color: #888;
-            font-size: 12px;
-            padding: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        /* 詳細モーダル */
-        .modal-root {
+        .journal-tasks-count {
+            font-size: 12px;
+            color: #43e97b;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .journal-title-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .journal-preview {
+            font-size: 13px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .journal-card-expand {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .journal-card.expanded .journal-card-expand {
+            max-height: 500px;
+        }
+
+        .journal-full-content {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
+
+        .journal-tasks-list {
+            margin-bottom: 12px;
+        }
+
+        .journal-tasks-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 6px;
+        }
+
+        .journal-task-item {
+            font-size: 13px;
+            color: #333;
+            padding: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .journal-body {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .journal-edit-btn {
+            margin-top: 12px;
+            background: #f5f5f5;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* ========== ステータスセクション（既存流用） ========== */
+        .status-avatar-section {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .status-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            margin: 0 auto 12px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .status-user-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .status-user-title {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .status-level-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 15px;
+            margin-top: 8px;
+        }
+
+        /* ========== レーダーチャート ========== */
+        .radar-section {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+        }
+
+        .radar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .radar-container {
+            height: 250px;
+        }
+
+        /* ========== ローディング ========== */
+        .loading-overlay {
             position: fixed;
             inset: 0;
-            display: none;
-            z-index: 50;
-            align-items: flex-end;
+            background: rgba(26, 26, 46, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            z-index: 1000;
         }
 
-            .modal-root.visible {
-                display: flex;
-            }
-
-        .modal-backdrop {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,.25);
-            z-index: 0;
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
-        .modal-panel {
-            width: 100%;
-            max-width: 480px;
-            background: #fff;
-            border-radius: 20px 20px 0 0;
-            padding: 16px;
-            animation: slideUp .18s ease-out;
-            position: relative;
-            z-index: 1;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(40px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .slider-group {
-            margin: 14px 0;
-        }
-
-        .slider-label-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-        }
-
-            .slider-label-row span.value {
-                font-size: 13px;
-                font-weight: 600;
-            }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: 14px;
-        }
-
-        .btn-secondary {
-            padding: 8px 14px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            background: #fafafa;
-            cursor: pointer;
-        }
-
-        .btn-primary-solid {
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: #7e6dff;
+        .loading-text {
             color: white;
-            border: none;
-            cursor: pointer;
+            margin-top: 16px;
+            font-size: 14px;
         }
 
-        .remindAt {
-            font-size: 11px;
-            color: #666;
-            margin-left: 8px;
-            white-space: nowrap;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
         }
     </style>
-
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
+    <!-- ローディング -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">読み込み中...</div>
+    </div>
 
-    <header>
-        <div class="bar">
-            <div style="font-weight:600">LIST</div>
-            <div class="tab active">タスク</div>
-            <div class="tab" id="refreshBtn">↻</div>
-        </div>
-    </header>
-
-    <main>
-        <div class="add">
-            <input id="newTitle" placeholder="タスクを入力…" />
-            <button id="btnAdd" class="tab" style="background:#111;color:white;border-color:#111">追加</button>
-        </div>
-
-        <div class="divider-label">ToDoタスク</div>
-        <div id="pinned" class="list"></div>
-        <div id="active" class="list"></div>
-
-        <div class="divider-label" style="margin-top:16px;">--------------------------------------------------------------------<br>達成タスク</div>
-        <div id="completed" class="list"></div>
-    </main>
-
-    <!-- 詳細モーダル -->
-    <div id="detailModal" class="modal-root">
-        <div id="detailBackdrop" class="modal-backdrop"></div>
-        <div class="modal-panel">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div style="font-weight:600">タスク詳細</div>
-                <button id="detailCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
-            </div>
-
-            <div id="detailTaskTitle" style="font-size:13px;color:#555;margin-bottom:8px;"></div>
-
-            <!-- スコア設定グループ（詳細モード用） -->
-            <div id="scoreGroup">
-                <div class="slider-group">
-                    <div class="slider-label-row"><span>優先度</span><span class="value" id="valPriority"></span></div>
-                    <input id="inputPriority" type="range" min="0" max="10" step="1" />
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label-row"><span>ビジョン関連度</span><span class="value" id="valVision"></span></div>
-                    <input id="inputVision" type="range" min="0" max="10" step="1" />
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label-row"><span>わくわく度</span><span class="value" id="valExcite"></span></div>
-                    <input id="inputExcite" type="range" min="0" max="10" step="1" />
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-label-row"><span>成長度</span><span class="value" id="valGrowth"></span></div>
-                    <input id="inputGrowth" type="range" min="0" max="10" step="1" />
-                </div>
-            </div>
-
-            <!-- リマインド日時グループ（通知モード用） -->
-            <div id="remindGroup" class="slider-group">
-                <div class="slider-label-row">
-                    <span>リマインド日時</span>
-                    <span class="value" id="valRemindAt"></span>
-                </div>
-                <input id="inputRemindAt" type="datetime-local" />
-            </div>
-
-            <div class="modal-footer">
-                <button id="detailCancelBtn" class="btn-secondary">キャンセル</button>
-                <button id="detailSaveBtn" class="btn-primary-solid">保存</button>
-            </div>
-
+    <!-- タブナビゲーション -->
+    <div class="tab-container">
+        <div class="tab-nav">
+            <div class="tab-item active" data-tab="list">リスト</div>
+            <div class="tab-item" data-tab="status">ステータス</div>
+            <div class="tab-item" data-tab="journal">ジャーナル</div>
         </div>
     </div>
 
+    <!-- コンテンツエリア -->
+    <div class="content-area">
+
+        <!-- ========== リストタブ ========== -->
+        <div id="tab-list" class="tab-content active">
+            <!-- ミッション達成者バナー -->
+            <div class="mission-banner" id="missionBanner">
+                <span class="mission-banner-icon">🔥</span>
+                <span>今週 <strong id="missionCount">0</strong> 人がミッション達成!</span>
+            </div>
+
+            <!-- ミッションタスク -->
+            <div class="mission-card" id="missionCard">
+                <div class="mission-card-header">
+                    <span class="mission-icon">🎯</span>
+                    <span class="mission-title" id="missionTitle">今週のミッション</span>
+                </div>
+                <div class="mission-desc" id="missionDesc">読み込み中...</div>
+                <button class="mission-btn" id="missionBtn">ミッション達成!</button>
+            </div>
+
+            <!-- タスク追加 -->
+            <div class="add-task-area">
+                <input type="text" class="add-task-input" id="newTaskInput" placeholder="タスクを入力..." />
+                <button class="add-task-btn" id="addTaskBtn">追加</button>
+            </div>
+
+            <!-- ToDoタスク -->
+            <div class="section-label">ToDoタスク</div>
+            <div class="task-list" id="activeTaskList"></div>
+
+            <!-- 達成タスク -->
+            <div class="section-label" style="margin-top: 20px;">達成タスク</div>
+            <div class="task-list" id="completedTaskList"></div>
+        </div>
+
+        <!-- ========== ステータスタブ ========== -->
+        <div id="tab-status" class="tab-content">
+            <!-- デイリータスク（習慣トラッカー） -->
+            <div class="daily-task-card" id="dailyTaskCard">
+                <div class="daily-task-header">
+                    <div class="daily-task-title">
+                        <span>📋</span>
+                        <span>デイリータスク</span>
+                    </div>
+                    <span class="daily-task-arrow">▼</span>
+                </div>
+                <div class="daily-task-content">
+                    <div class="habit-list" id="habitList">
+                        <!-- 習慣項目はJSで生成 -->
+                    </div>
+                    <div class="daily-task-buttons">
+                        <button class="daily-btn daily-btn-cancel" id="habitCancelBtn">キャンセル</button>
+                        <button class="daily-btn daily-btn-save" id="habitSaveBtn">保存</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 週間ビュー -->
+            <div class="week-view-section">
+                <div class="week-view-title">📅 週間ビュー</div>
+                <table class="week-table" id="weekTable">
+                    <thead>
+                        <tr>
+                            <th>習慣</th>
+                            <th>月</th>
+                            <th>火</th>
+                            <th>水</th>
+                            <th>木</th>
+                            <th>金</th>
+                            <th>土</th>
+                            <th>日</th>
+                        </tr>
+                    </thead>
+                    <tbody id="weekTableBody">
+                        <!-- JSで生成 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分析セクション -->
+            <div class="analysis-section">
+                <div class="analysis-title">📊 分析データ</div>
+                <div class="progress-bar-container">
+                    <div class="progress-label">
+                        <span class="progress-label-name">週間達成率</span>
+                        <span class="progress-label-value" id="weekProgressValue">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="weekProgressBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="chart-container-small">
+                    <canvas id="habitChart"></canvas>
+                </div>
+            </div>
+
+            <!-- アバター & ステータス -->
+            <div class="status-avatar-section">
+                <div class="status-avatar" id="statusAvatar">💪</div>
+                <div class="status-user-name" id="statusUserName">筋肉戦士</div>
+                <div class="status-user-title" id="statusUserTitle">筋肉の新芽</div>
+                <div class="status-level-badge" id="statusLevelBadge">Lv.1</div>
+            </div>
+
+            <!-- レーダーチャート -->
+            <div class="radar-section">
+                <div class="radar-title">💪 ステータス</div>
+                <div class="radar-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== ジャーナルタブ ========== -->
+        <div id="tab-journal" class="tab-content">
+            <!-- ジャーナル入力フォーム -->
+            <div class="journal-form">
+                <div class="journal-form-title">📝 新しいジャーナル</div>
+                <div class="form-group">
+                    <label class="form-label">日付</label>
+                    <input type="date" class="form-input" id="journalDate" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">タイトル</label>
+                    <input type="text" class="form-input" id="journalTitle" placeholder="今日のタイトル..." />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">内容</label>
+                    <textarea class="form-textarea" id="journalContent" placeholder="今日の振り返りを書いてみましょう..."></textarea>
+                </div>
+                <button class="journal-submit-btn" id="journalSubmitBtn">保存する</button>
+            </div>
+
+            <!-- ジャーナル一覧 -->
+            <div class="section-label">過去のジャーナル</div>
+            <div class="journal-list" id="journalList">
+                <!-- JSで生成 -->
+            </div>
+        </div>
+
+    </div>
+
     <script>
-        const LIFF_ID = "2008372898-2q9qWmxv";
+        // ========== 設定 ==========
+        const LIFF_ID = "2008372898-2q9qWmxv"; // 適切なLIFF IDに変更してください
         const API_BASE = "https://lumicreate.xvps.jp/webhook";
+
         let userId = null;
-        let currentDetailTask = null;
-        let modalMode = "detail"; // "detail" or "remind"
+        let radarChart = null;
+        let habitChart = null;
 
-        // 強スワイプ判定の比率
-        const STRONG_RATIO = 0.85;  // ボタン幅の約85%以上
-        const SNAP_THRESHOLD = 40;  // このpx以上で「開く」スナップ
+        // 習慣項目（運営固定）
+        const HABITS = [
+            { id: 'early_wake', name: '早起き', icon: '🌅' },
+            { id: 'mission', name: 'ミッションタスク', icon: '🎯' },
+            { id: 'reading', name: '読書/学習', icon: '📚' },
+            { id: 'journal', name: 'ジャーナル', icon: '📝' },
+            { id: 'no_alcohol', name: '禁酒', icon: '🚫' },
+            { id: 'workout', name: '今日トレ', icon: '💪' }
+        ];
 
-        // DOMキャッシュ
-        const pinnedEl = document.getElementById("pinned");
-        const activeEl = document.getElementById("active");
-        const completedEl = document.getElementById("completed");
-        const refreshBtn = document.getElementById("refreshBtn");
-        const btnAdd = document.getElementById("btnAdd");
-        const newTitle = document.getElementById("newTitle");
+        // 今日の習慣チェック状態
+        let todayHabits = {};
 
-        // モーダル要素
-        const detailModal = document.getElementById("detailModal");
-        const detailBackdrop = document.getElementById("detailBackdrop");
-        const detailCloseBtn = document.getElementById("detailCloseBtn");
-        const detailCancelBtn = document.getElementById("detailCancelBtn");
-        const detailSaveBtn = document.getElementById("detailSaveBtn");
-        const detailTaskTitle = document.getElementById("detailTaskTitle");
-
-        const inputPriority = document.getElementById("inputPriority");
-        const inputVision = document.getElementById("inputVision");
-        const inputExcite = document.getElementById("inputExcite");
-        const inputGrowth = document.getElementById("inputGrowth");
-        const valPriority = document.getElementById("valPriority");
-        const valVision = document.getElementById("valVision");
-        const valExcite = document.getElementById("valExcite");
-        const valGrowth = document.getElementById("valGrowth");
-
-        const inputRemindAt = document.getElementById("inputRemindAt"); // ★追加
-        const valRemindAt = document.getElementById("valRemindAt");     // ★追加
-
-        // ★ グループ要素（表示切り替え用）
-        const scoreGroup = document.getElementById("scoreGroup");
-        const remindGroup = document.getElementById("remindGroup");
-        const modalTitle = document.querySelector("#detailModal .modal-panel > div:first-child > div:first-child");
-
-
-        function toLocalDatetimeValue(iso) {
-            if (!iso) return "";
-            const d = new Date(iso);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, "0");
-            const dd = String(d.getDate()).padStart(2, "0");
-            const hh = String(d.getHours()).padStart(2, "0");
-            const mi = String(d.getMinutes()).padStart(2, "0");
-            return `${yyyy}-${mm}-${dd}T${hh}:${mi}`; // datetime-local 用
-        }
-
-        /*ここでいいのかな...?👇*/
-        function formatRemindLabel(iso) {
-            if (!iso) return "";
-            const d = new Date(iso);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, "0");
-            const dd = String(d.getDate()).padStart(2, "0");
-            const hh = String(d.getHours()).padStart(2, "0");
-            const mi = String(d.getMinutes()).padStart(2, "0");
-            return `🔔${yyyy}/${mm}/${dd} ${hh}:${mi}`; // 表示用
-        }
-
-        /* ==========================
-           INIT
-        ========================== */
+        // ========== 初期化 ==========
         async function init() {
             try {
                 await liff.init({ liffId: LIFF_ID });
@@ -429,611 +991,623 @@
                 userId = profile.userId;
 
                 bindUI();
-                bindModalUI();
-                await loadList();
+                await loadAllData();
+                hideLoading();
             } catch (e) {
-                console.error(e);
-                alert("LIFF初期化に失敗しました");
+                console.error("LIFF初期化エラー:", e);
+                // デモモードで動作
+                userId = "demo_user";
+                bindUI();
+                loadDemoData();
+                hideLoading();
             }
         }
 
-        /* ==========================
-           bindUI
-        ========================== */
+        // ========== UI バインド ==========
         function bindUI() {
-            refreshBtn.onclick = loadList;
+            // タブ切り替え
+            document.querySelectorAll('.tab-item').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.dataset.tab;
+                    switchTab(tabId);
+                });
+            });
 
-            btnAdd.onclick = async () => {
-                const title = newTitle.value.trim();
-                if (!title) return;
-                await action("create", null, { task_name: title });
-                newTitle.value = "";
-            };
-        }
+            // タスク追加
+            document.getElementById('addTaskBtn').addEventListener('click', addTask);
+            document.getElementById('newTaskInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addTask();
+            });
 
-        /* ==========================
-          詳細モーダル UI
-        ========================== */
-        function bindModalUI() {
-            const close = () => detailModal.classList.remove("visible");
+            // ミッション完了
+            document.getElementById('missionBtn').addEventListener('click', completeMission);
 
-            detailBackdrop.onclick = close;
-            detailCloseBtn.onclick = close;
-            detailCancelBtn.onclick = close;
-
-            const bindSlider = (input, label) => {
-                input.addEventListener("input", () => { label.textContent = input.value; });
-            };
-            bindSlider(inputPriority, valPriority);
-            bindSlider(inputVision, valVision);
-            bindSlider(inputExcite, valExcite);
-            bindSlider(inputGrowth, valGrowth);
-
-            // ★ リマインド日時が変更されたら右側のラベル更新（モーダル内）
-            inputRemindAt.addEventListener("change", () => {
-                if (inputRemindAt.value) {
-                    const d = new Date(inputRemindAt.value);
-                    valRemindAt.textContent = formatRemindLabel(d.toISOString());
-                } else {
-                    valRemindAt.textContent = "";
+            // デイリータスク展開
+            document.getElementById('dailyTaskCard').addEventListener('click', (e) => {
+                if (!e.target.closest('.habit-checkbox') && !e.target.closest('.daily-btn')) {
+                    toggleDailyTask();
                 }
             });
 
-            detailSaveBtn.onclick = async () => {
-                if (!currentDetailTask) return;
+            // 習慣保存/キャンセル
+            document.getElementById('habitSaveBtn').addEventListener('click', saveHabits);
+            document.getElementById('habitCancelBtn').addEventListener('click', () => {
+                document.getElementById('dailyTaskCard').classList.remove('expanded');
+            });
 
-                if (modalMode === "detail") {
-                    // ★ 通常の「詳細」モード → スコアだけ更新
-                    const payload = {
-                        priority: Number(inputPriority.value),
-                        vision_score: Number(inputVision.value),
-                        excite_score: Number(inputExcite.value),
-                        growth_score: Number(inputGrowth.value),
-                    };
-                    await action("update_detail", currentDetailTask.id, payload);
+            // ジャーナル保存
+            document.getElementById('journalSubmitBtn').addEventListener('click', saveJournal);
 
-                } else if (modalMode === "remind") {
-                    // ★ 「通知」モード → 入力が空なら NULL にリセット
-                    let remind_at = null;
+            // 今日の日付をデフォルトに
+            document.getElementById('journalDate').value = new Date().toISOString().split('T')[0];
 
-                    if (inputRemindAt.value) {
-                        // 日時が入っているときだけ ISO に変換
-                        const d = new Date(inputRemindAt.value);
-                        remind_at = d.toISOString();
-                    }
-
-                    // ★ 1) ローカルのタスクオブジェクトも更新
-                    currentDetailTask.remind_at = remind_at;
-
-                    // ★ 2) 対応するカードの右側ラベルを即時更新
-                    const card = document.querySelector(`.card[data-task-id="${currentDetailTask.id}"]`);
-                    if (card) {
-                        const rightBox = card.querySelector(".rightBox");
-                        if (rightBox) {
-                            let label = rightBox.querySelector(".remindAt");
-
-                            if (remind_at) {
-                                // 日時あり → ラベルを作る/更新
-                                if (!label) {
-                                    label = document.createElement("div");
-                                    label.className = "remindAt";
-                                    const handleEl = rightBox.querySelector(".handle");
-                                    rightBox.insertBefore(label, handleEl || null);
-                                }
-                                label.textContent = formatRemindLabel(remind_at);
-                            } else {
-                                // 日時なし（リセット）→ ラベルを消す
-                                if (label) {
-                                    label.remove();
-                                }
-                            }
-                        }
-                    }
-
-                    // ★ 3) サーバー側にも保存
-                    await action("remind_custom", currentDetailTask.id, {
-                        remind_at,                             // null もそのまま送る
-                        kind: remind_at ? "custom_datetime" : "clear",
-                    });
-                }
-
-
-                // 最後にモーダル閉じる
-                close();
-            };
+            // 習慣リスト生成
+            renderHabitList();
         }
 
-        /* ==========================
-          LIST API
-        ========================== */
-        async function loadList() {
-            const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
-            console.log("[LIST] request:", url);
+        // ========== タブ切り替え ==========
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
+            document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // ========== データ読み込み ==========
+        async function loadAllData() {
+            await Promise.all([
+                loadTasks(),
+                loadMission(),
+                loadHabits(),
+                loadStatus(),
+                loadJournals()
+            ]);
+        }
+
+        // タスク読み込み
+        async function loadTasks() {
             try {
-                const res = await fetch(url);
-                console.log("[LIST] status:", res.status);
-
-                const text = await res.text();
-                console.log("[LIST] raw response:", JSON.stringify(text));
-
-                if (!res.ok) {
-                    console.error("[LIST] http error:", res.status, text);
-                    alert("タスク一覧の取得に失敗しました（HTTPエラー）");
-                    return;
-                }
-
-                if (!text) {
-                    console.warn("[LIST] 空レスポンスでした");
-                    renderList({ pinned: [], active: [], completed: [] });
-                    return;
-                }
-
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    console.error("[LIST] JSONパースエラー:", e);
-                    alert("サーバーからJSONが返ってきていません");
-                    return;
-                }
-
-                console.log("[LIST] parsed json:", data);
-                renderList(data);
-
+                const res = await fetch(`${API_BASE}/list?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                renderTasks(data);
             } catch (e) {
-                console.error("[LIST] fetch error:", e);
-                alert("タスク一覧の取得に失敗しました（通信エラー）");
+                console.error('タスク読み込みエラー:', e);
+                renderTasks({ active: [], completed: [] });
             }
         }
 
-        function renderList(payload) {
-            pinnedEl.innerHTML = "";
-            activeEl.innerHTML = "";
-            completedEl.innerHTML = "";
-
-            const pinned = Array.isArray(payload.pinned) ? payload.pinned : [];
-            const active = Array.isArray(payload.active) ? payload.active : [];
-            const completed = Array.isArray(payload.completed) ? payload.completed : [];
-
-            pinned.forEach(t => pinnedEl.appendChild(taskCard(t, false)));
-            active.forEach(t => activeEl.appendChild(taskCard(t, false)));
-            completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
-        }
-
-        /* ==========================
-          並び順をサーバーへ保存
-        ========================== */
-        async function saveSortOrder() {
-            if (!userId) return;
-
-            const orders = [];
-
-            pinnedEl.querySelectorAll(".card").forEach((card, index) => {
-                const t = card.__taskData;
-                if (!t) return;
-                orders.push({ id: t.id, sort_order: index, section: "pinned" });
-            });
-            activeEl.querySelectorAll(".card").forEach((card, index) => {
-                const t = card.__taskData;
-                if (!t) return;
-                orders.push({ id: t.id, sort_order: index, section: "active" });
-            });
-            completedEl.querySelectorAll(".card").forEach((card, index) => {
-                const t = card.__taskData;
-                if (!t) return;
-                orders.push({ id: t.id, sort_order: index, section: "completed" });
-            });
-
-            console.log("[SORT_UPDATE] orders:", orders);
-            await action("sort_update", null, { orders });
-        }
-
-        /* ==========================
-          TASK CARD
-        ========================== */
-        function taskCard(t, isCompleted = false) {
-            const wrap = document.createElement("div");
-            wrap.className = "card";
-            if (isCompleted) wrap.classList.add("completed");
-
-            // 背面レール
-            const rail = document.createElement("div");
-            rail.className = "actions-rail";
-
-            const left = document.createElement("div");
-            left.className = "actions-left";
-
-            if (!isCompleted) {
-                left.append(
-                    mkBtn("完了", () => action("complete", t.id), "btn-complete"),
-                    // ★ 「通知」ボタンを押したら openRemind(t) を呼ぶ
-                    mkBtn("通知", () => openRemind(t), "btn-plus2h")
-                );
-            } else {
-                left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
-            }
-
-            const right = document.createElement("div");
-            right.className = "actions-right";
-            right.append(
-                mkBtn("詳細", () => openDetail(t), "btn-detail"),
-                mkBtn(t.pinned ? "📍解除" : "📍ピン", () => action("toggle_pin", t.id), "btn-pin"),
-                mkBtn("削除", () => {
-                    if (t.pinned) return alert("ピンを外してください！");
-                    action("delete", t.id);
-                }, "btn-delete")
-            );
-
-            rail.append(left, right);
-
-            // 前面
-            const sl = document.createElement("div");
-            sl.className = "sl";
-
-            const titleEl = document.createElement("div");
-            titleEl.className = "title";
-
-            const name = t.task_name || t.title || "(無題)";
-            titleEl.textContent = t.pinned ? "📍 " + name : name;
-
-            // 左（タイトル）と右（リマインド＋ハンドル）に分割
-            const leftBox = document.createElement("div");
-            leftBox.style.flex = "1";
-            leftBox.appendChild(titleEl);
-
-            const rightBox = document.createElement("div");
-            rightBox.className = "rightBox";           // ★ 追加
-            rightBox.style.display = "flex";
-            rightBox.style.alignItems = "center";
-
-            if (t.remind_at) {
-                const remindEl = document.createElement("div");
-                remindEl.className = "remindAt";
-                remindEl.textContent = formatRemindLabel(t.remind_at);
-                rightBox.appendChild(remindEl);
-            }
-
-            const handle = document.createElement("div");
-            handle.className = "handle";
-            handle.textContent = "☰";
-            handle.style.marginLeft = "8px";
-
-            rightBox.appendChild(handle);
-
-            sl.append(leftBox, rightBox);
-            wrap.append(rail, sl);
-
-
-            // ===== ボタン幅を測って data に保存（端を揃える用） =====
-            requestAnimationFrame(() => {
-                const lRect = left.getBoundingClientRect();
-                const rRect = right.getBoundingClientRect();
-                wrap.dataset.leftWidth = lRect.width || 140;
-                wrap.dataset.rightWidth = rRect.width || 140;
-            });
-
-            let holdTimer = null;
-            handle.addEventListener("pointerdown", e => {
-                holdTimer = setTimeout(() => startDrag(e), 500);
-            });
-
-            handle.addEventListener("pointerup", () => clearTimeout(holdTimer));
-            handle.addEventListener("pointerleave", () => clearTimeout(holdTimer));
-
-
-            /* ==========================
-                PC版 クリックでスワイプ
-            ========================== */
-            if (!/Mobi|Android/i.test(navigator.userAgent)) {
-                sl.addEventListener("click", e => {
-                    const rect = sl.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-
-                    const leftW = Number(wrap.dataset.leftWidth) || 140;
-                    const rightW = Number(wrap.dataset.rightWidth) || 140;
-
-                    if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
-                        wrap.classList.remove("open-left", "open-right");
-                        sl.style.transform = "translateX(0)";
-                        return;
-                    }
-
-                    if (x < rect.width / 2) {
-                        wrap.classList.add("open-left");
-                        wrap.classList.remove("open-right");
-                        sl.style.transform = `translateX(${leftW}px)`;
-                    } else {
-                        wrap.classList.add("open-right");
-                        wrap.classList.remove("open-left");
-                        sl.style.transform = `translateX(${-rightW}px)`;
-                    }
+        // ミッション読み込み
+        async function loadMission() {
+            try {
+                const res = await fetch(`${API_BASE}/mission?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                renderMission(data);
+            } catch (e) {
+                console.error('ミッション読み込みエラー:', e);
+                renderMission({
+                    title: '今週のミッション',
+                    description: '毎日5分のストレッチを続けよう!',
+                    completed: false,
+                    completion_count: 42
                 });
             }
+        }
 
-            /* ==========================
-                スマホ版 スワイプ
-            ========================== */
-            let startX = 0, dx = 0;
-            let isHandleDrag = false;  // ← 追加：☰ から始まったかどうか
+        // 習慣データ読み込み
+        async function loadHabits() {
+            try {
+                const res = await fetch(`${API_BASE}/habits?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                renderWeekView(data);
+                renderHabitAnalysis(data);
+            } catch (e) {
+                console.error('習慣読み込みエラー:', e);
+                renderWeekView(getDemoHabitData());
+                renderHabitAnalysis(getDemoHabitData());
+            }
+        }
 
-            wrap.addEventListener("touchstart", e => {
-                // ボタンをタップしている場合はスワイプ処理を起動しない
-                if (e.target.closest("button")) {
-                    return;
-                }
+        // ステータス読み込み
+        async function loadStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/status?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                renderStatus(data);
+            } catch (e) {
+                console.error('ステータス読み込みエラー:', e);
+                renderStatus(getDemoStatusData());
+            }
+        }
 
-                // ☰（.handle）から始まったタッチなら、スワイプ処理は一切しない
-                if (e.target.closest(".handle")) {
-                    isHandleDrag = true;
-                    return;
-                } else {
-                    isHandleDrag = false;
-                }
+        // ジャーナル読み込み
+        async function loadJournals() {
+            try {
+                const res = await fetch(`${API_BASE}/journals?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                renderJournals(data);
+            } catch (e) {
+                console.error('ジャーナル読み込みエラー:', e);
+                renderJournals(getDemoJournalData());
+            }
+        }
 
-                startX = e.touches[0].clientX;
-                dx = 0;
-                sl.style.transition = "none";
-            }, { passive: true });
+        // ========== タスク描画 ==========
+        function renderTasks(data) {
+            const activeList = document.getElementById('activeTaskList');
+            const completedList = document.getElementById('completedTaskList');
 
-            wrap.addEventListener("touchmove", e => {
-                if (isHandleDrag) {
-                    // ☰ をドラッグしてるときは、ここ（横スワイプ）には入らない
-                    return;
-                }
-                if (e.touches.length === 0) return;
-                dx = e.touches[0].clientX - startX;
-                if (Math.abs(dx) > 8) e.preventDefault();
-                sl.style.transform = `translateX(${dx}px)`;
-            }, { passive: false });
+            const active = [...(data.pinned || []), ...(data.active || [])];
+            const completed = data.completed || [];
 
-            wrap.addEventListener("touchend", () => {
-                // ☰ ドラッグだった場合は、スワイプの後処理をしない
-                if (isHandleDrag) {
-                    isHandleDrag = false;
-                    sl.style.transition = "";
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
+            activeList.innerHTML = active.map(t => createTaskCard(t, false)).join('');
+            completedList.innerHTML = completed.map(t => createTaskCard(t, true)).join('');
 
-                sl.style.transition = "transform .15s";
+            // イベントバインド
+            document.querySelectorAll('.task-card').forEach(card => {
+                card.addEventListener('click', () => toggleTaskComplete(card.dataset.id));
+            });
+        }
 
-                const leftW = Number(wrap.dataset.leftWidth) || 140;
-                const rightW = Number(wrap.dataset.rightWidth) || 140;
+        function createTaskCard(task, isCompleted) {
+            const name = task.task_name || task.title || '(無題)';
+            const remind = task.remind_at ? formatRemind(task.remind_at) : '';
+            return `
+                <div class="task-card ${isCompleted ? 'completed' : ''}" data-id="${task.id}">
+                    <div class="task-checkbox">${isCompleted ? '✓' : ''}</div>
+                    <div class="task-title">${task.pinned ? '📍 ' : ''}${name}</div>
+                    ${remind ? `<div class="task-remind">${remind}</div>` : ''}
+                </div>
+            `;
+        }
 
-                const leftStrong = leftW * STRONG_RATIO;
-                const rightStrong = rightW * STRONG_RATIO;
+        // ========== ミッション描画 ==========
+        function renderMission(data) {
+            document.getElementById('missionTitle').textContent = data.title || '今週のミッション';
+            document.getElementById('missionDesc').textContent = data.description || '';
+            document.getElementById('missionCount').textContent = data.completion_count || 0;
 
-                // ここ以下は今のままの強スワイプ判定でOK
-                if (dx > leftStrong) {
-                    if (!isCompleted) {
-                        action("complete", t.id);
-                    } else {
-                        action("uncomplete", t.id);
-                    }
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-                if (dx < -rightStrong) {
-                    if (t.pinned) {
-                        alert("ピンを外してください！");
-                    } else {
-                        action("delete", t.id);
-                    }
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
+            const btn = document.getElementById('missionBtn');
+            if (data.completed) {
+                btn.textContent = '達成済み ✓';
+                btn.classList.add('completed');
+                btn.disabled = true;
+            } else {
+                btn.textContent = 'ミッション達成!';
+                btn.classList.remove('completed');
+                btn.disabled = false;
+            }
+        }
 
-                if (dx > SNAP_THRESHOLD) {
-                    wrap.classList.add("open-left");
-                    wrap.classList.remove("open-right");
-                    sl.style.transform = `translateX(${leftW}px)`;
-                } else if (dx < -SNAP_THRESHOLD) {
-                    wrap.classList.add("open-right");
-                    wrap.classList.remove("open-left");
-                    sl.style.transform = `translateX(${-rightW}px)`;
-                } else {
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                }
+        // ========== 習慣リスト描画 ==========
+        function renderHabitList() {
+            const container = document.getElementById('habitList');
+            container.innerHTML = HABITS.map(h => `
+                <div class="habit-item">
+                    <div class="habit-checkbox" data-habit="${h.id}" onclick="toggleHabit('${h.id}')"></div>
+                    <span class="habit-name">${h.name}</span>
+                    <span class="habit-icon">${h.icon}</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleHabit(habitId) {
+            todayHabits[habitId] = !todayHabits[habitId];
+            const checkbox = document.querySelector(`.habit-checkbox[data-habit="${habitId}"]`);
+            if (todayHabits[habitId]) {
+                checkbox.classList.add('checked');
+                checkbox.textContent = '✓';
+            } else {
+                checkbox.classList.remove('checked');
+                checkbox.textContent = '';
+            }
+        }
+
+        function toggleDailyTask() {
+            document.getElementById('dailyTaskCard').classList.toggle('expanded');
+        }
+
+        // ========== 週間ビュー描画 ==========
+        function renderWeekView(data) {
+            const tbody = document.getElementById('weekTableBody');
+            const weekData = data.week || {};
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+            let html = '';
+            HABITS.forEach(h => {
+                html += `<tr><td>${h.icon} ${h.name}</td>`;
+                days.forEach(day => {
+                    const checked = weekData[day]?.[h.id] ? 'checked' : 'unchecked';
+                    html += `<td class="${checked}"></td>`;
+                });
+                html += '</tr>';
             });
 
-            /* ==========================
-                ☰ で並び替え（ドラッグ）
-            ========================== */
-            const startDrag = (startEvent) => {
-                startEvent.preventDefault();
-                startEvent.stopPropagation();
+            // 達成率行
+            html += '<tr><td>達成率</td>';
+            days.forEach(day => {
+                const dayData = weekData[day] || {};
+                const checkedCount = Object.values(dayData).filter(v => v).length;
+                const rate = Math.round((checkedCount / HABITS.length) * 100);
+                html += `<td>${rate}%</td>`;
+            });
+            html += '</tr>';
 
-                const card = wrap;
-                const list = card.parentElement;
-                if (!list) return;
+            tbody.innerHTML = html;
+        }
 
-                card.classList.add("dragging");
-                document.body.style.userSelect = "none";
+        // ========== 分析データ描画 ==========
+        function renderHabitAnalysis(data) {
+            const weekProgress = data.week_progress || 0;
+            document.getElementById('weekProgressValue').textContent = `${weekProgress}%`;
+            document.getElementById('weekProgressBar').style.width = `${weekProgress}%`;
 
-                const pointerId = startEvent.pointerId;
+            // 習慣別グラフ
+            const ctx = document.getElementById('habitChart').getContext('2d');
+            if (habitChart) habitChart.destroy();
 
-                const getY = (ev) => ev.clientY;
+            const habitStats = data.habit_stats || HABITS.map(h => ({
+                name: h.name,
+                goal: 7,
+                actual: Math.floor(Math.random() * 7)
+            }));
 
-                const onMove = (ev) => {
-                    const y = getY(ev);
-                    const siblings = Array.from(list.children);
-                    const currentIndex = siblings.indexOf(card);
-                    if (currentIndex === -1) return;
-
-                    const prev = siblings[currentIndex - 1];
-                    const next = siblings[currentIndex + 1];
-
-                    if (prev) {
-                        const rect = prev.getBoundingClientRect();
-                        if (y < rect.top + rect.height / 2) {
-                            list.insertBefore(card, prev);
-                            return;
+            habitChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: habitStats.map(h => h.name),
+                    datasets: [
+                        {
+                            label: '目標',
+                            data: habitStats.map(h => h.goal),
+                            backgroundColor: 'rgba(200, 200, 200, 0.5)',
+                            borderRadius: 4
+                        },
+                        {
+                            label: '実績',
+                            data: habitStats.map(h => h.actual),
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                            borderRadius: 4
                         }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { beginAtZero: true, max: 7 }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
                     }
-                    if (next) {
-                        const rect = next.getBoundingClientRect();
-                        if (y > rect.top + rect.height / 2) {
-                            list.insertBefore(next, card);
-                            return;
+                }
+            });
+        }
+
+        // ========== ステータス描画 ==========
+        function renderStatus(data) {
+            const user = data.user || {};
+            const stats = data.stats || {};
+
+            document.getElementById('statusAvatar').textContent = getAvatarEmoji(user.level || 1);
+            document.getElementById('statusUserName').textContent = user.name || '筋肉戦士';
+            document.getElementById('statusUserTitle').textContent = getTitle(user.level || 1);
+            document.getElementById('statusLevelBadge').textContent = `Lv.${user.level || 1}`;
+
+            // レーダーチャート
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            if (radarChart) radarChart.destroy();
+
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['筋力', '体力', '技術', '意志力', '知識', '継続運'],
+                    datasets: [{
+                        label: 'ステータス',
+                        data: [
+                            stats.strength || 0,
+                            stats.endurance || 0,
+                            stats.skill || 0,
+                            stats.mental || 0,
+                            stats.knowledge || 0,
+                            stats.consistency || 0
+                        ],
+                        backgroundColor: 'rgba(102, 126, 234, 0.3)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(102, 126, 234, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { stepSize: 20 }
                         }
-                    }
-                };
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
 
-                const onUp = (ev) => {
-                    document.removeEventListener("pointermove", onMove);
-                    document.removeEventListener("pointerup", onUp);
-                    card.classList.remove("dragging");
-                    document.body.style.userSelect = "";
-                    saveSortOrder();
-                };
+        // ========== ジャーナル描画 ==========
+        function renderJournals(data) {
+            const container = document.getElementById('journalList');
+            const journals = data.journals || [];
 
-                document.addEventListener("pointermove", onMove);
-                document.addEventListener("pointerup", onUp);
-            };
-
-            if (window.PointerEvent) {
-                handle.addEventListener("pointerdown", startDrag);
-            } else {
-                // pointer未対応ブラウザ用のフォールバック（必要なら）
-                handle.addEventListener("touchstart", (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // ここで同様のロジックを実装してもOK（簡略のため省略）
-                }, { passive: false });
+            if (journals.length === 0) {
+                container.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">まだジャーナルがありません</div>';
+                return;
             }
 
-            // 並び替え用にタスク情報を紐付け
-            // 並び替え用にタスク情報を紐付け
-            wrap.__taskData = t;
-            wrap.dataset.taskId = t.id;   // ★ 追加：DOMから逆引きする用
-
-            return wrap;
-
+            container.innerHTML = journals.map(j => `
+                <div class="journal-card" data-id="${j.id}" onclick="toggleJournalCard(this)">
+                    <div class="journal-card-header">
+                        <div class="journal-date">📅 ${formatDate(j.date)}</div>
+                        <div class="journal-tasks-count">✅ ${j.tasks_completed_count || 0}タスク達成</div>
+                    </div>
+                    <div class="journal-title-text">${j.title || '無題'}</div>
+                    <div class="journal-preview">${(j.content || '').substring(0, 50)}...</div>
+                    <div class="journal-card-expand">
+                        <div class="journal-full-content">
+                            ${j.completed_tasks ? `
+                                <div class="journal-tasks-list">
+                                    <div class="journal-tasks-label">達成したタスク:</div>
+                                    ${j.completed_tasks.map(t => `<div class="journal-task-item">✓ ${t}</div>`).join('')}
+                                </div>
+                            ` : ''}
+                            <div class="journal-body">${j.content || ''}</div>
+                            <button class="journal-edit-btn" onclick="editJournal('${j.id}')">編集する</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        /* ==========================
-           MODAL OPEN
-        ========================== */
-        function openDetail(t) {
-            modalMode = "detail";       // ★ ここでモード指定
-            currentDetailTask = t;
-
-            const name = t.task_name || t.title || "(無題)";
-            detailTaskTitle.textContent = name;
-            modalTitle.textContent = "タスク詳細";  // ★ モーダルタイトル
-
-            // ★ 表示切り替え：スコアのみ表示、リマインドは非表示
-            scoreGroup.style.display = "block";
-            remindGroup.style.display = "none";
-
-            inputPriority.value = t.priority ?? 0;
-            valPriority.textContent = inputPriority.value;
-
-            inputVision.value = t.vision_score ?? 0;
-            valVision.textContent = inputVision.value;
-
-            inputExcite.value = t.excite_score ?? 0;
-            valExcite.textContent = inputExcite.value;
-
-            inputGrowth.value = t.growth_score ?? 0;
-            valGrowth.textContent = inputGrowth.value;
-
-            detailModal.classList.add("visible");
-
+        function toggleJournalCard(card) {
+            card.classList.toggle('expanded');
         }
 
-        function openRemind(t) {
-            modalMode = "remind";        // ★ 通知モード
-            currentDetailTask = t;
+        // ========== アクション ==========
+        async function addTask() {
+            const input = document.getElementById('newTaskInput');
+            const title = input.value.trim();
+            if (!title) return;
 
-            const name = t.task_name || t.title || "(無題)";
-            detailTaskTitle.textContent = name;
-            modalTitle.textContent = "通知設定";  // ★ モーダルタイトル
-
-            // ★ 表示切り替え：リマインドのみ表示、スコアは非表示
-            scoreGroup.style.display = "none";
-            remindGroup.style.display = "block";
-
-            // 既にremind_atがあれば初期値として入れる
-            if (t.remind_at) {
-                inputRemindAt.value = toLocalDatetimeValue(t.remind_at);
-                valRemindAt.textContent = formatRemindLabel(t.remind_at);
-            } else {
-                inputRemindAt.value = "";
-                valRemindAt.textContent = "";
-            }
-
-            detailModal.classList.add("visible");
-
-        }
-
-        /* ==========================
-           BUTTON HELPER
-        ========================== */
-        function mkBtn(label, onClick, cls) {
-            const b = document.createElement("button");
-            b.textContent = label;
-            if (cls) b.className = cls;
-
-            const handler = (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onClick();
-            };
-
-            if ("ontouchend" in window) {
-                b.addEventListener("touchend", handler, { passive: false });
-            } else {
-                b.addEventListener("click", handler);
-            }
-
-            return b;
-        }
-
-        /* ==========================
-           API ACTION
-        ========================== */
-        async function action(kind, id, extra = {}) {
-            const url = `${API_BASE}/action`;
             try {
-                const res = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                await fetch(`${API_BASE}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         user_id: userId,
-                        action: kind,
-                        task_id: id,
-                        ...extra
+                        action: 'create',
+                        task_name: title
                     })
                 });
-
-                const text = await res.text();
-                console.log("[ACTION]", kind, "status:", res.status, "resp:", text);
-
-                if (!res.ok) {
-                    alert("操作に失敗しました（" + res.status + "）");
-                    return;
-                }
+                input.value = '';
+                await loadTasks();
             } catch (e) {
-                console.error("[ACTION] fetch error:", e);
-                alert("通信エラーで操作に失敗しました");
-            } finally {
-                // ★ 通知設定のときはフロントで直接ラベル更新しているので再読み込みはしない
-                if (kind !== "remind_custom") {
-                    loadList();
-                }
+                console.error('タスク追加エラー:', e);
             }
         }
 
+        async function toggleTaskComplete(taskId) {
+            try {
+                const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
+                const isCompleted = card.classList.contains('completed');
+                await fetch(`${API_BASE}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        action: isCompleted ? 'uncomplete' : 'complete',
+                        task_id: taskId
+                    })
+                });
+                await loadTasks();
+            } catch (e) {
+                console.error('タスク更新エラー:', e);
+            }
+        }
 
+        async function completeMission() {
+            try {
+                await fetch(`${API_BASE}/mission/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                await loadMission();
+            } catch (e) {
+                console.error('ミッション完了エラー:', e);
+            }
+        }
+
+        async function saveHabits() {
+            try {
+                await fetch(`${API_BASE}/habits/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        date: new Date().toISOString().split('T')[0],
+                        habits: todayHabits
+                    })
+                });
+                document.getElementById('dailyTaskCard').classList.remove('expanded');
+                await loadHabits();
+                alert('保存しました!');
+            } catch (e) {
+                console.error('習慣保存エラー:', e);
+            }
+        }
+
+        async function saveJournal() {
+            const date = document.getElementById('journalDate').value;
+            const title = document.getElementById('journalTitle').value.trim();
+            const content = document.getElementById('journalContent').value.trim();
+
+            if (!title || !content) {
+                alert('タイトルと内容を入力してください');
+                return;
+            }
+
+            try {
+                await fetch(`${API_BASE}/journals/save`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        date: date,
+                        title: title,
+                        content: content
+                    })
+                });
+                document.getElementById('journalTitle').value = '';
+                document.getElementById('journalContent').value = '';
+                await loadJournals();
+                alert('ジャーナルを保存しました!');
+            } catch (e) {
+                console.error('ジャーナル保存エラー:', e);
+            }
+        }
+
+        function editJournal(journalId) {
+            // 編集モーダルを開く（簡易実装）
+            alert('編集機能は次のバージョンで実装予定です');
+        }
+
+        // ========== ヘルパー関数 ==========
+        function formatRemind(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            return `🔔 ${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+        }
+
+        function getAvatarEmoji(level) {
+            if (level >= 50) return '👑';
+            if (level >= 30) return '⚔️';
+            if (level >= 20) return '🦸';
+            if (level >= 10) return '🏋️';
+            if (level >= 5) return '💪';
+            return '🦾';
+        }
+
+        function getTitle(level) {
+            if (level >= 50) return '筋肉神';
+            if (level >= 30) return '筋肉王';
+            if (level >= 20) return '筋肉魔導士';
+            if (level >= 10) return '脚の覇者';
+            if (level >= 5) return '胸の勇者';
+            return '筋肉の新芽';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        // ========== デモデータ ==========
+        function loadDemoData() {
+            renderTasks({
+                active: [
+                    { id: '1', task_name: 'プッシュアップ15回', pinned: true },
+                    { id: '2', task_name: 'スクワット20回' },
+                    { id: '3', task_name: 'プランク1分' }
+                ],
+                completed: [
+                    { id: '4', task_name: 'ストレッチ5分' }
+                ]
+            });
+
+            renderMission({
+                title: '毎日5分のストレッチを続けよう!',
+                description: '柔軟性を高めて怪我を予防しよう。7日間続けてミッションクリア!',
+                completed: false,
+                completion_count: 42
+            });
+
+            renderWeekView(getDemoHabitData());
+            renderHabitAnalysis(getDemoHabitData());
+            renderStatus(getDemoStatusData());
+            renderJournals(getDemoJournalData());
+        }
+
+        function getDemoHabitData() {
+            return {
+                week: {
+                    mon: { early_wake: true, mission: true, reading: true, journal: false, no_alcohol: true, workout: true },
+                    tue: { early_wake: true, mission: false, reading: true, journal: true, no_alcohol: true, workout: false },
+                    wed: { early_wake: false, mission: true, reading: false, journal: false, no_alcohol: true, workout: true },
+                    thu: { early_wake: true, mission: true, reading: true, journal: true, no_alcohol: true, workout: true },
+                    fri: { early_wake: false, mission: false, reading: false, journal: false, no_alcohol: false, workout: false },
+                    sat: { early_wake: false, mission: false, reading: false, journal: false, no_alcohol: false, workout: false },
+                    sun: { early_wake: false, mission: false, reading: false, journal: false, no_alcohol: false, workout: false }
+                },
+                week_progress: 58,
+                habit_stats: [
+                    { name: '早起き', goal: 7, actual: 3 },
+                    { name: 'ミッション', goal: 7, actual: 3 },
+                    { name: '読書/学習', goal: 7, actual: 3 },
+                    { name: 'ジャーナル', goal: 7, actual: 2 },
+                    { name: '禁酒', goal: 7, actual: 5 },
+                    { name: '今日トレ', goal: 7, actual: 3 }
+                ]
+            };
+        }
+
+        function getDemoStatusData() {
+            return {
+                user: { name: '筋肉戦士', level: 5, xp: 800, streak: 7 },
+                stats: {
+                    strength: 45,
+                    endurance: 35,
+                    skill: 25,
+                    mental: 40,
+                    knowledge: 20,
+                    consistency: 55
+                }
+            };
+        }
+
+        function getDemoJournalData() {
+            return {
+                journals: [
+                    {
+                        id: '1',
+                        date: '2025-01-15',
+                        title: '充実した一日だった',
+                        content: '今日は朝早く起きてストレッチから始められた。プッシュアップも目標回数をクリアできて嬉しい。明日も頑張ろう!',
+                        tasks_completed_count: 5,
+                        completed_tasks: ['プッシュアップ15回', 'スクワット20回', 'ストレッチ5分']
+                    },
+                    {
+                        id: '2',
+                        date: '2025-01-14',
+                        title: '少しサボってしまった...',
+                        content: '仕事が忙しくて筋トレの時間が取れなかった。でも明日は必ずやる!',
+                        tasks_completed_count: 2,
+                        completed_tasks: ['ストレッチ5分']
+                    }
+                ]
+            };
+        }
+
+        // ========== 起動 ==========
         init();
     </script>
 </body>
 </html>
-
-
-
