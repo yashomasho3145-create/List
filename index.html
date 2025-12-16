@@ -7,6 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
+        /* ========== ピクセルフォント風（Google Fonts） ========== */
+        @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -14,165 +17,211 @@
         }
 
         body {
-            font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'DotGothic16', 'MS Gothic', 'ＭＳ ゴシック', monospace;
+            background: #0a0a18;
             min-height: 100vh;
             color: #fff;
+            image-rendering: pixelated;
         }
 
-        /* ========== タブナビゲーション（バインダーインデックス風） ========== */
+        /* ========== レトロウィンドウ枠 ========== */
+        .retro-window {
+            border: 4px solid #fff;
+            border-radius: 0;
+            background: #1a1a3e;
+            box-shadow:
+                inset 2px 2px 0 #4a4a8e,
+                inset -2px -2px 0 #0a0a1e,
+                6px 6px 0 rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .retro-window::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border: 2px solid #3a3a6e;
+            pointer-events: none;
+        }
+
+        /* ========== タブナビゲーション（レトロ風） ========== */
         .tab-container {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: transparent;
-            padding: 12px 16px 0;
+            padding: 12px 12px 0;
+            background: #0a0a18;
         }
 
         .tab-nav {
             display: flex;
-            justify-content: center;
-            gap: 0;
+            gap: 4px;
         }
 
         .tab-item {
-            position: relative;
-            padding: 12px 24px;
+            padding: 10px 16px;
             font-size: 14px;
-            font-weight: 600;
             cursor: pointer;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: #2a2a4e;
+            border: 3px solid #5a5a8e;
             border-bottom: none;
-            border-radius: 12px 12px 0 0;
-            color: rgba(255, 255, 255, 0.6);
-            transition: all 0.2s ease;
-            margin: 0 2px;
-            transform: translateY(4px);
+            color: #8a8ab0;
+            transition: all 0.1s;
+            position: relative;
+            top: 3px;
         }
 
         .tab-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: rgba(255, 255, 255, 0.8);
+            background: #3a3a5e;
+            color: #aaaacc;
         }
 
         .tab-item.active {
-            background: rgba(255, 255, 255, 0.95);
-            color: #1a1a2e;
-            transform: translateY(0);
-            z-index: 2;
-            border-color: rgba(255, 255, 255, 0.3);
+            background: #1a1a3e;
+            color: #fff;
+            border-color: #fff;
+            top: 0;
+            padding-bottom: 13px;
+            text-shadow: 0 0 10px #fff;
         }
 
-        .tab-item.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        /* ========== コンテンツエリア ========== */
+        /* ========== メインコンテンツエリア ========== */
         .content-area {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px 20px 0 0;
-            min-height: calc(100vh - 60px);
-            padding: 0;
-            margin-top: -1px;
+            margin: 0 12px 12px;
+        }
+
+        .main-window {
+            min-height: calc(100vh - 80px);
+            padding: 16px;
         }
 
         .tab-content {
             display: none;
-            padding: 16px;
-            color: #333;
         }
 
         .tab-content.active {
             display: block;
         }
 
-        /* ========== ミッションバナー ========== */
+        /* ========== セクションタイトル（RPG風） ========== */
+        .section-title {
+            font-size: 14px;
+            color: #ffcc00;
+            margin: 16px 0 12px;
+            padding: 8px 12px;
+            background: linear-gradient(90deg, #3a2a00 0%, transparent 100%);
+            border-left: 4px solid #ffcc00;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .section-title::before {
+            content: '▶ ';
+        }
+
+        /* ========== ミッションバナー（レトロ風） ========== */
         .mission-banner {
-            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-            color: white;
+            background: linear-gradient(180deg, #4a1a00 0%, #2a0a00 100%);
+            border: 3px solid #ff6600;
             padding: 12px 16px;
-            border-radius: 12px;
             margin-bottom: 16px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            gap: 12px;
+            font-size: 13px;
+            color: #ffaa00;
+            text-shadow: 1px 1px 0 #000;
+            animation: banner-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes banner-glow {
+            0%, 100% { box-shadow: 0 0 5px #ff6600; }
+            50% { box-shadow: 0 0 15px #ff6600, 0 0 25px #ff3300; }
         }
 
         .mission-banner-icon {
-            font-size: 20px;
+            font-size: 24px;
+            animation: flame 0.5s ease-in-out infinite alternate;
         }
 
-        /* ========== ミッションタスクカード ========== */
+        @keyframes flame {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        /* ========== ミッションカード（伝説の巻物風） ========== */
         .mission-card {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-            border: 2px solid #f7931e;
-            border-radius: 12px;
+            background: linear-gradient(180deg, #3a2a10 0%, #2a1a08 100%);
+            border: 4px double #c9a227;
             padding: 16px;
             margin-bottom: 16px;
             position: relative;
-            overflow: hidden;
         }
 
         .mission-card::before {
-            content: 'MISSION';
+            content: '★ MISSION ★';
             position: absolute;
-            top: 8px;
-            right: 8px;
-            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 10px;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a3e;
+            color: #ffcc00;
+            font-size: 11px;
+            padding: 2px 12px;
+            border: 2px solid #c9a227;
+            text-shadow: 1px 1px 0 #000;
         }
 
         .mission-card-header {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 8px;
+            margin: 8px 0 12px;
         }
 
         .mission-icon {
-            font-size: 24px;
+            font-size: 28px;
+            filter: drop-shadow(2px 2px 0 #000);
         }
 
         .mission-title {
             font-size: 16px;
-            font-weight: 700;
-            color: #333;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
         }
 
         .mission-desc {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 12px;
+            font-size: 12px;
+            color: #c9a227;
+            margin-bottom: 16px;
+            line-height: 1.6;
         }
 
         .mission-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+            background: linear-gradient(180deg, #6a5a20 0%, #4a3a10 100%);
+            border: 3px solid #c9a227;
+            color: #ffcc00;
+            padding: 12px 20px;
             font-size: 14px;
-            font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
             width: 100%;
+            text-shadow: 1px 1px 0 #000;
+            transition: all 0.1s;
+        }
+
+        .mission-btn:hover {
+            background: linear-gradient(180deg, #8a7a30 0%, #6a5a20 100%);
+            box-shadow: 0 0 10px #c9a227;
+        }
+
+        .mission-btn:active {
+            transform: scale(0.98);
         }
 
         .mission-btn.completed {
-            background: #43e97b;
+            background: linear-gradient(180deg, #2a4a2a 0%, #1a3a1a 100%);
+            border-color: #4a8a4a;
+            color: #8ada8a;
         }
 
         /* ========== タスク追加エリア ========== */
@@ -184,111 +233,105 @@
 
         .add-task-input {
             flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 16px;
+            padding: 10px 12px;
+            background: #0a0a18;
+            border: 3px solid #5a5a8e;
+            color: #fff;
+            font-size: 14px;
+            font-family: inherit;
             outline: none;
         }
 
         .add-task-input:focus {
-            border-color: #667eea;
+            border-color: #8a8aee;
+            box-shadow: 0 0 8px #5a5aaa;
+        }
+
+        .add-task-input::placeholder {
+            color: #5a5a8e;
         }
 
         .add-task-btn {
-            background: #111;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
+            background: linear-gradient(180deg, #4a4a8e 0%, #2a2a5e 100%);
+            border: 3px solid #7a7aee;
+            color: #fff;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-family: inherit;
             cursor: pointer;
         }
 
-        /* ========== タスクリスト ========== */
-        .section-label {
-            font-size: 12px;
-            color: #888;
-            margin: 16px 0 8px;
-            padding-left: 4px;
+        .add-task-btn:hover {
+            background: linear-gradient(180deg, #5a5a9e 0%, #3a3a6e 100%);
         }
 
+        /* ========== タスクリスト ========== */
         .task-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .task-card {
-            background: white;
-            border: 1px solid #eee;
-            border-radius: 12px;
-            padding: 14px 16px;
+            background: #0a0a18;
+            border: 2px solid #3a3a6e;
+            padding: 12px 14px;
             display: flex;
             align-items: center;
             gap: 12px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.1s;
         }
 
         .task-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+            border-color: #6a6aaa;
+            background: #1a1a2e;
         }
 
         .task-card.completed {
-            opacity: 0.6;
+            opacity: 0.5;
         }
 
         .task-card.completed .task-title {
             text-decoration: line-through;
-            color: #aaa;
+            color: #5a5a8a;
         }
 
         .task-checkbox {
-            width: 22px;
-            height: 22px;
-            border: 2px solid #ddd;
-            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #5a5a8e;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            transition: all 0.2s;
+            font-size: 14px;
+            color: #4ada4a;
         }
 
         .task-card.completed .task-checkbox {
-            background: #667eea;
-            border-color: #667eea;
-            color: white;
+            background: #2a4a2a;
+            border-color: #4a8a4a;
         }
 
         .task-title {
             flex: 1;
-            font-size: 15px;
-            color: #333;
+            font-size: 13px;
+            color: #ddd;
         }
 
         .task-remind {
             font-size: 11px;
-            color: #888;
+            color: #8a8aaa;
         }
 
-        /* ========== デイリータスク（習慣トラッカー） ========== */
+        /* ========== デイリータスク（ステータスウィンドウ風） ========== */
         .daily-task-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px;
+            background: linear-gradient(180deg, #2a2a5e 0%, #1a1a3e 100%);
+            border: 4px solid #6a6aee;
             padding: 16px;
             margin-bottom: 20px;
-            color: white;
             cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .daily-task-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
 
         .daily-task-header {
@@ -298,16 +341,18 @@
         }
 
         .daily-task-title {
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 14px;
+            color: #aaaaff;
             display: flex;
             align-items: center;
             gap: 8px;
+            text-shadow: 1px 1px 0 #000;
         }
 
         .daily-task-arrow {
-            font-size: 20px;
-            transition: transform 0.3s;
+            font-size: 16px;
+            color: #6a6aaa;
+            transition: transform 0.2s;
         }
 
         .daily-task-card.expanded .daily-task-arrow {
@@ -321,50 +366,51 @@
         }
 
         .daily-task-card.expanded .daily-task-content {
-            max-height: 500px;
+            max-height: 600px;
         }
 
         .habit-list {
             margin-top: 16px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
 
         .habit-item {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
+            padding: 10px 12px;
+            background: #0a0a18;
+            border: 2px solid #3a3a6e;
         }
 
         .habit-checkbox {
-            width: 24px;
-            height: 24px;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 6px;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #5a5a8e;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s;
+            font-size: 14px;
+            transition: all 0.1s;
         }
 
         .habit-checkbox.checked {
-            background: white;
-            border-color: white;
-            color: #667eea;
+            background: #2a5a2a;
+            border-color: #4ada4a;
+            color: #4ada4a;
         }
 
         .habit-name {
             flex: 1;
-            font-size: 14px;
+            font-size: 13px;
+            color: #ccc;
         }
 
         .habit-icon {
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .daily-task-buttons {
@@ -375,103 +421,101 @@
 
         .daily-btn {
             flex: 1;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
+            padding: 10px;
+            font-size: 13px;
+            font-family: inherit;
             cursor: pointer;
-            border: none;
+            border: 3px solid;
         }
 
         .daily-btn-cancel {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
+            background: #2a2a3e;
+            border-color: #5a5a7e;
+            color: #8a8aaa;
         }
 
         .daily-btn-save {
-            background: white;
-            color: #667eea;
+            background: linear-gradient(180deg, #3a5a3a 0%, #2a4a2a 100%);
+            border-color: #4ada4a;
+            color: #aaffaa;
         }
 
-        /* ========== 週間ビュー（習慣トラッカー表） ========== */
+        /* ========== 週間ビュー ========== */
         .week-view-section {
-            background: white;
-            border-radius: 16px;
+            background: #0a0a18;
+            border: 3px solid #3a3a6e;
             padding: 16px;
             margin-bottom: 20px;
-            border: 1px solid #eee;
             overflow-x: auto;
         }
 
         .week-view-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
+            font-size: 13px;
+            color: #aaaaff;
             margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            text-shadow: 1px 1px 0 #000;
         }
 
         .week-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 12px;
-            min-width: 400px;
+            font-size: 11px;
+            min-width: 360px;
         }
 
         .week-table th,
         .week-table td {
             padding: 8px 4px;
             text-align: center;
-            border-bottom: 1px solid #eee;
+            border: 1px solid #2a2a4e;
         }
 
         .week-table th {
-            color: #888;
-            font-weight: 500;
+            background: #1a1a3e;
+            color: #8a8aaa;
         }
 
         .week-table th:first-child,
         .week-table td:first-child {
             text-align: left;
-            font-weight: 500;
-            color: #333;
+            color: #aaa;
+            padding-left: 8px;
+        }
+
+        .week-table td.checked {
+            color: #4ada4a;
         }
 
         .week-table td.checked::after {
-            content: '✓';
-            color: #43e97b;
-            font-weight: 700;
+            content: '◆';
+        }
+
+        .week-table td.unchecked {
+            color: #3a3a5a;
         }
 
         .week-table td.unchecked::after {
-            content: '-';
-            color: #ddd;
+            content: '・';
         }
 
         .week-table tr:last-child td {
-            font-weight: 600;
-            color: #667eea;
+            color: #ffcc00;
+            background: #2a2a10;
         }
 
         /* ========== 分析セクション ========== */
         .analysis-section {
-            background: white;
-            border-radius: 16px;
+            background: #0a0a18;
+            border: 3px solid #3a3a6e;
             padding: 16px;
             margin-bottom: 20px;
-            border: 1px solid #eee;
         }
 
         .analysis-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
+            font-size: 13px;
+            color: #aaaaff;
             margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            text-shadow: 1px 1px 0 #000;
         }
 
         .progress-bar-container {
@@ -481,55 +525,117 @@
         .progress-label {
             display: flex;
             justify-content: space-between;
-            font-size: 13px;
+            font-size: 12px;
             margin-bottom: 6px;
         }
 
         .progress-label-name {
-            color: #666;
+            color: #8a8aaa;
         }
 
         .progress-label-value {
-            font-weight: 600;
-            color: #667eea;
+            color: #4ada4a;
         }
 
         .progress-bar-bg {
-            height: 8px;
-            background: #eee;
-            border-radius: 4px;
-            overflow: hidden;
+            height: 16px;
+            background: #1a1a2e;
+            border: 2px solid #3a3a6e;
         }
 
         .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            border-radius: 4px;
+            background: linear-gradient(90deg, #2a6a2a 0%, #4ada4a 100%);
             transition: width 0.5s ease;
         }
 
         .chart-container-small {
-            height: 200px;
+            height: 180px;
             margin-top: 16px;
         }
 
-        /* ========== ジャーナル入力フォーム ========== */
-        .journal-form {
-            background: white;
-            border-radius: 16px;
+        /* ========== ステータスアバター ========== */
+        .status-avatar-section {
+            text-align: center;
+            padding: 20px 0;
+            background: linear-gradient(180deg, #1a1a3e 0%, #0a0a18 100%);
+            border: 3px solid #4a4a8e;
+            margin-bottom: 20px;
+        }
+
+        .status-avatar {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 12px;
+            font-size: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0a18;
+            border: 3px solid #6a6aaa;
+            animation: avatar-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes avatar-pulse {
+            0%, 100% { box-shadow: 0 0 5px #4a4a8e; }
+            50% { box-shadow: 0 0 15px #6a6aee; }
+        }
+
+        .status-user-name {
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .status-user-title {
+            font-size: 12px;
+            color: #c9a227;
+            margin-top: 4px;
+        }
+
+        .status-level-badge {
+            display: inline-block;
+            background: linear-gradient(180deg, #5a3a00 0%, #3a2a00 100%);
+            border: 2px solid #c9a227;
+            color: #ffcc00;
+            font-size: 12px;
+            padding: 4px 16px;
+            margin-top: 8px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        /* ========== レーダーチャート ========== */
+        .radar-section {
+            background: #0a0a18;
+            border: 3px solid #3a3a6e;
             padding: 16px;
             margin-bottom: 20px;
-            border: 1px solid #eee;
+        }
+
+        .radar-title {
+            font-size: 13px;
+            color: #ffcc00;
+            margin-bottom: 12px;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        .radar-container {
+            height: 220px;
+        }
+
+        /* ========== ジャーナルフォーム ========== */
+        .journal-form {
+            background: #0a0a18;
+            border: 3px solid #3a3a6e;
+            padding: 16px;
+            margin-bottom: 20px;
         }
 
         .journal-form-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
+            font-size: 13px;
+            color: #aaaaff;
             margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            text-shadow: 1px 1px 0 #000;
         }
 
         .form-group {
@@ -537,71 +643,66 @@
         }
 
         .form-label {
-            font-size: 12px;
-            color: #888;
+            font-size: 11px;
+            color: #6a6a9a;
             margin-bottom: 6px;
             display: block;
         }
 
-        .form-input {
+        .form-input,
+        .form-textarea {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 10px 12px;
+            background: #1a1a2e;
+            border: 2px solid #3a3a6e;
+            color: #fff;
+            font-size: 13px;
+            font-family: inherit;
             outline: none;
         }
 
-        .form-input:focus {
-            border-color: #667eea;
+        .form-input:focus,
+        .form-textarea:focus {
+            border-color: #6a6aaa;
         }
 
         .form-textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            font-size: 14px;
-            outline: none;
-            min-height: 120px;
+            min-height: 100px;
             resize: vertical;
-        }
-
-        .form-textarea:focus {
-            border-color: #667eea;
         }
 
         .journal-submit-btn {
             width: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
+            background: linear-gradient(180deg, #3a5a3a 0%, #2a4a2a 100%);
+            border: 3px solid #4ada4a;
+            color: #aaffaa;
+            padding: 12px;
+            font-size: 14px;
+            font-family: inherit;
             cursor: pointer;
+        }
+
+        .journal-submit-btn:hover {
+            background: linear-gradient(180deg, #4a6a4a 0%, #3a5a3a 100%);
         }
 
         /* ========== ジャーナルカード ========== */
         .journal-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
 
         .journal-card {
-            background: white;
-            border: 1px solid #eee;
-            border-radius: 12px;
-            padding: 16px;
+            background: #0a0a18;
+            border: 2px solid #3a3a6e;
+            padding: 14px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.1s;
         }
 
         .journal-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+            border-color: #5a5a9e;
         }
 
         .journal-card-header {
@@ -612,32 +713,24 @@
         }
 
         .journal-date {
-            font-size: 13px;
-            color: #888;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            font-size: 11px;
+            color: #6a6a9a;
         }
 
         .journal-tasks-count {
-            font-size: 12px;
-            color: #43e97b;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            font-size: 11px;
+            color: #4ada4a;
         }
 
         .journal-title-text {
-            font-size: 15px;
-            font-weight: 600;
-            color: #333;
+            font-size: 14px;
+            color: #fff;
             margin-bottom: 4px;
         }
 
         .journal-preview {
-            font-size: 13px;
-            color: #888;
+            font-size: 12px;
+            color: #6a6a9a;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -656,117 +749,46 @@
         .journal-full-content {
             margin-top: 12px;
             padding-top: 12px;
-            border-top: 1px solid #eee;
-        }
-
-        .journal-tasks-list {
-            margin-bottom: 12px;
+            border-top: 1px solid #2a2a4e;
         }
 
         .journal-tasks-label {
-            font-size: 12px;
-            color: #888;
+            font-size: 11px;
+            color: #6a6a9a;
             margin-bottom: 6px;
         }
 
         .journal-task-item {
-            font-size: 13px;
-            color: #333;
-            padding: 4px 0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            font-size: 12px;
+            color: #4ada4a;
+            padding: 2px 0;
         }
 
         .journal-body {
-            font-size: 14px;
-            color: #333;
+            font-size: 13px;
+            color: #ccc;
             line-height: 1.6;
             white-space: pre-wrap;
+            margin-top: 12px;
         }
 
         .journal-edit-btn {
             margin-top: 12px;
-            background: #f5f5f5;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #666;
+            background: #1a1a2e;
+            border: 2px solid #3a3a6e;
+            color: #6a6a9a;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-family: inherit;
             cursor: pointer;
             width: 100%;
-        }
-
-        /* ========== ステータスセクション（既存流用） ========== */
-        .status-avatar-section {
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .status-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 50px;
-            margin: 0 auto 12px;
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .status-user-name {
-            font-size: 20px;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .status-user-title {
-            font-size: 13px;
-            color: #888;
-            margin-top: 4px;
-        }
-
-        .status-level-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 4px 12px;
-            border-radius: 15px;
-            margin-top: 8px;
-        }
-
-        /* ========== レーダーチャート ========== */
-        .radar-section {
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 20px;
-            border: 1px solid #eee;
-        }
-
-        .radar-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .radar-container {
-            height: 250px;
         }
 
         /* ========== ローディング ========== */
         .loading-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(26, 26, 46, 0.9);
+            background: #0a0a18;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -774,35 +796,56 @@
             z-index: 1000;
         }
 
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
         .loading-text {
-            color: white;
-            margin-top: 16px;
+            color: #fff;
             font-size: 14px;
+            animation: blink 1s step-end infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .loading-text::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
         }
 
         .hidden {
             display: none !important;
+        }
+
+        /* ========== スクロールバー ========== */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a18;
+            border: 2px solid #2a2a4e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3a3a6e;
+            border: 2px solid #2a2a4e;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4a8e;
         }
     </style>
 </head>
 <body>
     <!-- ローディング -->
     <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">読み込み中...</div>
+        <div class="loading-text">NOW LOADING</div>
     </div>
 
     <!-- タブナビゲーション -->
@@ -814,169 +857,161 @@
         </div>
     </div>
 
-    <!-- コンテンツエリア -->
+    <!-- メインコンテンツエリア -->
     <div class="content-area">
+        <div class="retro-window main-window">
 
-        <!-- ========== リストタブ ========== -->
-        <div id="tab-list" class="tab-content active">
-            <!-- ミッション達成者バナー -->
-            <div class="mission-banner" id="missionBanner">
-                <span class="mission-banner-icon">🔥</span>
-                <span>今週 <strong id="missionCount">0</strong> 人がミッション達成!</span>
-            </div>
-
-            <!-- ミッションタスク -->
-            <div class="mission-card" id="missionCard">
-                <div class="mission-card-header">
-                    <span class="mission-icon">🎯</span>
-                    <span class="mission-title" id="missionTitle">今週のミッション</span>
+            <!-- ========== リストタブ ========== -->
+            <div id="tab-list" class="tab-content active">
+                <!-- ミッション達成者バナー -->
+                <div class="mission-banner">
+                    <span class="mission-banner-icon">🔥</span>
+                    <span>今週 <strong id="missionCount">0</strong> 人の勇者がミッション達成!</span>
                 </div>
-                <div class="mission-desc" id="missionDesc">読み込み中...</div>
-                <button class="mission-btn" id="missionBtn">ミッション達成!</button>
+
+                <!-- ミッションタスク -->
+                <div class="mission-card">
+                    <div class="mission-card-header">
+                        <span class="mission-icon">⚔️</span>
+                        <span class="mission-title" id="missionTitle">今週のミッション</span>
+                    </div>
+                    <div class="mission-desc" id="missionDesc">読み込み中...</div>
+                    <button class="mission-btn" id="missionBtn">▶ ミッション達成!</button>
+                </div>
+
+                <!-- タスク追加 -->
+                <div class="add-task-area">
+                    <input type="text" class="add-task-input" id="newTaskInput" placeholder="クエストを入力..." />
+                    <button class="add-task-btn" id="addTaskBtn">追加</button>
+                </div>
+
+                <!-- ToDoタスク -->
+                <div class="section-title">進行中のクエスト</div>
+                <div class="task-list" id="activeTaskList"></div>
+
+                <!-- 達成タスク -->
+                <div class="section-title">達成済みクエスト</div>
+                <div class="task-list" id="completedTaskList"></div>
             </div>
 
-            <!-- タスク追加 -->
-            <div class="add-task-area">
-                <input type="text" class="add-task-input" id="newTaskInput" placeholder="タスクを入力..." />
-                <button class="add-task-btn" id="addTaskBtn">追加</button>
+            <!-- ========== ステータスタブ ========== -->
+            <div id="tab-status" class="tab-content">
+                <!-- デイリータスク -->
+                <div class="daily-task-card" id="dailyTaskCard">
+                    <div class="daily-task-header">
+                        <div class="daily-task-title">
+                            <span>📜</span>
+                            <span>デイリークエスト</span>
+                        </div>
+                        <span class="daily-task-arrow">▼</span>
+                    </div>
+                    <div class="daily-task-content">
+                        <div class="habit-list" id="habitList"></div>
+                        <div class="daily-task-buttons">
+                            <button class="daily-btn daily-btn-cancel" id="habitCancelBtn">キャンセル</button>
+                            <button class="daily-btn daily-btn-save" id="habitSaveBtn">保存する</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 週間ビュー -->
+                <div class="week-view-section">
+                    <div class="week-view-title">📅 週間クエスト記録</div>
+                    <table class="week-table" id="weekTable">
+                        <thead>
+                            <tr>
+                                <th>習慣</th>
+                                <th>月</th>
+                                <th>火</th>
+                                <th>水</th>
+                                <th>木</th>
+                                <th>金</th>
+                                <th>土</th>
+                                <th>日</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weekTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- 分析 -->
+                <div class="analysis-section">
+                    <div class="analysis-title">📊 パラメータ分析</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span class="progress-label-name">週間達成率</span>
+                            <span class="progress-label-value" id="weekProgressValue">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="weekProgressBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="chart-container-small">
+                        <canvas id="habitChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- アバター -->
+                <div class="status-avatar-section">
+                    <div class="status-avatar" id="statusAvatar">💪</div>
+                    <div class="status-user-name" id="statusUserName">筋肉戦士</div>
+                    <div class="status-user-title" id="statusUserTitle">筋肉の新芽</div>
+                    <div class="status-level-badge" id="statusLevelBadge">Lv.1</div>
+                </div>
+
+                <!-- レーダーチャート -->
+                <div class="radar-section">
+                    <div class="radar-title">⚔️ 戦闘パラメータ</div>
+                    <div class="radar-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
             </div>
 
-            <!-- ToDoタスク -->
-            <div class="section-label">ToDoタスク</div>
-            <div class="task-list" id="activeTaskList"></div>
+            <!-- ========== ジャーナルタブ ========== -->
+            <div id="tab-journal" class="tab-content">
+                <div class="journal-form">
+                    <div class="journal-form-title">📝 冒険の記録</div>
+                    <div class="form-group">
+                        <label class="form-label">日付</label>
+                        <input type="date" class="form-input" id="journalDate" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">タイトル</label>
+                        <input type="text" class="form-input" id="journalTitle" placeholder="今日の冒険..." />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">内容</label>
+                        <textarea class="form-textarea" id="journalContent" placeholder="今日の振り返りを記録しよう..."></textarea>
+                    </div>
+                    <button class="journal-submit-btn" id="journalSubmitBtn">▶ 記録する</button>
+                </div>
 
-            <!-- 達成タスク -->
-            <div class="section-label" style="margin-top: 20px;">達成タスク</div>
-            <div class="task-list" id="completedTaskList"></div>
+                <div class="section-title">過去の冒険記録</div>
+                <div class="journal-list" id="journalList"></div>
+            </div>
+
         </div>
-
-        <!-- ========== ステータスタブ ========== -->
-        <div id="tab-status" class="tab-content">
-            <!-- デイリータスク（習慣トラッカー） -->
-            <div class="daily-task-card" id="dailyTaskCard">
-                <div class="daily-task-header">
-                    <div class="daily-task-title">
-                        <span>📋</span>
-                        <span>デイリータスク</span>
-                    </div>
-                    <span class="daily-task-arrow">▼</span>
-                </div>
-                <div class="daily-task-content">
-                    <div class="habit-list" id="habitList">
-                        <!-- 習慣項目はJSで生成 -->
-                    </div>
-                    <div class="daily-task-buttons">
-                        <button class="daily-btn daily-btn-cancel" id="habitCancelBtn">キャンセル</button>
-                        <button class="daily-btn daily-btn-save" id="habitSaveBtn">保存</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 週間ビュー -->
-            <div class="week-view-section">
-                <div class="week-view-title">📅 週間ビュー</div>
-                <table class="week-table" id="weekTable">
-                    <thead>
-                        <tr>
-                            <th>習慣</th>
-                            <th>月</th>
-                            <th>火</th>
-                            <th>水</th>
-                            <th>木</th>
-                            <th>金</th>
-                            <th>土</th>
-                            <th>日</th>
-                        </tr>
-                    </thead>
-                    <tbody id="weekTableBody">
-                        <!-- JSで生成 -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 分析セクション -->
-            <div class="analysis-section">
-                <div class="analysis-title">📊 分析データ</div>
-                <div class="progress-bar-container">
-                    <div class="progress-label">
-                        <span class="progress-label-name">週間達成率</span>
-                        <span class="progress-label-value" id="weekProgressValue">0%</span>
-                    </div>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" id="weekProgressBar" style="width: 0%"></div>
-                    </div>
-                </div>
-                <div class="chart-container-small">
-                    <canvas id="habitChart"></canvas>
-                </div>
-            </div>
-
-            <!-- アバター & ステータス -->
-            <div class="status-avatar-section">
-                <div class="status-avatar" id="statusAvatar">💪</div>
-                <div class="status-user-name" id="statusUserName">筋肉戦士</div>
-                <div class="status-user-title" id="statusUserTitle">筋肉の新芽</div>
-                <div class="status-level-badge" id="statusLevelBadge">Lv.1</div>
-            </div>
-
-            <!-- レーダーチャート -->
-            <div class="radar-section">
-                <div class="radar-title">💪 ステータス</div>
-                <div class="radar-container">
-                    <canvas id="radarChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- ========== ジャーナルタブ ========== -->
-        <div id="tab-journal" class="tab-content">
-            <!-- ジャーナル入力フォーム -->
-            <div class="journal-form">
-                <div class="journal-form-title">📝 新しいジャーナル</div>
-                <div class="form-group">
-                    <label class="form-label">日付</label>
-                    <input type="date" class="form-input" id="journalDate" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">タイトル</label>
-                    <input type="text" class="form-input" id="journalTitle" placeholder="今日のタイトル..." />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">内容</label>
-                    <textarea class="form-textarea" id="journalContent" placeholder="今日の振り返りを書いてみましょう..."></textarea>
-                </div>
-                <button class="journal-submit-btn" id="journalSubmitBtn">保存する</button>
-            </div>
-
-            <!-- ジャーナル一覧 -->
-            <div class="section-label">過去のジャーナル</div>
-            <div class="journal-list" id="journalList">
-                <!-- JSで生成 -->
-            </div>
-        </div>
-
     </div>
 
     <script>
         // ========== 設定 ==========
-        const LIFF_ID = "2008372898-2q9qWmxv"; // 適切なLIFF IDに変更してください
+        const LIFF_ID = "2008372898-2q9qWmxv";
         const API_BASE = "https://lumicreate.xvps.jp/webhook";
 
         let userId = null;
         let radarChart = null;
         let habitChart = null;
 
-        // 習慣項目（運営固定）
         const HABITS = [
             { id: 'early_wake', name: '早起き', icon: '🌅' },
-            { id: 'mission', name: 'ミッションタスク', icon: '🎯' },
+            { id: 'mission', name: 'ミッション', icon: '⚔️' },
             { id: 'reading', name: '読書/学習', icon: '📚' },
             { id: 'journal', name: 'ジャーナル', icon: '📝' },
             { id: 'no_alcohol', name: '禁酒', icon: '🚫' },
             { id: 'workout', name: '今日トレ', icon: '💪' }
         ];
 
-        // 今日の習慣チェック状態
         let todayHabits = {};
 
         // ========== 初期化 ==========
@@ -989,13 +1024,11 @@
                 }
                 const profile = await liff.getProfile();
                 userId = profile.userId;
-
                 bindUI();
                 await loadAllData();
                 hideLoading();
             } catch (e) {
                 console.error("LIFF初期化エラー:", e);
-                // デモモードで動作
                 userId = "demo_user";
                 bindUI();
                 loadDemoData();
@@ -1003,58 +1036,42 @@
             }
         }
 
-        // ========== UI バインド ==========
         function bindUI() {
-            // タブ切り替え
             document.querySelectorAll('.tab-item').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabId = tab.dataset.tab;
-                    switchTab(tabId);
-                });
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
             });
 
-            // タスク追加
             document.getElementById('addTaskBtn').addEventListener('click', addTask);
             document.getElementById('newTaskInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') addTask();
             });
 
-            // ミッション完了
             document.getElementById('missionBtn').addEventListener('click', completeMission);
 
-            // デイリータスク展開
             document.getElementById('dailyTaskCard').addEventListener('click', (e) => {
                 if (!e.target.closest('.habit-checkbox') && !e.target.closest('.daily-btn')) {
                     toggleDailyTask();
                 }
             });
 
-            // 習慣保存/キャンセル
             document.getElementById('habitSaveBtn').addEventListener('click', saveHabits);
             document.getElementById('habitCancelBtn').addEventListener('click', () => {
                 document.getElementById('dailyTaskCard').classList.remove('expanded');
             });
 
-            // ジャーナル保存
             document.getElementById('journalSubmitBtn').addEventListener('click', saveJournal);
-
-            // 今日の日付をデフォルトに
             document.getElementById('journalDate').value = new Date().toISOString().split('T')[0];
 
-            // 習慣リスト生成
             renderHabitList();
         }
 
-        // ========== タブ切り替え ==========
         function switchTab(tabId) {
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
             document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
-        // ========== データ読み込み ==========
         async function loadAllData() {
             await Promise.all([
                 loadTasks(),
@@ -1065,7 +1082,6 @@
             ]);
         }
 
-        // タスク読み込み
         async function loadTasks() {
             try {
                 const res = await fetch(`${API_BASE}/list?user_id=${encodeURIComponent(userId)}`);
@@ -1073,12 +1089,10 @@
                 const data = await res.json();
                 renderTasks(data);
             } catch (e) {
-                console.error('タスク読み込みエラー:', e);
                 renderTasks({ active: [], completed: [] });
             }
         }
 
-        // ミッション読み込み
         async function loadMission() {
             try {
                 const res = await fetch(`${API_BASE}/mission?user_id=${encodeURIComponent(userId)}`);
@@ -1086,17 +1100,15 @@
                 const data = await res.json();
                 renderMission(data);
             } catch (e) {
-                console.error('ミッション読み込みエラー:', e);
                 renderMission({
-                    title: '今週のミッション',
-                    description: '毎日5分のストレッチを続けよう!',
+                    title: '毎日5分のストレッチを続けよう!',
+                    description: '柔軟性を高めて怪我を予防せよ。7日間続けてミッションクリア!',
                     completed: false,
                     completion_count: 42
                 });
             }
         }
 
-        // 習慣データ読み込み
         async function loadHabits() {
             try {
                 const res = await fetch(`${API_BASE}/habits?user_id=${encodeURIComponent(userId)}`);
@@ -1105,13 +1117,11 @@
                 renderWeekView(data);
                 renderHabitAnalysis(data);
             } catch (e) {
-                console.error('習慣読み込みエラー:', e);
                 renderWeekView(getDemoHabitData());
                 renderHabitAnalysis(getDemoHabitData());
             }
         }
 
-        // ステータス読み込み
         async function loadStatus() {
             try {
                 const res = await fetch(`${API_BASE}/status?user_id=${encodeURIComponent(userId)}`);
@@ -1119,12 +1129,10 @@
                 const data = await res.json();
                 renderStatus(data);
             } catch (e) {
-                console.error('ステータス読み込みエラー:', e);
                 renderStatus(getDemoStatusData());
             }
         }
 
-        // ジャーナル読み込み
         async function loadJournals() {
             try {
                 const res = await fetch(`${API_BASE}/journals?user_id=${encodeURIComponent(userId)}`);
@@ -1132,23 +1140,19 @@
                 const data = await res.json();
                 renderJournals(data);
             } catch (e) {
-                console.error('ジャーナル読み込みエラー:', e);
                 renderJournals(getDemoJournalData());
             }
         }
 
-        // ========== タスク描画 ==========
         function renderTasks(data) {
             const activeList = document.getElementById('activeTaskList');
             const completedList = document.getElementById('completedTaskList');
-
             const active = [...(data.pinned || []), ...(data.active || [])];
             const completed = data.completed || [];
 
             activeList.innerHTML = active.map(t => createTaskCard(t, false)).join('');
             completedList.innerHTML = completed.map(t => createTaskCard(t, true)).join('');
 
-            // イベントバインド
             document.querySelectorAll('.task-card').forEach(card => {
                 card.addEventListener('click', () => toggleTaskComplete(card.dataset.id));
             });
@@ -1160,13 +1164,12 @@
             return `
                 <div class="task-card ${isCompleted ? 'completed' : ''}" data-id="${task.id}">
                     <div class="task-checkbox">${isCompleted ? '✓' : ''}</div>
-                    <div class="task-title">${task.pinned ? '📍 ' : ''}${name}</div>
+                    <div class="task-title">${task.pinned ? '📍' : ''}${name}</div>
                     ${remind ? `<div class="task-remind">${remind}</div>` : ''}
                 </div>
             `;
         }
 
-        // ========== ミッション描画 ==========
         function renderMission(data) {
             document.getElementById('missionTitle').textContent = data.title || '今週のミッション';
             document.getElementById('missionDesc').textContent = data.description || '';
@@ -1174,17 +1177,16 @@
 
             const btn = document.getElementById('missionBtn');
             if (data.completed) {
-                btn.textContent = '達成済み ✓';
+                btn.textContent = '✓ 達成済み';
                 btn.classList.add('completed');
                 btn.disabled = true;
             } else {
-                btn.textContent = 'ミッション達成!';
+                btn.textContent = '▶ ミッション達成!';
                 btn.classList.remove('completed');
                 btn.disabled = false;
             }
         }
 
-        // ========== 習慣リスト描画 ==========
         function renderHabitList() {
             const container = document.getElementById('habitList');
             container.innerHTML = HABITS.map(h => `
@@ -1212,7 +1214,6 @@
             document.getElementById('dailyTaskCard').classList.toggle('expanded');
         }
 
-        // ========== 週間ビュー描画 ==========
         function renderWeekView(data) {
             const tbody = document.getElementById('weekTableBody');
             const weekData = data.week || {};
@@ -1228,7 +1229,6 @@
                 html += '</tr>';
             });
 
-            // 達成率行
             html += '<tr><td>達成率</td>';
             days.forEach(day => {
                 const dayData = weekData[day] || {};
@@ -1241,13 +1241,11 @@
             tbody.innerHTML = html;
         }
 
-        // ========== 分析データ描画 ==========
         function renderHabitAnalysis(data) {
             const weekProgress = data.week_progress || 0;
             document.getElementById('weekProgressValue').textContent = `${weekProgress}%`;
             document.getElementById('weekProgressBar').style.width = `${weekProgress}%`;
 
-            // 習慣別グラフ
             const ctx = document.getElementById('habitChart').getContext('2d');
             if (habitChart) habitChart.destroy();
 
@@ -1265,14 +1263,16 @@
                         {
                             label: '目標',
                             data: habitStats.map(h => h.goal),
-                            backgroundColor: 'rgba(200, 200, 200, 0.5)',
-                            borderRadius: 4
+                            backgroundColor: '#3a3a6e',
+                            borderColor: '#5a5a9e',
+                            borderWidth: 2
                         },
                         {
                             label: '実績',
                             data: habitStats.map(h => h.actual),
-                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                            borderRadius: 4
+                            backgroundColor: '#2a6a2a',
+                            borderColor: '#4ada4a',
+                            borderWidth: 2
                         }
                     ]
                 },
@@ -1281,16 +1281,27 @@
                     maintainAspectRatio: false,
                     indexAxis: 'y',
                     scales: {
-                        x: { beginAtZero: true, max: 7 }
+                        x: {
+                            beginAtZero: true,
+                            max: 7,
+                            grid: { color: '#2a2a4e' },
+                            ticks: { color: '#8a8aaa' }
+                        },
+                        y: {
+                            grid: { color: '#2a2a4e' },
+                            ticks: { color: '#8a8aaa' }
+                        }
                     },
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#8a8aaa' }
+                        }
                     }
                 }
             });
         }
 
-        // ========== ステータス描画 ==========
         function renderStatus(data) {
             const user = data.user || {};
             const stats = data.stats || {};
@@ -1300,7 +1311,6 @@
             document.getElementById('statusUserTitle').textContent = getTitle(user.level || 1);
             document.getElementById('statusLevelBadge').textContent = `Lv.${user.level || 1}`;
 
-            // レーダーチャート
             const ctx = document.getElementById('radarChart').getContext('2d');
             if (radarChart) radarChart.destroy();
 
@@ -1318,10 +1328,12 @@
                             stats.knowledge || 0,
                             stats.consistency || 0
                         ],
-                        backgroundColor: 'rgba(102, 126, 234, 0.3)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(74, 218, 74, 0.2)',
+                        borderColor: '#4ada4a',
                         borderWidth: 2,
-                        pointBackgroundColor: 'rgba(102, 126, 234, 1)'
+                        pointBackgroundColor: '#4ada4a',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1
                     }]
                 },
                 options: {
@@ -1331,7 +1343,14 @@
                         r: {
                             beginAtZero: true,
                             max: 100,
-                            ticks: { stepSize: 20 }
+                            ticks: {
+                                stepSize: 20,
+                                color: '#6a6a9a',
+                                backdropColor: 'transparent'
+                            },
+                            grid: { color: '#2a2a4e' },
+                            angleLines: { color: '#2a2a4e' },
+                            pointLabels: { color: '#aaaaff', font: { size: 11 } }
                         }
                     },
                     plugins: { legend: { display: false } }
@@ -1339,13 +1358,12 @@
             });
         }
 
-        // ========== ジャーナル描画 ==========
         function renderJournals(data) {
             const container = document.getElementById('journalList');
             const journals = data.journals || [];
 
             if (journals.length === 0) {
-                container.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">まだジャーナルがありません</div>';
+                container.innerHTML = '<div style="text-align:center;color:#6a6a9a;padding:20px;">まだ冒険記録がありません</div>';
                 return;
             }
 
@@ -1353,17 +1371,15 @@
                 <div class="journal-card" data-id="${j.id}" onclick="toggleJournalCard(this)">
                     <div class="journal-card-header">
                         <div class="journal-date">📅 ${formatDate(j.date)}</div>
-                        <div class="journal-tasks-count">✅ ${j.tasks_completed_count || 0}タスク達成</div>
+                        <div class="journal-tasks-count">✓ ${j.tasks_completed_count || 0}クエスト達成</div>
                     </div>
                     <div class="journal-title-text">${j.title || '無題'}</div>
                     <div class="journal-preview">${(j.content || '').substring(0, 50)}...</div>
                     <div class="journal-card-expand">
                         <div class="journal-full-content">
                             ${j.completed_tasks ? `
-                                <div class="journal-tasks-list">
-                                    <div class="journal-tasks-label">達成したタスク:</div>
-                                    ${j.completed_tasks.map(t => `<div class="journal-task-item">✓ ${t}</div>`).join('')}
-                                </div>
+                                <div class="journal-tasks-label">達成したクエスト:</div>
+                                ${j.completed_tasks.map(t => `<div class="journal-task-item">◆ ${t}</div>`).join('')}
                             ` : ''}
                             <div class="journal-body">${j.content || ''}</div>
                             <button class="journal-edit-btn" onclick="editJournal('${j.id}')">編集する</button>
@@ -1377,7 +1393,6 @@
             card.classList.toggle('expanded');
         }
 
-        // ========== アクション ==========
         async function addTask() {
             const input = document.getElementById('newTaskInput');
             const title = input.value.trim();
@@ -1387,11 +1402,7 @@
                 await fetch(`${API_BASE}/action`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        action: 'create',
-                        task_name: title
-                    })
+                    body: JSON.stringify({ user_id: userId, action: 'create', task_name: title })
                 });
                 input.value = '';
                 await loadTasks();
@@ -1465,28 +1476,21 @@
                 await fetch(`${API_BASE}/journals/save`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        date: date,
-                        title: title,
-                        content: content
-                    })
+                    body: JSON.stringify({ user_id: userId, date, title, content })
                 });
                 document.getElementById('journalTitle').value = '';
                 document.getElementById('journalContent').value = '';
                 await loadJournals();
-                alert('ジャーナルを保存しました!');
+                alert('記録しました!');
             } catch (e) {
                 console.error('ジャーナル保存エラー:', e);
             }
         }
 
         function editJournal(journalId) {
-            // 編集モーダルを開く（簡易実装）
             alert('編集機能は次のバージョンで実装予定です');
         }
 
-        // ========== ヘルパー関数 ==========
         function formatRemind(iso) {
             if (!iso) return '';
             const d = new Date(iso);
@@ -1520,7 +1524,6 @@
             document.getElementById('loadingOverlay').classList.add('hidden');
         }
 
-        // ========== デモデータ ==========
         function loadDemoData() {
             renderTasks({
                 active: [
@@ -1528,14 +1531,12 @@
                     { id: '2', task_name: 'スクワット20回' },
                     { id: '3', task_name: 'プランク1分' }
                 ],
-                completed: [
-                    { id: '4', task_name: 'ストレッチ5分' }
-                ]
+                completed: [{ id: '4', task_name: 'ストレッチ5分' }]
             });
 
             renderMission({
                 title: '毎日5分のストレッチを続けよう!',
-                description: '柔軟性を高めて怪我を予防しよう。7日間続けてミッションクリア!',
+                description: '柔軟性を高めて怪我を予防せよ。7日間続けてミッションクリア!',
                 completed: false,
                 completion_count: 42
             });
@@ -1553,9 +1554,7 @@
                     tue: { early_wake: true, mission: false, reading: true, journal: true, no_alcohol: true, workout: false },
                     wed: { early_wake: false, mission: true, reading: false, journal: false, no_alcohol: true, workout: true },
                     thu: { early_wake: true, mission: true, reading: true, journal: true, no_alcohol: true, workout: true },
-                    fri: { early_wake: false, mission: false, reading: false, journal: false, no_alcohol: false, workout: false },
-                    sat: { early_wake: false, mission: false, reading: false, journal: false, no_alcohol: false, workout: false },
-                    sun: { early_wake: false, mission: false, reading: false, journal: false, no_alcohol: false, workout: false }
+                    fri: {}, sat: {}, sun: {}
                 },
                 week_progress: 58,
                 habit_stats: [
@@ -1572,14 +1571,7 @@
         function getDemoStatusData() {
             return {
                 user: { name: '筋肉戦士', level: 5, xp: 800, streak: 7 },
-                stats: {
-                    strength: 45,
-                    endurance: 35,
-                    skill: 25,
-                    mental: 40,
-                    knowledge: 20,
-                    consistency: 55
-                }
+                stats: { strength: 45, endurance: 35, skill: 25, mental: 40, knowledge: 20, consistency: 55 }
             };
         }
 
@@ -1589,7 +1581,7 @@
                     {
                         id: '1',
                         date: '2025-01-15',
-                        title: '充実した一日だった',
+                        title: '充実した冒険の日',
                         content: '今日は朝早く起きてストレッチから始められた。プッシュアップも目標回数をクリアできて嬉しい。明日も頑張ろう!',
                         tasks_completed_count: 5,
                         completed_tasks: ['プッシュアップ15回', 'スクワット20回', 'ストレッチ5分']
@@ -1597,7 +1589,7 @@
                     {
                         id: '2',
                         date: '2025-01-14',
-                        title: '少しサボってしまった...',
+                        title: '休息の日',
                         content: '仕事が忙しくて筋トレの時間が取れなかった。でも明日は必ずやる!',
                         tasks_completed_count: 2,
                         completed_tasks: ['ストレッチ5分']
@@ -1606,7 +1598,6 @@
             };
         }
 
-        // ========== 起動 ==========
         init();
     </script>
 </body>
