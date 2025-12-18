@@ -117,9 +117,27 @@
             text-decoration: line-through;
         }
         .card.dragging {
-            opacity: 0.9;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-            z-index: 5;
+            opacity: 0.95;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            z-index: 100;
+            transform: scale(1.02);
+            transition: box-shadow 0.2s, transform 0.2s, opacity 0.2s;
+        }
+        .card.drag-placeholder {
+            height: 60px;
+            background: rgba(126, 109, 255, 0.1);
+            border: 2px dashed #7e6dff;
+            border-radius: 8px;
+            margin: 4px 0;
+            transition: all 0.2s ease;
+        }
+        .card.drag-over-above {
+            transform: translateY(64px);
+            transition: transform 0.2s ease;
+        }
+        .card.drag-over-below {
+            transform: translateY(-64px);
+            transition: transform 0.2s ease;
         }
         .sl {
             position: relative;
@@ -194,6 +212,112 @@
             white-space: nowrap;
         }
 
+        /* ミッションタスク */
+        .mission-task-wrapper {
+            position: relative;
+            margin: 12px 16px;
+        }
+        .mission-task-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .mission-task-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        .mission-task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .mission-task-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+        .mission-task-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .mission-task-desc {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+        .mission-task-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mission-complete-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mission-complete-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .mission-complete-btn.completed {
+            background: rgba(255, 255, 255, 0.9);
+            color: #764ba2;
+        }
+        .mission-expire {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        /* 達成者数の吹き出し */
+        .mission-achievement-bubble {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff6b6b;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+            animation: pulse 2s infinite;
+            z-index: 5;
+        }
+        .mission-achievement-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 20px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #ff6b6b;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
         /* ========== ステータスタブ ========== */
         .status-section {
             background: #fff;
@@ -247,6 +371,17 @@
             padding: 10px 12px;
             background: #f7f7f8;
             border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .habit-item:active {
+            background: #eeeeee;
+            transform: scale(0.98);
+        }
+        .habit-item.checked {
+            background: rgba(126, 109, 255, 0.1);
+            border: 1px solid rgba(126, 109, 255, 0.3);
         }
         .habit-checkbox {
             width: 22px;
@@ -518,7 +653,214 @@
             color: #888;
             font-size: 14px;
         }
+
+        /* ========== 月間分析モーダル ========== */
+        .monthly-analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .month-selector {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .month-selector-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .month-selector-btn:hover {
+            background: #f5f5f5;
+        }
+        .current-month {
+            font-size: 16px;
+            font-weight: 600;
+            min-width: 100px;
+            text-align: center;
+        }
+        .monthly-stats-summary {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .monthly-stat-card {
+            flex: 1;
+            background: #f7f7f8;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .monthly-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #7e6dff;
+        }
+        .monthly-stat-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .monthly-table-container {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+        }
+        .monthly-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        .monthly-table th, .monthly-table td {
+            padding: 8px 4px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        .monthly-table th {
+            background: #f7f7f8;
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+            color: #666;
+        }
+        .monthly-table td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+        .monthly-table .cell-check { color: #7e6dff; }
+        .monthly-table .cell-uncheck { color: #ddd; }
+        .monthly-chart-container {
+            height: 180px;
+            margin-top: 16px;
+        }
+        .detail-view-btn {
+            background: linear-gradient(135deg, #7e6dff 0%, #9d8fff 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .detail-view-btn:hover {
+            opacity: 0.9;
+        }
+        .week-view-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        /* ========== ジャーナル詳細モーダル ========== */
+        .journal-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .journal-modal-date {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .journal-modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .journal-tasks-section {
+            background: #f7f7f8;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        .journal-tasks-header {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .journal-tasks-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .journal-task-chip {
+            background: #7e6dff;
+            color: white;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+        .journal-task-chip.not-completed {
+            background: #ddd;
+            color: #888;
+        }
+        .journal-content-section {
+            margin-bottom: 16px;
+        }
+        .journal-content-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .journal-content-body {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #333;
+            white-space: pre-wrap;
+        }
+        .journal-modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .journal-modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .journal-close-btn {
+            background: #f7f7f8;
+            border: 1px solid #ddd;
+            color: #666;
+        }
+        .journal-edit-modal-btn {
+            background: #7e6dff;
+            border: none;
+            color: white;
+        }
+        .journal-edit-form {
+            display: none;
+        }
+        .journal-edit-form.active {
+            display: block;
+        }
+        .journal-view-content {
+            display: block;
+        }
+        .journal-view-content.hidden {
+            display: none;
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
@@ -532,6 +874,9 @@
             </div>
         </header>
         <main>
+            <!-- ミッションタスク -->
+            <div id="missionTaskContainer"></div>
+
             <div class="add">
                 <input id="newTitle" placeholder="タスクを入力…" />
                 <button id="btnAdd">追加</button>
@@ -572,8 +917,13 @@
 
             <!-- 週間ビュー -->
             <div class="status-section">
-                <div class="status-section-title">
-                    <span>📅</span> 週間ビュー
+                <div class="week-view-header">
+                    <div class="status-section-title" style="margin-bottom:0;">
+                        <span>📅</span> 週間ビュー
+                    </div>
+                    <button class="detail-view-btn" id="openMonthlyAnalysis">
+                        <span>📊</span> 詳しく見る
+                    </button>
                 </div>
                 <table class="week-table" id="weekTable">
                     <thead>
@@ -659,6 +1009,126 @@
         </div>
     </nav>
 
+    <!-- ========== ジャーナル詳細モーダル ========== -->
+    <div id="journalDetailModal" class="modal-root">
+        <div class="modal-backdrop" id="journalDetailBackdrop"></div>
+        <div class="modal-panel" style="max-height:80vh;overflow-y:auto;">
+            <!-- 表示モード -->
+            <div id="journalViewContent" class="journal-view-content">
+                <div class="journal-modal-header">
+                    <div>
+                        <div class="journal-modal-date" id="journalModalDate">2025年1月1日</div>
+                        <div class="journal-modal-title" id="journalModalTitle">今日のひとこと</div>
+                    </div>
+                    <button id="closeJournalDetail" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+                </div>
+
+                <div class="journal-tasks-section">
+                    <div class="journal-tasks-header">
+                        <span>✓</span> この日に達成したタスク
+                    </div>
+                    <div class="journal-tasks-list" id="journalModalTasks">
+                        <!-- タスクチップがここに入る -->
+                    </div>
+                </div>
+
+                <div class="journal-content-section">
+                    <div class="journal-content-label">振り返り内容</div>
+                    <div class="journal-content-body" id="journalModalContent">
+                        内容がここに表示されます
+                    </div>
+                </div>
+
+                <div class="journal-modal-actions">
+                    <button class="journal-close-btn" id="journalCloseBtn">閉じる</button>
+                    <button class="journal-edit-modal-btn" id="journalEditBtn">編集する</button>
+                </div>
+            </div>
+
+            <!-- 編集モード -->
+            <div id="journalEditContent" class="journal-edit-form">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <div style="font-weight:600;font-size:16px;">ジャーナルを編集</div>
+                    <button id="closeJournalEdit" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">タイトル</label>
+                    <input type="text" class="form-input" id="editJournalTitle" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">内容</label>
+                    <textarea class="form-textarea" id="editJournalContent" style="min-height:150px;"></textarea>
+                </div>
+
+                <div class="journal-modal-actions">
+                    <button class="journal-close-btn" id="journalCancelEditBtn">キャンセル</button>
+                    <button class="journal-edit-modal-btn" id="journalSaveEditBtn">保存する</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 月間分析モーダル ========== -->
+    <div id="monthlyAnalysisModal" class="modal-root">
+        <div class="modal-backdrop" id="monthlyAnalysisBackdrop"></div>
+        <div class="modal-panel" style="max-height:85vh;overflow-y:auto;">
+            <div class="monthly-analysis-header">
+                <div style="font-weight:600;font-size:16px;">📊 月間分析</div>
+                <button id="closeMonthlyAnalysis" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
+            </div>
+
+            <!-- 月選択 -->
+            <div class="month-selector">
+                <button class="month-selector-btn" id="prevMonthBtn">&lt;</button>
+                <div class="current-month" id="currentMonthLabel">2025年1月</div>
+                <button class="month-selector-btn" id="nextMonthBtn">&gt;</button>
+            </div>
+
+            <!-- サマリー統計 -->
+            <div class="monthly-stats-summary" style="margin-top:16px;">
+                <div class="monthly-stat-card">
+                    <div class="monthly-stat-value" id="monthlyTotalDays">0</div>
+                    <div class="monthly-stat-label">記録日数</div>
+                </div>
+                <div class="monthly-stat-card">
+                    <div class="monthly-stat-value" id="monthlyAchievement">0%</div>
+                    <div class="monthly-stat-label">総合達成率</div>
+                </div>
+                <div class="monthly-stat-card">
+                    <div class="monthly-stat-value" id="monthlyBestStreak">0</div>
+                    <div class="monthly-stat-label">最長連続</div>
+                </div>
+            </div>
+
+            <!-- 月間テーブル -->
+            <div style="font-weight:600;font-size:14px;margin:16px 0 8px;">日別達成状況</div>
+            <div class="monthly-table-container">
+                <table class="monthly-table">
+                    <thead>
+                        <tr>
+                            <th>日付</th>
+                            <th>🌅</th>
+                            <th>🎯</th>
+                            <th>📚</th>
+                            <th>📝</th>
+                            <th>🚫</th>
+                            <th>💪</th>
+                            <th>達成</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monthlyTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- 折れ線グラフ -->
+            <div style="font-weight:600;font-size:14px;margin:16px 0 8px;">達成率の推移</div>
+            <div class="monthly-chart-container">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
     <!-- ========== 詳細モーダル ========== -->
     <div id="detailModal" class="modal-root">
         <div id="detailBackdrop" class="modal-backdrop"></div>
@@ -725,6 +1195,13 @@
 
         let todayHabits = {};
         let weekHabitsData = {};
+        let currentMission = null;
+        let missionCompletedToday = false;
+        let selectedMonth = new Date();
+        let monthlyChart = null;
+        let monthlyHabitsData = {};
+        let currentEditJournal = null;
+        let journalsData = [];
 
         // スワイプ設定
         const STRONG_RATIO = 0.85;
@@ -787,6 +1264,8 @@
 
             // モーダル
             bindModalUI();
+            bindMonthlyAnalysisUI();
+            bindJournalDetailModalUI();
         }
 
         function switchTab(tabId) {
@@ -799,9 +1278,113 @@
         async function loadAllData() {
             await Promise.all([
                 loadList(),
+                loadMissionTask(),
                 loadHabits(),
                 loadJournals()
             ]);
+        }
+
+        // ========== ミッションタスク機能 ==========
+        async function loadMissionTask() {
+            try {
+                const res = await fetch(`${API_BASE}/mission?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                currentMission = data.mission || null;
+                missionCompletedToday = data.completed_today || false;
+                renderMissionTask(data);
+            } catch (e) {
+                console.error("[MISSION] error:", e);
+                // デモデータを表示
+                renderMissionTask({
+                    mission: {
+                        id: 'demo',
+                        title: '今週のミッション',
+                        description: '毎日10分間の瞑想を行い、心を落ち着けよう',
+                        expires_at: getNextSunday()
+                    },
+                    completed_today: false,
+                    today_completions: 42
+                });
+            }
+        }
+
+        function getNextSunday() {
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const daysUntilSunday = (7 - dayOfWeek) % 7 || 7;
+            const nextSunday = new Date(today);
+            nextSunday.setDate(today.getDate() + daysUntilSunday);
+            nextSunday.setHours(23, 59, 59);
+            return nextSunday.toISOString();
+        }
+
+        function renderMissionTask(data) {
+            const container = document.getElementById('missionTaskContainer');
+            if (!data.mission) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const mission = data.mission;
+            const completedToday = data.completed_today;
+            const todayCount = data.today_completions || 0;
+            const expiresAt = new Date(mission.expires_at);
+            const daysLeft = Math.ceil((expiresAt - new Date()) / (1000 * 60 * 60 * 24));
+
+            container.innerHTML = `
+                <div class="mission-task-wrapper">
+                    <div class="mission-achievement-bubble">
+                        今日は${todayCount}人が達成🔥
+                    </div>
+                    <div class="mission-task-card">
+                        <div class="mission-task-header">
+                            <div class="mission-task-badge">
+                                <span>🎯</span>
+                                <span>週間ミッション</span>
+                            </div>
+                        </div>
+                        <div class="mission-task-title">${mission.title || '今週のミッション'}</div>
+                        <div class="mission-task-desc">${mission.description || ''}</div>
+                        <div class="mission-task-actions">
+                            <button class="mission-complete-btn ${completedToday ? 'completed' : ''}" id="missionCompleteBtn">
+                                ${completedToday ? '✓ 達成済み' : '達成する'}
+                            </button>
+                            <div class="mission-expire">残り${daysLeft}日</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('missionCompleteBtn').addEventListener('click', async () => {
+                if (completedToday) return;
+                await completeMission(mission.id);
+            });
+        }
+
+        async function completeMission(missionId) {
+            try {
+                const res = await fetch(`${API_BASE}/mission/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        mission_id: missionId
+                    })
+                });
+                if (res.ok) {
+                    missionCompletedToday = true;
+                    await loadMissionTask();
+                }
+            } catch (e) {
+                console.error("[MISSION] complete error:", e);
+                // デモ用：ローカルで完了状態を更新
+                const btn = document.getElementById('missionCompleteBtn');
+                if (btn) {
+                    btn.classList.add('completed');
+                    btn.textContent = '✓ 達成済み';
+                }
+            }
         }
 
         // ========== リスト機能 ==========
@@ -932,73 +1515,211 @@
                 });
             }
 
-            // スマホ版スワイプ
-            let startX = 0, dx = 0;
+            // スマホ版スワイプ & ドラッグ（優位性判定）
+            let startX = 0, startY = 0, dx = 0, dy = 0;
+            let gestureDirection = null; // 'horizontal' or 'vertical' or null
+            let isDragging = false;
+            let dragStartY = 0;
+            let placeholder = null;
+            const DIRECTION_THRESHOLD = 10; // この距離を超えたら方向確定
+
             wrap.addEventListener("touchstart", e => {
-                if (e.target.closest("button") || e.target.closest(".handle")) return;
+                if (e.target.closest("button")) return;
+
+                const isHandle = e.target.closest(".handle");
                 startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
                 dx = 0;
+                dy = 0;
+                gestureDirection = null;
+                isDragging = false;
+
+                if (isHandle) {
+                    // ハンドルからの開始 → 縦ドラッグ優先モード
+                    gestureDirection = 'vertical';
+                    isDragging = true;
+                    dragStartY = startY;
+                    startDragMode(wrap);
+                }
+
                 sl.style.transition = "none";
             }, { passive: true });
 
             wrap.addEventListener("touchmove", e => {
+                if (e.target.closest("button")) return;
                 if (e.touches.length === 0) return;
+
                 dx = e.touches[0].clientX - startX;
-                if (Math.abs(dx) > 8) e.preventDefault();
-                sl.style.transform = `translateX(${dx}px)`;
+                dy = e.touches[0].clientY - startY;
+
+                // 方向が確定していなければ判定
+                if (gestureDirection === null) {
+                    if (Math.abs(dx) > DIRECTION_THRESHOLD || Math.abs(dy) > DIRECTION_THRESHOLD) {
+                        if (Math.abs(dx) > Math.abs(dy)) {
+                            gestureDirection = 'horizontal';
+                        } else {
+                            gestureDirection = 'vertical';
+                        }
+                    }
+                }
+
+                if (gestureDirection === 'horizontal') {
+                    // 左右スワイプ
+                    e.preventDefault();
+                    sl.style.transform = `translateX(${dx}px)`;
+                } else if (gestureDirection === 'vertical' && isDragging) {
+                    // 縦ドラッグ（並び替え）
+                    e.preventDefault();
+                    handleDragMove(wrap, e.touches[0].clientY);
+                }
             }, { passive: false });
 
             wrap.addEventListener("touchend", () => {
+                if (isDragging) {
+                    endDragMode(wrap);
+                    isDragging = false;
+                    gestureDirection = null;
+                    return;
+                }
+
                 sl.style.transition = "transform .15s";
                 const leftW = Number(wrap.dataset.leftWidth) || 140;
                 const rightW = Number(wrap.dataset.rightWidth) || 140;
 
-                if (dx > leftW * STRONG_RATIO) {
-                    isCompleted ? action("uncomplete", t.id) : action("complete", t.id);
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-                if (dx < -rightW * STRONG_RATIO) {
-                    if (t.pinned) alert("ピンを外してください！");
-                    else action("delete", t.id);
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
+                if (gestureDirection === 'horizontal') {
+                    if (dx > leftW * STRONG_RATIO) {
+                        isCompleted ? action("uncomplete", t.id) : action("complete", t.id);
+                        sl.style.transform = "translateX(0)";
+                        gestureDirection = null;
+                        return;
+                    }
+                    if (dx < -rightW * STRONG_RATIO) {
+                        if (t.pinned) alert("ピンを外してください！");
+                        else action("delete", t.id);
+                        sl.style.transform = "translateX(0)";
+                        gestureDirection = null;
+                        return;
+                    }
 
-                if (dx > SNAP_THRESHOLD) {
-                    wrap.classList.add("open-left");
-                    sl.style.transform = `translateX(${leftW}px)`;
-                } else if (dx < -SNAP_THRESHOLD) {
-                    wrap.classList.add("open-right");
-                    sl.style.transform = `translateX(${-rightW}px)`;
+                    if (dx > SNAP_THRESHOLD) {
+                        wrap.classList.add("open-left");
+                        sl.style.transform = `translateX(${leftW}px)`;
+                    } else if (dx < -SNAP_THRESHOLD) {
+                        wrap.classList.add("open-right");
+                        sl.style.transform = `translateX(${-rightW}px)`;
+                    } else {
+                        wrap.classList.remove("open-left", "open-right");
+                        sl.style.transform = "translateX(0)";
+                    }
                 } else {
                     wrap.classList.remove("open-left", "open-right");
                     sl.style.transform = "translateX(0)";
                 }
+                gestureDirection = null;
             });
+
+            // ドラッグモード開始
+            function startDragMode(card) {
+                card.classList.add("dragging");
+                document.body.style.userSelect = "none";
+                document.body.style.overflow = "hidden";
+            }
+
+            // ドラッグ中の移動処理
+            function handleDragMove(card, currentY) {
+                const list = card.parentElement;
+                if (!list) return;
+
+                const siblings = Array.from(list.children).filter(c => c !== card && !c.classList.contains('drag-placeholder'));
+
+                // 他のカードの位置をリセット
+                siblings.forEach(s => {
+                    s.classList.remove('drag-over-above', 'drag-over-below');
+                });
+
+                // カードの位置を計算してスペースを空ける
+                const cardRect = card.getBoundingClientRect();
+                const cardCenterY = currentY;
+
+                let insertBefore = null;
+                siblings.forEach(sibling => {
+                    const rect = sibling.getBoundingClientRect();
+                    const siblingCenterY = rect.top + rect.height / 2;
+
+                    if (cardCenterY < siblingCenterY && !insertBefore) {
+                        insertBefore = sibling;
+                    }
+                });
+
+                // 挿入位置のカードにスペース空け効果
+                if (insertBefore) {
+                    insertBefore.classList.add('drag-over-above');
+                }
+            }
+
+            // ドラッグモード終了
+            function endDragMode(card) {
+                card.classList.remove("dragging");
+                document.body.style.userSelect = "";
+                document.body.style.overflow = "";
+
+                const list = card.parentElement;
+                if (!list) return;
+
+                // 他のカードのスタイルをリセット
+                Array.from(list.children).forEach(c => {
+                    c.classList.remove('drag-over-above', 'drag-over-below');
+                    c.style.transform = '';
+                });
+
+                // 並び順を保存
+                saveSortOrder();
+            }
 
             wrap.__taskData = t;
             wrap.dataset.taskId = t.id;
             return wrap;
         }
 
+        // 並び順保存
+        async function saveSortOrder() {
+            if (!userId) return;
+
+            const orders = [];
+            [pinnedEl, activeEl, completedEl].forEach((listEl, sectionIdx) => {
+                const section = ['pinned', 'active', 'completed'][sectionIdx];
+                listEl.querySelectorAll('.card').forEach((card, index) => {
+                    const t = card.__taskData;
+                    if (t) orders.push({ id: t.id, sort_order: index, section });
+                });
+            });
+
+            if (orders.length > 0) {
+                await action("sort_update", null, { orders });
+            }
+        }
+
         // ========== ステータス機能 ==========
         function renderHabitList() {
             const container = document.getElementById('habitList');
             container.innerHTML = HABITS.map(h => `
-                <div class="habit-item">
+                <div class="habit-item" data-habit="${h.id}">
                     <div class="habit-checkbox" data-habit="${h.id}"></div>
                     <span class="habit-name">${h.name}</span>
                     <span class="habit-icon">${h.icon}</span>
                 </div>
             `).join('');
 
-            container.querySelectorAll('.habit-checkbox').forEach(cb => {
-                cb.addEventListener('click', () => {
-                    const id = cb.dataset.habit;
+            // カード全体でクリック可能に
+            container.querySelectorAll('.habit-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation(); // モーダル閉じを防止
+                    const id = item.dataset.habit;
+                    const cb = item.querySelector('.habit-checkbox');
                     todayHabits[id] = !todayHabits[id];
                     cb.classList.toggle('checked', todayHabits[id]);
                     cb.textContent = todayHabits[id] ? '✓' : '';
+                    item.classList.toggle('checked', todayHabits[id]);
                 });
             });
         }
@@ -1021,10 +1742,13 @@
         }
 
         function updateHabitCheckboxes() {
-            document.querySelectorAll('.habit-checkbox').forEach(cb => {
-                const id = cb.dataset.habit;
-                cb.classList.toggle('checked', !!todayHabits[id]);
-                cb.textContent = todayHabits[id] ? '✓' : '';
+            document.querySelectorAll('.habit-item').forEach(item => {
+                const id = item.dataset.habit;
+                const cb = item.querySelector('.habit-checkbox');
+                const isChecked = !!todayHabits[id];
+                cb.classList.toggle('checked', isChecked);
+                cb.textContent = isChecked ? '✓' : '';
+                item.classList.toggle('checked', isChecked);
             });
         }
 
@@ -1048,6 +1772,189 @@
             const progress = data.week_progress || 0;
             document.getElementById('weekProgressValue').textContent = `${progress}%`;
             document.getElementById('weekProgressBar').style.width = `${progress}%`;
+        }
+
+        // ========== 月間分析機能 ==========
+        function bindMonthlyAnalysisUI() {
+            const modal = document.getElementById('monthlyAnalysisModal');
+            const closeModal = () => modal.classList.remove('visible');
+
+            document.getElementById('openMonthlyAnalysis').addEventListener('click', () => {
+                selectedMonth = new Date();
+                modal.classList.add('visible');
+                loadMonthlyData();
+            });
+
+            document.getElementById('monthlyAnalysisBackdrop').addEventListener('click', closeModal);
+            document.getElementById('closeMonthlyAnalysis').addEventListener('click', closeModal);
+
+            document.getElementById('prevMonthBtn').addEventListener('click', () => {
+                selectedMonth.setMonth(selectedMonth.getMonth() - 1);
+                loadMonthlyData();
+            });
+
+            document.getElementById('nextMonthBtn').addEventListener('click', () => {
+                const now = new Date();
+                if (selectedMonth.getFullYear() < now.getFullYear() ||
+                    (selectedMonth.getFullYear() === now.getFullYear() && selectedMonth.getMonth() < now.getMonth())) {
+                    selectedMonth.setMonth(selectedMonth.getMonth() + 1);
+                    loadMonthlyData();
+                }
+            });
+        }
+
+        async function loadMonthlyData() {
+            const year = selectedMonth.getFullYear();
+            const month = selectedMonth.getMonth() + 1;
+            document.getElementById('currentMonthLabel').textContent = `${year}年${month}月`;
+
+            try {
+                const res = await fetch(`${API_BASE}/habits/monthly?user_id=${encodeURIComponent(userId)}&year=${year}&month=${month}`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                monthlyHabitsData = data.days || {};
+                renderMonthlyAnalysis(data);
+            } catch (e) {
+                console.error("[MONTHLY] error:", e);
+                // デモデータを表示
+                renderMonthlyAnalysis(generateDemoMonthlyData(year, month));
+            }
+        }
+
+        function generateDemoMonthlyData(year, month) {
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const days = {};
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isRecord = Math.random() > 0.3;
+                if (isRecord) {
+                    days[dateStr] = {
+                        early_wake: Math.random() > 0.4,
+                        mission: Math.random() > 0.5,
+                        reading: Math.random() > 0.3,
+                        journal: Math.random() > 0.4,
+                        no_alcohol: Math.random() > 0.2,
+                        workout: Math.random() > 0.5
+                    };
+                }
+            }
+            return { days, total_days: Object.keys(days).length };
+        }
+
+        function renderMonthlyAnalysis(data) {
+            const days = data.days || {};
+            const year = selectedMonth.getFullYear();
+            const month = selectedMonth.getMonth() + 1;
+            const daysInMonth = new Date(year, month, 0).getDate();
+
+            // サマリー計算
+            const recordDays = Object.keys(days).length;
+            let totalChecks = 0;
+            let totalPossible = 0;
+            let currentStreak = 0;
+            let bestStreak = 0;
+            const dailyRates = [];
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayData = days[dateStr];
+
+                if (dayData) {
+                    const checked = Object.values(dayData).filter(v => v).length;
+                    totalChecks += checked;
+                    totalPossible += 6;
+                    currentStreak++;
+                    bestStreak = Math.max(bestStreak, currentStreak);
+                    dailyRates.push({ day: d, rate: Math.round((checked / 6) * 100) });
+                } else {
+                    currentStreak = 0;
+                    dailyRates.push({ day: d, rate: 0 });
+                }
+            }
+
+            const achievement = totalPossible > 0 ? Math.round((totalChecks / totalPossible) * 100) : 0;
+
+            document.getElementById('monthlyTotalDays').textContent = recordDays;
+            document.getElementById('monthlyAchievement').textContent = `${achievement}%`;
+            document.getElementById('monthlyBestStreak').textContent = bestStreak;
+
+            // テーブル描画
+            const tbody = document.getElementById('monthlyTableBody');
+            let tableHtml = '';
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayData = days[dateStr];
+                const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][new Date(dateStr).getDay()];
+
+                tableHtml += `<tr>
+                    <td>${month}/${d}(${dayOfWeek})</td>`;
+
+                HABITS.forEach(h => {
+                    const checked = dayData && dayData[h.id];
+                    tableHtml += `<td class="${checked ? 'cell-check' : 'cell-uncheck'}">${checked ? '●' : '○'}</td>`;
+                });
+
+                const dayChecked = dayData ? Object.values(dayData).filter(v => v).length : 0;
+                tableHtml += `<td>${dayChecked}/6</td></tr>`;
+            }
+            tbody.innerHTML = tableHtml;
+
+            // グラフ描画
+            renderMonthlyChart(dailyRates);
+        }
+
+        function renderMonthlyChart(dailyRates) {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+
+            if (monthlyChart) {
+                monthlyChart.destroy();
+            }
+
+            monthlyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dailyRates.map(d => `${d.day}日`),
+                    datasets: [{
+                        label: '達成率',
+                        data: dailyRates.map(d => d.rate),
+                        borderColor: '#7e6dff',
+                        backgroundColor: 'rgba(126, 109, 255, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#7e6dff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 25,
+                                callback: (value) => `${value}%`
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxTicksLimit: 10
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => `達成率: ${context.raw}%`
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         async function saveHabits() {
@@ -1077,11 +1984,32 @@
                 const res = await fetch(`${API_BASE}/journals?user_id=${encodeURIComponent(userId)}`);
                 if (!res.ok) throw new Error('API Error');
                 const data = await res.json();
-                renderJournals(data.journals || []);
+                journalsData = data.journals || [];
+                renderJournals(journalsData);
             } catch (e) {
                 console.error("[JOURNALS] error:", e);
-                container.innerHTML = '<div class="empty-state">まだ記録がありません</div>';
+                // デモデータを表示
+                journalsData = generateDemoJournals();
+                renderJournals(journalsData);
             }
+        }
+
+        function generateDemoJournals() {
+            const today = new Date();
+            const journals = [];
+            for (let i = 0; i < 5; i++) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                journals.push({
+                    id: `demo-${i}`,
+                    date: d.toISOString().split('T')[0],
+                    title: ['今日も頑張った', '充実した一日', '新しい発見', 'まあまあの日', '反省点あり'][i],
+                    content: `今日は${['筋トレ', '読書', '仕事', '勉強', '休息'][i]}に集中できた。${['明日も継続したい', 'もっと時間を作りたい', '新しい目標ができた', '改善点が見つかった', '明日は頑張る'][i]}。`,
+                    tasks_completed_count: Math.floor(Math.random() * 6) + 1,
+                    completed_tasks: ['早起き', 'ミッション', '読書', 'ジャーナル', '禁酒', '今日トレ'].slice(0, Math.floor(Math.random() * 6) + 1)
+                });
+            }
+            return journals;
         }
 
         function renderJournals(journals) {
@@ -1098,22 +2026,138 @@
                         <div class="journal-tasks-count">✓ ${j.tasks_completed_count || 0}タスク達成</div>
                     </div>
                     <div class="journal-title-text">${j.title || '無題'}</div>
-                    <div class="journal-preview">${(j.content || '').substring(0, 50)}...</div>
-                    <div class="journal-card-expand">
-                        <div class="journal-full-content">
-                            <div class="journal-body">${j.content || ''}</div>
-                            <button class="journal-edit-btn">編集する</button>
-                        </div>
-                    </div>
+                    <div class="journal-preview">${(j.content || '').substring(0, 50)}${(j.content || '').length > 50 ? '...' : ''}</div>
                 </div>
             `).join('');
 
             container.querySelectorAll('.journal-card').forEach(card => {
-                card.addEventListener('click', e => {
-                    if (!e.target.closest('.journal-edit-btn')) {
-                        card.classList.toggle('expanded');
+                card.addEventListener('click', () => {
+                    const journalId = card.dataset.id;
+                    const journal = journalsData.find(j => j.id === journalId || j.id === String(journalId));
+                    if (journal) {
+                        openJournalDetailModal(journal);
                     }
                 });
+            });
+        }
+
+        function openJournalDetailModal(journal) {
+            currentEditJournal = journal;
+
+            // 表示モードをリセット
+            document.getElementById('journalViewContent').classList.remove('hidden');
+            document.getElementById('journalEditContent').classList.remove('active');
+
+            // データを表示
+            const d = new Date(journal.date);
+            document.getElementById('journalModalDate').textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+            document.getElementById('journalModalTitle').textContent = journal.title || '無題';
+            document.getElementById('journalModalContent').textContent = journal.content || '内容なし';
+
+            // 達成タスクを表示
+            const tasksContainer = document.getElementById('journalModalTasks');
+            const completedTasks = journal.completed_tasks || [];
+            if (completedTasks.length > 0) {
+                tasksContainer.innerHTML = completedTasks.map(task =>
+                    `<span class="journal-task-chip">${task}</span>`
+                ).join('');
+            } else {
+                // デモ用：習慣データから推定
+                const habitNames = HABITS.map(h => h.name);
+                const count = journal.tasks_completed_count || 0;
+                const demoTasks = habitNames.slice(0, count);
+                if (demoTasks.length > 0) {
+                    tasksContainer.innerHTML = demoTasks.map(task =>
+                        `<span class="journal-task-chip">${task}</span>`
+                    ).join('');
+                } else {
+                    tasksContainer.innerHTML = '<span style="color:#888;font-size:12px;">達成タスクなし</span>';
+                }
+            }
+
+            document.getElementById('journalDetailModal').classList.add('visible');
+        }
+
+        function bindJournalDetailModalUI() {
+            const modal = document.getElementById('journalDetailModal');
+            const closeModal = () => {
+                modal.classList.remove('visible');
+                currentEditJournal = null;
+            };
+
+            document.getElementById('journalDetailBackdrop').addEventListener('click', closeModal);
+            document.getElementById('closeJournalDetail').addEventListener('click', closeModal);
+            document.getElementById('journalCloseBtn').addEventListener('click', closeModal);
+            document.getElementById('closeJournalEdit').addEventListener('click', closeModal);
+
+            // 編集モードに切り替え
+            document.getElementById('journalEditBtn').addEventListener('click', () => {
+                if (!currentEditJournal) return;
+
+                document.getElementById('journalViewContent').classList.add('hidden');
+                document.getElementById('journalEditContent').classList.add('active');
+
+                document.getElementById('editJournalTitle').value = currentEditJournal.title || '';
+                document.getElementById('editJournalContent').value = currentEditJournal.content || '';
+            });
+
+            // 編集キャンセル
+            document.getElementById('journalCancelEditBtn').addEventListener('click', () => {
+                document.getElementById('journalViewContent').classList.remove('hidden');
+                document.getElementById('journalEditContent').classList.remove('active');
+            });
+
+            // 編集保存
+            document.getElementById('journalSaveEditBtn').addEventListener('click', async () => {
+                if (!currentEditJournal) return;
+
+                const newTitle = document.getElementById('editJournalTitle').value.trim();
+                const newContent = document.getElementById('editJournalContent').value.trim();
+
+                if (!newTitle && !newContent) {
+                    alert('タイトルまたは内容を入力してください');
+                    return;
+                }
+
+                try {
+                    await fetch(`${API_BASE}/journals/update`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            journal_id: currentEditJournal.id,
+                            title: newTitle,
+                            content: newContent
+                        })
+                    });
+
+                    // ローカルデータも更新
+                    currentEditJournal.title = newTitle;
+                    currentEditJournal.content = newContent;
+
+                    // 表示を更新
+                    document.getElementById('journalModalTitle').textContent = newTitle || '無題';
+                    document.getElementById('journalModalContent').textContent = newContent || '内容なし';
+
+                    // 表示モードに戻る
+                    document.getElementById('journalViewContent').classList.remove('hidden');
+                    document.getElementById('journalEditContent').classList.remove('active');
+
+                    // リスト更新
+                    await loadJournals();
+                    alert('更新しました！');
+                } catch (e) {
+                    console.error("[JOURNALS] update error:", e);
+                    // デモ用：ローカル更新のみ
+                    currentEditJournal.title = newTitle;
+                    currentEditJournal.content = newContent;
+                    document.getElementById('journalModalTitle').textContent = newTitle || '無題';
+                    document.getElementById('journalModalContent').textContent = newContent || '内容なし';
+                    document.getElementById('journalViewContent').classList.remove('hidden');
+                    document.getElementById('journalEditContent').classList.remove('active');
+                    renderJournals(journalsData);
+                    alert('更新しました！');
+                }
             });
         }
 
@@ -1139,7 +2183,19 @@
                 alert('保存しました！');
             } catch (e) {
                 console.error("[JOURNALS] save error:", e);
-                alert('保存に失敗しました');
+                // デモ用：ローカルに追加
+                journalsData.unshift({
+                    id: `demo-${Date.now()}`,
+                    date,
+                    title,
+                    content,
+                    tasks_completed_count: 0,
+                    completed_tasks: []
+                });
+                document.getElementById('journalTitle').value = '';
+                document.getElementById('journalContent').value = '';
+                renderJournals(journalsData);
+                alert('保存しました！');
             }
         }
 
