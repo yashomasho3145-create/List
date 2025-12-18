@@ -10,37 +10,59 @@
             font-family: -apple-system, system-ui;
             margin: 0;
             background: #f7f7f8;
-            padding-bottom: 70px;
         }
 
-        /* ========== タブナビゲーション ========== */
+        /* ========== タブナビゲーション（上部インデックス付箋風） ========== */
         .tab-nav {
-            position: fixed;
-            bottom: 0;
+            position: sticky;
+            top: 0;
             left: 0;
             right: 0;
-            background: #fff;
-            border-top: 1px solid #eee;
+            background: linear-gradient(180deg, #f0f0f2 0%, #f7f7f8 100%);
             display: flex;
+            padding: 12px 12px 0;
+            gap: 4px;
             z-index: 100;
         }
         .tab-nav-item {
-            flex: 1;
-            padding: 12px 0;
-            text-align: center;
-            font-size: 12px;
-            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #666;
             cursor: pointer;
-            transition: all 0.2s;
+            padding: 10px 16px 14px;
+            background: #e0e0e3;
+            border-radius: 12px 12px 0 0;
+            position: relative;
+            transition: all 0.2s ease;
+            flex: 1;
+            border: 1px solid #d0d0d5;
+            border-bottom: none;
+        }
+        .tab-nav-item:hover {
+            background: #eaeaec;
         }
         .tab-nav-item.active {
+            background: #fff;
             color: #7e6dff;
             font-weight: 600;
+            border-color: #ccc;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+            z-index: 2;
+        }
+        .tab-nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #fff;
         }
         .tab-nav-item span {
-            display: block;
-            font-size: 20px;
-            margin-bottom: 2px;
+            font-size: 16px;
         }
 
         /* ========== タブコンテンツ ========== */
@@ -121,23 +143,15 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.25);
             z-index: 100;
             transform: scale(1.02);
-            transition: box-shadow 0.2s, transform 0.2s, opacity 0.2s;
+            background: #fff;
         }
         .card.drag-placeholder {
-            height: 60px;
-            background: rgba(126, 109, 255, 0.1);
-            border: 2px dashed #7e6dff;
-            border-radius: 8px;
-            margin: 4px 0;
-            transition: all 0.2s ease;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
         }
-        .card.drag-over-above {
-            transform: translateY(64px);
-            transition: transform 0.2s ease;
-        }
-        .card.drag-over-below {
-            transform: translateY(-64px);
-            transition: transform 0.2s ease;
+        .card.drag-placeholder .sl,
+        .card.drag-placeholder .actions-rail {
+            visibility: hidden;
         }
         .sl {
             position: relative;
@@ -865,6 +879,22 @@
 </head>
 <body>
 
+    <!-- ========== タブナビゲーション（上部） ========== -->
+    <nav class="tab-nav">
+        <div class="tab-nav-item active" data-tab="list">
+            <span>📋</span>
+            リスト
+        </div>
+        <div class="tab-nav-item" data-tab="status">
+            <span>📊</span>
+            ステータス
+        </div>
+        <div class="tab-nav-item" data-tab="journal">
+            <span>📝</span>
+            ジャーナル
+        </div>
+    </nav>
+
     <!-- ========== リストタブ ========== -->
     <div id="tab-list" class="tab-content active">
         <header>
@@ -992,22 +1022,6 @@
             <div class="journal-list" id="journalList"></div>
         </main>
     </div>
-
-    <!-- ========== タブナビゲーション ========== -->
-    <nav class="tab-nav">
-        <div class="tab-nav-item active" data-tab="list">
-            <span>📋</span>
-            リスト
-        </div>
-        <div class="tab-nav-item" data-tab="status">
-            <span>📊</span>
-            ステータス
-        </div>
-        <div class="tab-nav-item" data-tab="journal">
-            <span>📝</span>
-            ジャーナル
-        </div>
-    </nav>
 
     <!-- ========== ジャーナル詳細モーダル ========== -->
     <div id="journalDetailModal" class="modal-root">
@@ -1206,6 +1220,9 @@
         // スワイプ設定
         const STRONG_RATIO = 0.85;
         const SNAP_THRESHOLD = 40;
+
+        // ドラッグ中フラグ（スワイプを無効化するため）
+        let isDraggingCard = false;
 
         // DOM要素
         const pinnedEl = document.getElementById("pinned");
@@ -1515,70 +1532,62 @@
                 });
             }
 
-            // スマホ版スワイプ & ドラッグ（優位性判定）
+            // スマホ版スワイプ
             let startX = 0, startY = 0, dx = 0, dy = 0;
-            let gestureDirection = null; // 'horizontal' or 'vertical' or null
-            let isDragging = false;
-            let dragStartY = 0;
-            let placeholder = null;
-            const DIRECTION_THRESHOLD = 10; // この距離を超えたら方向確定
+            let isHandleDrag = false;
+            let isScrolling = null;
 
             wrap.addEventListener("touchstart", e => {
+                // ドラッグ中はスワイプを無効化
+                if (isDraggingCard) return;
                 if (e.target.closest("button")) return;
 
-                const isHandle = e.target.closest(".handle");
+                // ☰（.handle）から始まったタッチならスワイプ処理しない
+                if (e.target.closest(".handle")) {
+                    isHandleDrag = true;
+                    return;
+                } else {
+                    isHandleDrag = false;
+                }
+
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
                 dx = 0;
                 dy = 0;
-                gestureDirection = null;
-                isDragging = false;
-
-                if (isHandle) {
-                    // ハンドルからの開始 → 縦ドラッグ優先モード
-                    gestureDirection = 'vertical';
-                    isDragging = true;
-                    dragStartY = startY;
-                    startDragMode(wrap);
-                }
-
+                isScrolling = null;
                 sl.style.transition = "none";
             }, { passive: true });
 
             wrap.addEventListener("touchmove", e => {
-                if (e.target.closest("button")) return;
+                if (isHandleDrag) return;
                 if (e.touches.length === 0) return;
 
                 dx = e.touches[0].clientX - startX;
                 dy = e.touches[0].clientY - startY;
 
-                // 方向が確定していなければ判定
-                if (gestureDirection === null) {
-                    if (Math.abs(dx) > DIRECTION_THRESHOLD || Math.abs(dy) > DIRECTION_THRESHOLD) {
-                        if (Math.abs(dx) > Math.abs(dy)) {
-                            gestureDirection = 'horizontal';
-                        } else {
-                            gestureDirection = 'vertical';
-                        }
-                    }
+                // 方向がまだ確定していない場合、一定距離動いたら判定
+                if (isScrolling === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+                    isScrolling = Math.abs(dy) > Math.abs(dx);
                 }
 
-                if (gestureDirection === 'horizontal') {
-                    // 左右スワイプ
-                    e.preventDefault();
-                    sl.style.transform = `translateX(${dx}px)`;
-                } else if (gestureDirection === 'vertical' && isDragging) {
-                    // 縦ドラッグ（並び替え）
-                    e.preventDefault();
-                    handleDragMove(wrap, e.touches[0].clientY);
-                }
+                // 縦スクロール優位の場合は横スライドしない
+                if (isScrolling) return;
+
+                if (Math.abs(dx) > 8) e.preventDefault();
+                sl.style.transform = `translateX(${dx}px)`;
             }, { passive: false });
 
             wrap.addEventListener("touchend", () => {
-                if (isDragging) {
-                    endDragMode(wrap);
-                    isDragging = false;
-                    gestureDirection = null;
+                if (isHandleDrag) {
+                    isHandleDrag = false;
+                    sl.style.transition = "";
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+
+                if (isScrolling) {
+                    sl.style.transition = "";
+                    sl.style.transform = "translateX(0)";
                     return;
                 }
 
@@ -1586,95 +1595,152 @@
                 const leftW = Number(wrap.dataset.leftWidth) || 140;
                 const rightW = Number(wrap.dataset.rightWidth) || 140;
 
-                if (gestureDirection === 'horizontal') {
-                    if (dx > leftW * STRONG_RATIO) {
-                        isCompleted ? action("uncomplete", t.id) : action("complete", t.id);
-                        sl.style.transform = "translateX(0)";
-                        gestureDirection = null;
-                        return;
-                    }
-                    if (dx < -rightW * STRONG_RATIO) {
-                        if (t.pinned) alert("ピンを外してください！");
-                        else action("delete", t.id);
-                        sl.style.transform = "translateX(0)";
-                        gestureDirection = null;
-                        return;
-                    }
+                if (dx > leftW * STRONG_RATIO) {
+                    isCompleted ? action("uncomplete", t.id) : action("complete", t.id);
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+                if (dx < -rightW * STRONG_RATIO) {
+                    if (t.pinned) alert("ピンを外してください！");
+                    else action("delete", t.id);
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
 
-                    if (dx > SNAP_THRESHOLD) {
-                        wrap.classList.add("open-left");
-                        sl.style.transform = `translateX(${leftW}px)`;
-                    } else if (dx < -SNAP_THRESHOLD) {
-                        wrap.classList.add("open-right");
-                        sl.style.transform = `translateX(${-rightW}px)`;
-                    } else {
-                        wrap.classList.remove("open-left", "open-right");
-                        sl.style.transform = "translateX(0)";
-                    }
+                if (dx > SNAP_THRESHOLD) {
+                    wrap.classList.add("open-left");
+                    wrap.classList.remove("open-right");
+                    sl.style.transform = `translateX(${leftW}px)`;
+                } else if (dx < -SNAP_THRESHOLD) {
+                    wrap.classList.add("open-right");
+                    wrap.classList.remove("open-left");
+                    sl.style.transform = `translateX(${-rightW}px)`;
                 } else {
                     wrap.classList.remove("open-left", "open-right");
                     sl.style.transform = "translateX(0)";
                 }
-                gestureDirection = null;
             });
 
-            // ドラッグモード開始
-            function startDragMode(card) {
-                card.classList.add("dragging");
-                document.body.style.userSelect = "none";
-                document.body.style.overflow = "hidden";
-            }
+            // ☰ で並び替え（ドラッグ）- 改善版
+            const startDrag = (startEvent) => {
+                startEvent.preventDefault();
+                startEvent.stopPropagation();
 
-            // ドラッグ中の移動処理
-            function handleDragMove(card, currentY) {
+                const card = wrap;
                 const list = card.parentElement;
                 if (!list) return;
 
-                const siblings = Array.from(list.children).filter(c => c !== card && !c.classList.contains('drag-placeholder'));
+                isDraggingCard = true;
 
-                // 他のカードの位置をリセット
-                siblings.forEach(s => {
-                    s.classList.remove('drag-over-above', 'drag-over-below');
-                });
-
-                // カードの位置を計算してスペースを空ける
+                // 初期位置を記録
                 const cardRect = card.getBoundingClientRect();
-                const cardCenterY = currentY;
+                const startY = startEvent.clientY || (startEvent.touches && startEvent.touches[0].clientY);
+                const cardStartTop = cardRect.top;
+                const cardHeight = cardRect.height;
 
-                let insertBefore = null;
-                siblings.forEach(sibling => {
-                    const rect = sibling.getBoundingClientRect();
-                    const siblingCenterY = rect.top + rect.height / 2;
+                // プレースホルダーを作成（元の位置を示す）
+                const placeholder = document.createElement("div");
+                placeholder.className = "card drag-placeholder";
+                placeholder.style.height = cardHeight + "px";
+                list.insertBefore(placeholder, card);
 
-                    if (cardCenterY < siblingCenterY && !insertBefore) {
-                        insertBefore = sibling;
+                // カードを浮かせる（position: fixed で画面に固定）
+                card.classList.add("dragging");
+                card.style.position = "fixed";
+                card.style.left = cardRect.left + "px";
+                card.style.top = cardRect.top + "px";
+                card.style.width = cardRect.width + "px";
+                card.style.height = cardHeight + "px";
+                card.style.pointerEvents = "none";
+
+                document.body.style.userSelect = "none";
+                document.body.appendChild(card);
+
+                const getY = (ev) => {
+                    if (ev.touches && ev.touches.length > 0) {
+                        return ev.touches[0].clientY;
                     }
-                });
+                    return ev.clientY;
+                };
 
-                // 挿入位置のカードにスペース空け効果
-                if (insertBefore) {
-                    insertBefore.classList.add('drag-over-above');
-                }
-            }
+                const onMove = (ev) => {
+                    const currentY = getY(ev);
+                    const deltaY = currentY - startY;
 
-            // ドラッグモード終了
-            function endDragMode(card) {
-                card.classList.remove("dragging");
-                document.body.style.userSelect = "";
-                document.body.style.overflow = "";
+                    // カードを指に追従させる
+                    card.style.top = (cardStartTop + deltaY) + "px";
 
-                const list = card.parentElement;
-                if (!list) return;
+                    // プレースホルダーの位置を更新
+                    const cardCenterY = cardStartTop + deltaY + cardHeight / 2;
+                    const siblings = Array.from(list.querySelectorAll(".card:not(.dragging)"));
 
-                // 他のカードのスタイルをリセット
-                Array.from(list.children).forEach(c => {
-                    c.classList.remove('drag-over-above', 'drag-over-below');
-                    c.style.transform = '';
-                });
+                    for (let i = 0; i < siblings.length; i++) {
+                        const sibling = siblings[i];
+                        if (sibling === placeholder) continue;
 
-                // 並び順を保存
-                saveSortOrder();
-            }
+                        const siblingRect = sibling.getBoundingClientRect();
+                        const siblingCenterY = siblingRect.top + siblingRect.height / 2;
+
+                        if (cardCenterY < siblingCenterY) {
+                            if (placeholder.nextSibling !== sibling) {
+                                list.insertBefore(placeholder, sibling);
+                            }
+                            return;
+                        }
+                    }
+
+                    // 全てのカードより下なら、最後に移動
+                    if (placeholder.nextSibling !== null) {
+                        list.appendChild(placeholder);
+                    }
+                };
+
+                const onUp = () => {
+                    document.removeEventListener("pointermove", onMove);
+                    document.removeEventListener("pointerup", onUp);
+                    document.removeEventListener("touchmove", onMove);
+                    document.removeEventListener("touchend", onUp);
+
+                    // カードをプレースホルダーの位置に挿入
+                    card.classList.remove("dragging");
+                    card.style.position = "";
+                    card.style.left = "";
+                    card.style.top = "";
+                    card.style.width = "";
+                    card.style.height = "";
+                    card.style.pointerEvents = "";
+
+                    list.insertBefore(card, placeholder);
+                    placeholder.remove();
+
+                    document.body.style.userSelect = "";
+
+                    // ドラッグ終了フラグをOFF（少し遅延させて誤作動防止）
+                    setTimeout(() => {
+                        isDraggingCard = false;
+                    }, 100);
+
+                    saveSortOrder();
+                };
+
+                document.addEventListener("pointermove", onMove);
+                document.addEventListener("pointerup", onUp);
+                document.addEventListener("touchmove", onMove, { passive: false });
+                document.addEventListener("touchend", onUp);
+            };
+
+            // PointerEventとTouchEventの両方をサポート
+            handle.addEventListener("pointerdown", (e) => {
+                e.preventDefault();
+                startDrag(e);
+            });
+            handle.addEventListener("touchstart", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                startDrag(e);
+            }, { passive: false });
 
             wrap.__taskData = t;
             wrap.dataset.taskId = t.id;
