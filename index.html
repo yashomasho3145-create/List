@@ -2,1019 +2,422 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>ムキムキタスくん</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LIST｜タスク一覧</title>
     <style>
-        /* ========== ピクセルフォント風（Google Fonts） ========== */
-        @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            font-family: 'DotGothic16', 'MS Gothic', 'ＭＳ ゴシック', monospace;
-            background: #0a0a18;
-            min-height: 100vh;
-            color: #fff;
-            image-rendering: pixelated;
+            font-family: -apple-system, system-ui;
+            margin: 0;
+            background: #f7f7f8;
         }
 
-        /* ========== レトロウィンドウ枠 ========== */
-        .retro-window {
-            border: 4px solid #fff;
-            border-radius: 0;
-            background: #1a1a3e;
-            box-shadow:
-                inset 2px 2px 0 #4a4a8e,
-                inset -2px -2px 0 #0a0a1e,
-                6px 6px 0 rgba(0, 0, 0, 0.5);
-            position: relative;
-        }
-
-        .retro-window::before {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            right: 2px;
-            bottom: 2px;
-            border: 2px solid #3a3a6e;
-            pointer-events: none;
-        }
-
-        /* ========== タブナビゲーション（レトロ風） ========== */
-        .tab-container {
-            padding: 12px 12px 0;
-            background: #0a0a18;
-        }
-
-        .tab-nav {
-            display: flex;
-            gap: 4px;
-        }
-
-        .tab-item {
-            padding: 10px 16px;
-            font-size: 14px;
-            cursor: pointer;
-            background: #2a2a4e;
-            border: 3px solid #5a5a8e;
-            border-bottom: none;
-            color: #8a8ab0;
-            transition: all 0.1s;
-            position: relative;
-            top: 3px;
-        }
-
-        .tab-item:hover {
-            background: #3a3a5e;
-            color: #aaaacc;
-        }
-
-        .tab-item.active {
-            background: #1a1a3e;
-            color: #fff;
-            border-color: #fff;
+        header {
+            position: sticky;
             top: 0;
-            padding-bottom: 13px;
-            text-shadow: 0 0 10px #fff;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            z-index: 10;
         }
 
-        /* ========== メインコンテンツエリア ========== */
-        .content-area {
-            margin: 0 12px 12px;
-        }
-
-        .main-window {
-            min-height: calc(100vh - 80px);
-            padding: 16px;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* ========== セクションタイトル（RPG風） ========== */
-        .section-title {
-            font-size: 14px;
-            color: #ffcc00;
-            margin: 16px 0 12px;
-            padding: 8px 12px;
-            background: linear-gradient(90deg, #3a2a00 0%, transparent 100%);
-            border-left: 4px solid #ffcc00;
-            text-shadow: 2px 2px 0 #000;
-        }
-
-        .section-title::before {
-            content: '▶ ';
-        }
-
-        /* ========== ミッションバナー（レトロ風） ========== */
-        .mission-banner {
-            background: linear-gradient(180deg, #4a1a00 0%, #2a0a00 100%);
-            border: 3px solid #ff6600;
+        .bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 12px 16px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        }
+
+        .tab {
+            padding: 6px 12px;
+            border-radius: 14px;
+            border: 1px solid #ddd;
             font-size: 13px;
-            color: #ffaa00;
-            text-shadow: 1px 1px 0 #000;
-            animation: banner-glow 2s ease-in-out infinite;
+            cursor: pointer;
         }
 
-        @keyframes banner-glow {
-            0%, 100% { box-shadow: 0 0 5px #ff6600; }
-            50% { box-shadow: 0 0 15px #ff6600, 0 0 25px #ff3300; }
+            .tab.active {
+                background: #111;
+                color: white;
+                border-color: #111;
+            }
+
+        .add {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
         }
 
-        .mission-banner-icon {
-            font-size: 24px;
-            animation: flame 0.5s ease-in-out infinite alternate;
+            .add input {
+                flex: 1;
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid #ddd;
+                font-size: 16px; /* iOSの勝手ズーム防止 */
+            }
+
+        .list {
+            display: flex;
+            flex-direction: column;
         }
 
-        @keyframes flame {
-            from { transform: scale(1); }
-            to { transform: scale(1.1); }
-        }
-
-        /* ========== ミッションカード（伝説の巻物風） ========== */
-        .mission-card {
-            background: linear-gradient(180deg, #3a2a10 0%, #2a1a08 100%);
-            border: 4px double #c9a227;
-            padding: 16px;
-            margin-bottom: 16px;
+        .card {
             position: relative;
-        }
-
-        .mission-card::before {
-            content: '★ MISSION ★';
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1a1a3e;
-            color: #ffcc00;
-            font-size: 11px;
-            padding: 2px 12px;
-            border: 2px solid #c9a227;
-            text-shadow: 1px 1px 0 #000;
-        }
-
-        .mission-card-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 8px 0 12px;
-        }
-
-        .mission-icon {
-            font-size: 28px;
-            filter: drop-shadow(2px 2px 0 #000);
-        }
-
-        .mission-title {
-            font-size: 16px;
-            color: #fff;
-            text-shadow: 2px 2px 0 #000;
-        }
-
-        .mission-desc {
-            font-size: 12px;
-            color: #c9a227;
-            margin-bottom: 16px;
-            line-height: 1.6;
-        }
-
-        .mission-btn {
-            background: linear-gradient(180deg, #6a5a20 0%, #4a3a10 100%);
-            border: 3px solid #c9a227;
-            color: #ffcc00;
-            padding: 12px 20px;
-            font-size: 14px;
-            font-family: inherit;
-            cursor: pointer;
-            width: 100%;
-            text-shadow: 1px 1px 0 #000;
-            transition: all 0.1s;
-        }
-
-        .mission-btn:hover {
-            background: linear-gradient(180deg, #8a7a30 0%, #6a5a20 100%);
-            box-shadow: 0 0 10px #c9a227;
-        }
-
-        .mission-btn:active {
-            transform: scale(0.98);
-        }
-
-        .mission-btn.completed {
-            background: linear-gradient(180deg, #2a4a2a 0%, #1a3a1a 100%);
-            border-color: #4a8a4a;
-            color: #8ada8a;
-        }
-
-        /* ========== タスク追加エリア ========== */
-        .add-task-area {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .add-task-input {
-            flex: 1;
-            padding: 10px 12px;
-            background: #0a0a18;
-            border: 3px solid #5a5a8e;
-            color: #fff;
-            font-size: 14px;
-            font-family: inherit;
-            outline: none;
-        }
-
-        .add-task-input:focus {
-            border-color: #8a8aee;
-            box-shadow: 0 0 8px #5a5aaa;
-        }
-
-        .add-task-input::placeholder {
-            color: #5a5a8e;
-        }
-
-        .add-task-btn {
-            background: linear-gradient(180deg, #4a4a8e 0%, #2a2a5e 100%);
-            border: 3px solid #7a7aee;
-            color: #fff;
-            padding: 10px 16px;
-            font-size: 13px;
-            font-family: inherit;
-            cursor: pointer;
-        }
-
-        .add-task-btn:hover {
-            background: linear-gradient(180deg, #5a5a9e 0%, #3a3a6e 100%);
-        }
-
-        /* ========== タスクリスト ========== */
-        .task-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .task-card {
-            background: #0a0a18;
-            border: 2px solid #3a3a6e;
-            padding: 12px 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: all 0.1s;
-        }
-
-        .task-card:hover {
-            border-color: #6a6aaa;
-            background: #1a1a2e;
-        }
-
-        .task-card.completed {
-            opacity: 0.5;
-        }
-
-        .task-card.completed .task-title {
-            text-decoration: line-through;
-            color: #5a5a8a;
-        }
-
-        .task-checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #5a5a8e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 14px;
-            color: #4ada4a;
-        }
-
-        .task-card.completed .task-checkbox {
-            background: #2a4a2a;
-            border-color: #4a8a4a;
-        }
-
-        .task-title {
-            flex: 1;
-            font-size: 13px;
-            color: #ddd;
-        }
-
-        .task-remind {
-            font-size: 11px;
-            color: #8a8aaa;
-        }
-
-        /* ========== デイリータスク（ステータスウィンドウ風） ========== */
-        .daily-task-card {
-            background: linear-gradient(180deg, #2a2a5e 0%, #1a1a3e 100%);
-            border: 4px solid #6a6aee;
-            padding: 16px;
-            margin-bottom: 20px;
-            cursor: pointer;
-        }
-
-        .daily-task-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .daily-task-title {
-            font-size: 14px;
-            color: #aaaaff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-shadow: 1px 1px 0 #000;
-        }
-
-        .daily-task-arrow {
-            font-size: 16px;
-            color: #6a6aaa;
-            transition: transform 0.2s;
-        }
-
-        .daily-task-card.expanded .daily-task-arrow {
-            transform: rotate(180deg);
-        }
-
-        .daily-task-content {
-            max-height: 0;
+            background: white;
+            border-bottom: 1px solid #eee;
+            height: 60px;
             overflow: hidden;
-            transition: max-height 0.3s ease;
+            touch-action: pan-y;
+            box-sizing: border-box;
         }
 
-        .daily-task-card.expanded .daily-task-content {
-            max-height: 600px;
-        }
+            .card.completed .title {
+                color: #aaa;
+                text-decoration: line-through;
+            }
 
-        .habit-list {
-            margin-top: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+            .card.dragging {
+                opacity: 0.9;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+                z-index: 5;
+            }
 
-        .habit-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            background: #0a0a18;
-            border: 2px solid #3a3a6e;
-        }
-
-        .habit-checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #5a5a8e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.1s;
-        }
-
-        .habit-checkbox.checked {
-            background: #2a5a2a;
-            border-color: #4ada4a;
-            color: #4ada4a;
-        }
-
-        .habit-name {
-            flex: 1;
-            font-size: 13px;
-            color: #ccc;
-        }
-
-        .habit-icon {
-            font-size: 16px;
-        }
-
-        .daily-task-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-        }
-
-        .daily-btn {
-            flex: 1;
-            padding: 10px;
-            font-size: 13px;
-            font-family: inherit;
-            cursor: pointer;
-            border: 3px solid;
-        }
-
-        .daily-btn-cancel {
-            background: #2a2a3e;
-            border-color: #5a5a7e;
-            color: #8a8aaa;
-        }
-
-        .daily-btn-save {
-            background: linear-gradient(180deg, #3a5a3a 0%, #2a4a2a 100%);
-            border-color: #4ada4a;
-            color: #aaffaa;
-        }
-
-        /* ========== 週間ビュー ========== */
-        .week-view-section {
-            background: #0a0a18;
-            border: 3px solid #3a3a6e;
-            padding: 16px;
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-
-        .week-view-title {
-            font-size: 13px;
-            color: #aaaaff;
-            margin-bottom: 12px;
-            text-shadow: 1px 1px 0 #000;
-        }
-
-        .week-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
-            min-width: 360px;
-        }
-
-        .week-table th,
-        .week-table td {
-            padding: 8px 4px;
-            text-align: center;
-            border: 1px solid #2a2a4e;
-        }
-
-        .week-table th {
-            background: #1a1a3e;
-            color: #8a8aaa;
-        }
-
-        .week-table th:first-child,
-        .week-table td:first-child {
-            text-align: left;
-            color: #aaa;
-            padding-left: 8px;
-        }
-
-        .week-table td.checked {
-            color: #4ada4a;
-        }
-
-        .week-table td.checked::after {
-            content: '◆';
-        }
-
-        .week-table td.unchecked {
-            color: #3a3a5a;
-        }
-
-        .week-table td.unchecked::after {
-            content: '・';
-        }
-
-        .week-table tr:last-child td {
-            color: #ffcc00;
-            background: #2a2a10;
-        }
-
-        /* ========== 分析セクション ========== */
-        .analysis-section {
-            background: #0a0a18;
-            border: 3px solid #3a3a6e;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .analysis-title {
-            font-size: 13px;
-            color: #aaaaff;
-            margin-bottom: 16px;
-            text-shadow: 1px 1px 0 #000;
-        }
-
-        .progress-bar-container {
-            margin-bottom: 16px;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            margin-bottom: 6px;
-        }
-
-        .progress-label-name {
-            color: #8a8aaa;
-        }
-
-        .progress-label-value {
-            color: #4ada4a;
-        }
-
-        .progress-bar-bg {
-            height: 16px;
-            background: #1a1a2e;
-            border: 2px solid #3a3a6e;
-        }
-
-        .progress-bar-fill {
+        .sl {
+            position: relative;
             height: 100%;
-            background: linear-gradient(90deg, #2a6a2a 0%, #4ada4a 100%);
-            transition: width 0.5s ease;
-        }
-
-        .chart-container-small {
-            height: 180px;
-            margin-top: 16px;
-        }
-
-        /* ========== ステータスアバター ========== */
-        .status-avatar-section {
-            text-align: center;
-            padding: 20px 0;
-            background: linear-gradient(180deg, #1a1a3e 0%, #0a0a18 100%);
-            border: 3px solid #4a4a8e;
-            margin-bottom: 20px;
-        }
-
-        .status-avatar {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 12px;
-            font-size: 48px;
+            width: 100%;
             display: flex;
             align-items: center;
-            justify-content: center;
-            background: #0a0a18;
-            border: 3px solid #6a6aaa;
-            animation: avatar-pulse 2s ease-in-out infinite;
+            padding: 0 12px;
+            transition: transform .15s ease;
+            background: white;
+            z-index: 2;
+            box-sizing: border-box;
         }
 
-        @keyframes avatar-pulse {
-            0%, 100% { box-shadow: 0 0 5px #4a4a8e; }
-            50% { box-shadow: 0 0 15px #6a6aee; }
-        }
-
-        .status-user-name {
-            font-size: 18px;
-            color: #fff;
-            text-shadow: 2px 2px 0 #000;
-        }
-
-        .status-user-title {
-            font-size: 12px;
-            color: #c9a227;
-            margin-top: 4px;
-        }
-
-        .status-level-badge {
-            display: inline-block;
-            background: linear-gradient(180deg, #5a3a00 0%, #3a2a00 100%);
-            border: 2px solid #c9a227;
-            color: #ffcc00;
-            font-size: 12px;
-            padding: 4px 16px;
-            margin-top: 8px;
-            text-shadow: 1px 1px 0 #000;
-        }
-
-        /* ========== レーダーチャート ========== */
-        .radar-section {
-            background: #0a0a18;
-            border: 3px solid #3a3a6e;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .radar-title {
-            font-size: 13px;
-            color: #ffcc00;
-            margin-bottom: 12px;
-            text-shadow: 1px 1px 0 #000;
-        }
-
-        .radar-container {
-            height: 220px;
-        }
-
-        /* ========== ジャーナルフォーム ========== */
-        .journal-form {
-            background: #0a0a18;
-            border: 3px solid #3a3a6e;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .journal-form-title {
-            font-size: 13px;
-            color: #aaaaff;
-            margin-bottom: 16px;
-            text-shadow: 1px 1px 0 #000;
-        }
-
-        .form-group {
-            margin-bottom: 14px;
-        }
-
-        .form-label {
-            font-size: 11px;
-            color: #6a6a9a;
-            margin-bottom: 6px;
-            display: block;
-        }
-
-        .form-input,
-        .form-textarea {
-            width: 100%;
-            padding: 10px 12px;
-            background: #1a1a2e;
-            border: 2px solid #3a3a6e;
-            color: #fff;
-            font-size: 13px;
-            font-family: inherit;
-            outline: none;
-        }
-
-        .form-input:focus,
-        .form-textarea:focus {
-            border-color: #6a6aaa;
-        }
-
-        .form-textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .journal-submit-btn {
-            width: 100%;
-            background: linear-gradient(180deg, #3a5a3a 0%, #2a4a2a 100%);
-            border: 3px solid #4ada4a;
-            color: #aaffaa;
-            padding: 12px;
-            font-size: 14px;
-            font-family: inherit;
-            cursor: pointer;
-        }
-
-        .journal-submit-btn:hover {
-            background: linear-gradient(180deg, #4a6a4a 0%, #3a5a3a 100%);
-        }
-
-        /* ========== ジャーナルカード ========== */
-        .journal-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .journal-card {
-            background: #0a0a18;
-            border: 2px solid #3a3a6e;
-            padding: 14px;
-            cursor: pointer;
-            transition: all 0.1s;
-        }
-
-        .journal-card:hover {
-            border-color: #5a5a9e;
-        }
-
-        .journal-card-header {
+        .actions-rail {
+            position: absolute;
+            inset: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            pointer-events: none;
+            z-index: 1;
         }
 
-        .journal-date {
-            font-size: 11px;
-            color: #6a6a9a;
+        /* スワイプで開いているときだけボタンを押せるようにする */
+        .card.open-left .actions-rail,
+        .card.open-right .actions-rail {
+            pointer-events: auto;
         }
 
-        .journal-tasks-count {
-            font-size: 11px;
-            color: #4ada4a;
+        .actions-left, .actions-right {
+            height: 100%;
+            display: flex;
+            align-items: center;
         }
 
-        .journal-title-text {
-            font-size: 14px;
-            color: #fff;
-            margin-bottom: 4px;
+        .actions-left {
+            background: #e8f7ee;
+            justify-content: flex-start;
+            padding-left: 0;
         }
 
-        .journal-preview {
-            font-size: 12px;
-            color: #6a6a9a;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .actions-right {
+            background: #fdeeee;
+            justify-content: flex-end;
+            padding-right: 0;
         }
 
-        .journal-card-expand {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .journal-card.expanded .journal-card-expand {
-            max-height: 500px;
-        }
-
-        .journal-full-content {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #2a2a4e;
-        }
-
-        .journal-tasks-label {
-            font-size: 11px;
-            color: #6a6a9a;
-            margin-bottom: 6px;
-        }
-
-        .journal-task-item {
-            font-size: 12px;
-            color: #4ada4a;
-            padding: 2px 0;
-        }
-
-        .journal-body {
+        .actions-rail button {
+            height: 100%;
+            min-width: 64px;
+            border: none;
+            color: white;
             font-size: 13px;
-            color: #ccc;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            margin-top: 12px;
-        }
-
-        .journal-edit-btn {
-            margin-top: 12px;
-            background: #1a1a2e;
-            border: 2px solid #3a3a6e;
-            color: #6a6a9a;
-            padding: 8px 14px;
-            font-size: 12px;
-            font-family: inherit;
+            border-radius: 0;
             cursor: pointer;
-            width: 100%;
         }
 
-        /* ========== ローディング ========== */
-        .loading-overlay {
+        .btn-complete {
+            background: #7e6dff;
+        }
+
+        .btn-plus2h {
+            background: #8012e2;
+        }
+
+        .btn-detail {
+            background: #1e928b;
+        }
+
+        .btn-pin {
+            background: #d97706;
+        }
+
+        .btn-delete {
+            background: #f03d30;
+        }
+
+        .title {
+            font-size: 15px;
+        }
+
+        .handle {
+            margin-left: auto;
+            cursor: grab;
+            opacity: 0.25;
+            -webkit-user-select: none;
+            user-select: none;
+            padding: 0 8px;
+            font-size: 20px;
+            touch-action: none;
+        }
+
+        .divider-label {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            padding: 6px 0;
+        }
+
+        /* 詳細モーダル */
+        .modal-root {
             position: fixed;
             inset: 0;
-            background: #0a0a18;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            display: none;
+            z-index: 50;
+            align-items: flex-end;
             justify-content: center;
-            z-index: 1000;
         }
 
-        .loading-text {
-            color: #fff;
-            font-size: 14px;
-            animation: blink 1s step-end infinite;
+            .modal-root.visible {
+                display: flex;
+            }
+
+        .modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,.25);
+            z-index: 0;
         }
 
-        .loading-text::after {
-            content: '...';
-            animation: dots 1.5s steps(4, end) infinite;
+        .modal-panel {
+            width: 100%;
+            max-width: 480px;
+            background: #fff;
+            border-radius: 20px 20px 0 0;
+            padding: 16px;
+            animation: slideUp .18s ease-out;
+            position: relative;
+            z-index: 1;
         }
 
-        @keyframes blink {
-            50% { opacity: 0.5; }
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
-        @keyframes dots {
-            0% { content: ''; }
-            25% { content: '.'; }
-            50% { content: '..'; }
-            75% { content: '...'; }
+        .slider-group {
+            margin: 14px 0;
         }
 
-        .hidden {
-            display: none !important;
+        .slider-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
         }
 
-        /* ========== スクロールバー ========== */
-        ::-webkit-scrollbar {
-            width: 12px;
+            .slider-label-row span.value {
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 14px;
         }
 
-        ::-webkit-scrollbar-track {
-            background: #0a0a18;
-            border: 2px solid #2a2a4e;
+        .btn-secondary {
+            padding: 8px 14px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: #fafafa;
+            cursor: pointer;
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: #3a3a6e;
-            border: 2px solid #2a2a4e;
+        .btn-primary-solid {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #7e6dff;
+            color: white;
+            border: none;
+            cursor: pointer;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4a4a8e;
+        .remindAt {
+            font-size: 11px;
+            color: #666;
+            margin-left: 8px;
+            white-space: nowrap;
         }
     </style>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
-    <!-- ローディング -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-text">NOW LOADING</div>
-    </div>
 
-    <!-- タブナビゲーション -->
-    <div class="tab-container">
-        <div class="tab-nav">
-            <div class="tab-item active" data-tab="list">リスト</div>
-            <div class="tab-item" data-tab="status">ステータス</div>
-            <div class="tab-item" data-tab="journal">ジャーナル</div>
+    <header>
+        <div class="bar">
+            <div style="font-weight:600">LIST</div>
+            <div class="tab active">タスク</div>
+            <div class="tab" id="refreshBtn">↻</div>
         </div>
-    </div>
+    </header>
 
-    <!-- メインコンテンツエリア -->
-    <div class="content-area">
-        <div class="retro-window main-window">
+    <main>
+        <div class="add">
+            <input id="newTitle" placeholder="タスクを入力…" />
+            <button id="btnAdd" class="tab" style="background:#111;color:white;border-color:#111">追加</button>
+        </div>
 
-            <!-- ========== リストタブ ========== -->
-            <div id="tab-list" class="tab-content active">
-                <!-- ミッション達成者バナー -->
-                <div class="mission-banner">
-                    <span class="mission-banner-icon">🔥</span>
-                    <span>今週 <strong id="missionCount">0</strong> 人の勇者がミッション達成!</span>
-                </div>
+        <div class="divider-label">ToDoタスク</div>
+        <div id="pinned" class="list"></div>
+        <div id="active" class="list"></div>
 
-                <!-- ミッションタスク -->
-                <div class="mission-card">
-                    <div class="mission-card-header">
-                        <span class="mission-icon">⚔️</span>
-                        <span class="mission-title" id="missionTitle">今週のミッション</span>
-                    </div>
-                    <div class="mission-desc" id="missionDesc">読み込み中...</div>
-                    <button class="mission-btn" id="missionBtn">▶ ミッション達成!</button>
-                </div>
+        <div class="divider-label" style="margin-top:16px;">--------------------------------------------------------------------<br>達成タスク</div>
+        <div id="completed" class="list"></div>
+    </main>
 
-                <!-- タスク追加 -->
-                <div class="add-task-area">
-                    <input type="text" class="add-task-input" id="newTaskInput" placeholder="クエストを入力..." />
-                    <button class="add-task-btn" id="addTaskBtn">追加</button>
-                </div>
-
-                <!-- ToDoタスク -->
-                <div class="section-title">進行中のクエスト</div>
-                <div class="task-list" id="activeTaskList"></div>
-
-                <!-- 達成タスク -->
-                <div class="section-title">達成済みクエスト</div>
-                <div class="task-list" id="completedTaskList"></div>
+    <!-- 詳細モーダル -->
+    <div id="detailModal" class="modal-root">
+        <div id="detailBackdrop" class="modal-backdrop"></div>
+        <div class="modal-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-weight:600">タスク詳細</div>
+                <button id="detailCloseBtn" style="background:none;border:none;font-size:20px;cursor:pointer">&times;</button>
             </div>
 
-            <!-- ========== ステータスタブ ========== -->
-            <div id="tab-status" class="tab-content">
-                <!-- デイリータスク -->
-                <div class="daily-task-card" id="dailyTaskCard">
-                    <div class="daily-task-header">
-                        <div class="daily-task-title">
-                            <span>📜</span>
-                            <span>デイリークエスト</span>
-                        </div>
-                        <span class="daily-task-arrow">▼</span>
-                    </div>
-                    <div class="daily-task-content">
-                        <div class="habit-list" id="habitList"></div>
-                        <div class="daily-task-buttons">
-                            <button class="daily-btn daily-btn-cancel" id="habitCancelBtn">キャンセル</button>
-                            <button class="daily-btn daily-btn-save" id="habitSaveBtn">保存する</button>
-                        </div>
-                    </div>
+            <div id="detailTaskTitle" style="font-size:13px;color:#555;margin-bottom:8px;"></div>
+
+            <!-- スコア設定グループ（詳細モード用） -->
+            <div id="scoreGroup">
+                <div class="slider-group">
+                    <div class="slider-label-row"><span>優先度</span><span class="value" id="valPriority"></span></div>
+                    <input id="inputPriority" type="range" min="0" max="10" step="1" />
                 </div>
 
-                <!-- 週間ビュー -->
-                <div class="week-view-section">
-                    <div class="week-view-title">📅 週間クエスト記録</div>
-                    <table class="week-table" id="weekTable">
-                        <thead>
-                            <tr>
-                                <th>習慣</th>
-                                <th>月</th>
-                                <th>火</th>
-                                <th>水</th>
-                                <th>木</th>
-                                <th>金</th>
-                                <th>土</th>
-                                <th>日</th>
-                            </tr>
-                        </thead>
-                        <tbody id="weekTableBody"></tbody>
-                    </table>
+                <div class="slider-group">
+                    <div class="slider-label-row"><span>ビジョン関連度</span><span class="value" id="valVision"></span></div>
+                    <input id="inputVision" type="range" min="0" max="10" step="1" />
                 </div>
 
-                <!-- 分析 -->
-                <div class="analysis-section">
-                    <div class="analysis-title">📊 パラメータ分析</div>
-                    <div class="progress-bar-container">
-                        <div class="progress-label">
-                            <span class="progress-label-name">週間達成率</span>
-                            <span class="progress-label-value" id="weekProgressValue">0%</span>
-                        </div>
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill" id="weekProgressBar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div class="chart-container-small">
-                        <canvas id="habitChart"></canvas>
-                    </div>
+                <div class="slider-group">
+                    <div class="slider-label-row"><span>わくわく度</span><span class="value" id="valExcite"></span></div>
+                    <input id="inputExcite" type="range" min="0" max="10" step="1" />
                 </div>
 
-                <!-- アバター -->
-                <div class="status-avatar-section">
-                    <div class="status-avatar" id="statusAvatar">💪</div>
-                    <div class="status-user-name" id="statusUserName">筋肉戦士</div>
-                    <div class="status-user-title" id="statusUserTitle">筋肉の新芽</div>
-                    <div class="status-level-badge" id="statusLevelBadge">Lv.1</div>
-                </div>
-
-                <!-- レーダーチャート -->
-                <div class="radar-section">
-                    <div class="radar-title">⚔️ 戦闘パラメータ</div>
-                    <div class="radar-container">
-                        <canvas id="radarChart"></canvas>
-                    </div>
+                <div class="slider-group">
+                    <div class="slider-label-row"><span>成長度</span><span class="value" id="valGrowth"></span></div>
+                    <input id="inputGrowth" type="range" min="0" max="10" step="1" />
                 </div>
             </div>
 
-            <!-- ========== ジャーナルタブ ========== -->
-            <div id="tab-journal" class="tab-content">
-                <div class="journal-form">
-                    <div class="journal-form-title">📝 冒険の記録</div>
-                    <div class="form-group">
-                        <label class="form-label">日付</label>
-                        <input type="date" class="form-input" id="journalDate" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">タイトル</label>
-                        <input type="text" class="form-input" id="journalTitle" placeholder="今日の冒険..." />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">内容</label>
-                        <textarea class="form-textarea" id="journalContent" placeholder="今日の振り返りを記録しよう..."></textarea>
-                    </div>
-                    <button class="journal-submit-btn" id="journalSubmitBtn">▶ 記録する</button>
+            <!-- リマインド日時グループ（通知モード用） -->
+            <div id="remindGroup" class="slider-group">
+                <div class="slider-label-row">
+                    <span>リマインド日時</span>
+                    <span class="value" id="valRemindAt"></span>
                 </div>
+                <input id="inputRemindAt" type="datetime-local" />
+            </div>
 
-                <div class="section-title">過去の冒険記録</div>
-                <div class="journal-list" id="journalList"></div>
+            <div class="modal-footer">
+                <button id="detailCancelBtn" class="btn-secondary">キャンセル</button>
+                <button id="detailSaveBtn" class="btn-primary-solid">保存</button>
             </div>
 
         </div>
     </div>
 
     <script>
-        // ========== 設定 ==========
         const LIFF_ID = "2008372898-2q9qWmxv";
         const API_BASE = "https://lumicreate.xvps.jp/webhook";
-
         let userId = null;
-        let radarChart = null;
-        let habitChart = null;
+        let currentDetailTask = null;
+        let modalMode = "detail"; // "detail" or "remind"
 
-        const HABITS = [
-            { id: 'early_wake', name: '早起き', icon: '🌅' },
-            { id: 'mission', name: 'ミッション', icon: '⚔️' },
-            { id: 'reading', name: '読書/学習', icon: '📚' },
-            { id: 'journal', name: 'ジャーナル', icon: '📝' },
-            { id: 'no_alcohol', name: '禁酒', icon: '🚫' },
-            { id: 'workout', name: '今日トレ', icon: '💪' }
-        ];
+        // 強スワイプ判定の比率
+        const STRONG_RATIO = 0.85;  // ボタン幅の約85%以上
+        const SNAP_THRESHOLD = 40;  // このpx以上で「開く」スナップ
 
-        let todayHabits = {};
+        // DOMキャッシュ
+        const pinnedEl = document.getElementById("pinned");
+        const activeEl = document.getElementById("active");
+        const completedEl = document.getElementById("completed");
+        const refreshBtn = document.getElementById("refreshBtn");
+        const btnAdd = document.getElementById("btnAdd");
+        const newTitle = document.getElementById("newTitle");
 
-        // ========== 初期化 ==========
+        // モーダル要素
+        const detailModal = document.getElementById("detailModal");
+        const detailBackdrop = document.getElementById("detailBackdrop");
+        const detailCloseBtn = document.getElementById("detailCloseBtn");
+        const detailCancelBtn = document.getElementById("detailCancelBtn");
+        const detailSaveBtn = document.getElementById("detailSaveBtn");
+        const detailTaskTitle = document.getElementById("detailTaskTitle");
+
+        const inputPriority = document.getElementById("inputPriority");
+        const inputVision = document.getElementById("inputVision");
+        const inputExcite = document.getElementById("inputExcite");
+        const inputGrowth = document.getElementById("inputGrowth");
+        const valPriority = document.getElementById("valPriority");
+        const valVision = document.getElementById("valVision");
+        const valExcite = document.getElementById("valExcite");
+        const valGrowth = document.getElementById("valGrowth");
+
+        const inputRemindAt = document.getElementById("inputRemindAt"); // ★追加
+        const valRemindAt = document.getElementById("valRemindAt");     // ★追加
+
+        // ★ グループ要素（表示切り替え用）
+        const scoreGroup = document.getElementById("scoreGroup");
+        const remindGroup = document.getElementById("remindGroup");
+        const modalTitle = document.querySelector("#detailModal .modal-panel > div:first-child > div:first-child");
+
+
+        function toLocalDatetimeValue(iso) {
+            if (!iso) return "";
+            const d = new Date(iso);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mi = String(d.getMinutes()).padStart(2, "0");
+            return `${yyyy}-${mm}-${dd}T${hh}:${mi}`; // datetime-local 用
+        }
+
+        /*ここでいいのかな...?👇*/
+        function formatRemindLabel(iso) {
+            if (!iso) return "";
+            const d = new Date(iso);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mi = String(d.getMinutes()).padStart(2, "0");
+            return `🔔${yyyy}/${mm}/${dd} ${hh}:${mi}`; // 表示用
+        }
+
+        /* ==========================
+           INIT
+        ========================== */
         async function init() {
             try {
                 await liff.init({ liffId: LIFF_ID });
@@ -1024,581 +427,613 @@
                 }
                 const profile = await liff.getProfile();
                 userId = profile.userId;
+
                 bindUI();
-                await loadAllData();
-                hideLoading();
+                bindModalUI();
+                await loadList();
             } catch (e) {
-                console.error("LIFF初期化エラー:", e);
-                userId = "demo_user";
-                bindUI();
-                loadDemoData();
-                hideLoading();
+                console.error(e);
+                alert("LIFF初期化に失敗しました");
             }
         }
 
+        /* ==========================
+           bindUI
+        ========================== */
         function bindUI() {
-            document.querySelectorAll('.tab-item').forEach(tab => {
-                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-            });
+            refreshBtn.onclick = loadList;
 
-            document.getElementById('addTaskBtn').addEventListener('click', addTask);
-            document.getElementById('newTaskInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') addTask();
-            });
+            btnAdd.onclick = async () => {
+                const title = newTitle.value.trim();
+                if (!title) return;
+                await action("create", null, { task_name: title });
+                newTitle.value = "";
+            };
+        }
 
-            document.getElementById('missionBtn').addEventListener('click', completeMission);
+        /* ==========================
+          詳細モーダル UI
+        ========================== */
+        function bindModalUI() {
+            const close = () => detailModal.classList.remove("visible");
 
-            document.getElementById('dailyTaskCard').addEventListener('click', (e) => {
-                if (!e.target.closest('.habit-checkbox') && !e.target.closest('.daily-btn')) {
-                    toggleDailyTask();
+            detailBackdrop.onclick = close;
+            detailCloseBtn.onclick = close;
+            detailCancelBtn.onclick = close;
+
+            const bindSlider = (input, label) => {
+                input.addEventListener("input", () => { label.textContent = input.value; });
+            };
+            bindSlider(inputPriority, valPriority);
+            bindSlider(inputVision, valVision);
+            bindSlider(inputExcite, valExcite);
+            bindSlider(inputGrowth, valGrowth);
+
+            // ★ リマインド日時が変更されたら右側のラベル更新（モーダル内）
+            inputRemindAt.addEventListener("change", () => {
+                if (inputRemindAt.value) {
+                    const d = new Date(inputRemindAt.value);
+                    valRemindAt.textContent = formatRemindLabel(d.toISOString());
+                } else {
+                    valRemindAt.textContent = "";
                 }
             });
 
-            document.getElementById('habitSaveBtn').addEventListener('click', saveHabits);
-            document.getElementById('habitCancelBtn').addEventListener('click', () => {
-                document.getElementById('dailyTaskCard').classList.remove('expanded');
-            });
+            detailSaveBtn.onclick = async () => {
+                if (!currentDetailTask) return;
 
-            document.getElementById('journalSubmitBtn').addEventListener('click', saveJournal);
-            document.getElementById('journalDate').value = new Date().toISOString().split('T')[0];
+                if (modalMode === "detail") {
+                    // ★ 通常の「詳細」モード → スコアだけ更新
+                    const payload = {
+                        priority: Number(inputPriority.value),
+                        vision_score: Number(inputVision.value),
+                        excite_score: Number(inputExcite.value),
+                        growth_score: Number(inputGrowth.value),
+                    };
+                    await action("update_detail", currentDetailTask.id, payload);
 
-            renderHabitList();
-        }
+                } else if (modalMode === "remind") {
+                    // ★ 「通知」モード → 入力が空なら NULL にリセット
+                    let remind_at = null;
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-        }
+                    if (inputRemindAt.value) {
+                        // 日時が入っているときだけ ISO に変換
+                        const d = new Date(inputRemindAt.value);
+                        remind_at = d.toISOString();
+                    }
 
-        async function loadAllData() {
-            await Promise.all([
-                loadTasks(),
-                loadMission(),
-                loadHabits(),
-                loadStatus(),
-                loadJournals()
-            ]);
-        }
+                    // ★ 1) ローカルのタスクオブジェクトも更新
+                    currentDetailTask.remind_at = remind_at;
 
-        async function loadTasks() {
-            try {
-                const res = await fetch(`${API_BASE}/list?user_id=${encodeURIComponent(userId)}`);
-                if (!res.ok) throw new Error('API Error');
-                const data = await res.json();
-                renderTasks(data);
-            } catch (e) {
-                renderTasks({ active: [], completed: [] });
-            }
-        }
+                    // ★ 2) 対応するカードの右側ラベルを即時更新
+                    const card = document.querySelector(`.card[data-task-id="${currentDetailTask.id}"]`);
+                    if (card) {
+                        const rightBox = card.querySelector(".rightBox");
+                        if (rightBox) {
+                            let label = rightBox.querySelector(".remindAt");
 
-        async function loadMission() {
-            try {
-                const res = await fetch(`${API_BASE}/mission?user_id=${encodeURIComponent(userId)}`);
-                if (!res.ok) throw new Error('API Error');
-                const data = await res.json();
-                renderMission(data);
-            } catch (e) {
-                renderMission({
-                    title: '毎日5分のストレッチを続けよう!',
-                    description: '柔軟性を高めて怪我を予防せよ。7日間続けてミッションクリア!',
-                    completed: false,
-                    completion_count: 42
-                });
-            }
-        }
-
-        async function loadHabits() {
-            try {
-                const res = await fetch(`${API_BASE}/habits?user_id=${encodeURIComponent(userId)}`);
-                if (!res.ok) throw new Error('API Error');
-                const data = await res.json();
-                renderWeekView(data);
-                renderHabitAnalysis(data);
-            } catch (e) {
-                renderWeekView(getDemoHabitData());
-                renderHabitAnalysis(getDemoHabitData());
-            }
-        }
-
-        async function loadStatus() {
-            try {
-                const res = await fetch(`${API_BASE}/status?user_id=${encodeURIComponent(userId)}`);
-                if (!res.ok) throw new Error('API Error');
-                const data = await res.json();
-                renderStatus(data);
-            } catch (e) {
-                renderStatus(getDemoStatusData());
-            }
-        }
-
-        async function loadJournals() {
-            try {
-                const res = await fetch(`${API_BASE}/journals?user_id=${encodeURIComponent(userId)}`);
-                if (!res.ok) throw new Error('API Error');
-                const data = await res.json();
-                renderJournals(data);
-            } catch (e) {
-                renderJournals(getDemoJournalData());
-            }
-        }
-
-        function renderTasks(data) {
-            const activeList = document.getElementById('activeTaskList');
-            const completedList = document.getElementById('completedTaskList');
-            const active = [...(data.pinned || []), ...(data.active || [])];
-            const completed = data.completed || [];
-
-            activeList.innerHTML = active.map(t => createTaskCard(t, false)).join('');
-            completedList.innerHTML = completed.map(t => createTaskCard(t, true)).join('');
-
-            document.querySelectorAll('.task-card').forEach(card => {
-                card.addEventListener('click', () => toggleTaskComplete(card.dataset.id));
-            });
-        }
-
-        function createTaskCard(task, isCompleted) {
-            const name = task.task_name || task.title || '(無題)';
-            const remind = task.remind_at ? formatRemind(task.remind_at) : '';
-            return `
-                <div class="task-card ${isCompleted ? 'completed' : ''}" data-id="${task.id}">
-                    <div class="task-checkbox">${isCompleted ? '✓' : ''}</div>
-                    <div class="task-title">${task.pinned ? '📍' : ''}${name}</div>
-                    ${remind ? `<div class="task-remind">${remind}</div>` : ''}
-                </div>
-            `;
-        }
-
-        function renderMission(data) {
-            document.getElementById('missionTitle').textContent = data.title || '今週のミッション';
-            document.getElementById('missionDesc').textContent = data.description || '';
-            document.getElementById('missionCount').textContent = data.completion_count || 0;
-
-            const btn = document.getElementById('missionBtn');
-            if (data.completed) {
-                btn.textContent = '✓ 達成済み';
-                btn.classList.add('completed');
-                btn.disabled = true;
-            } else {
-                btn.textContent = '▶ ミッション達成!';
-                btn.classList.remove('completed');
-                btn.disabled = false;
-            }
-        }
-
-        function renderHabitList() {
-            const container = document.getElementById('habitList');
-            container.innerHTML = HABITS.map(h => `
-                <div class="habit-item">
-                    <div class="habit-checkbox" data-habit="${h.id}" onclick="toggleHabit('${h.id}')"></div>
-                    <span class="habit-name">${h.name}</span>
-                    <span class="habit-icon">${h.icon}</span>
-                </div>
-            `).join('');
-        }
-
-        function toggleHabit(habitId) {
-            todayHabits[habitId] = !todayHabits[habitId];
-            const checkbox = document.querySelector(`.habit-checkbox[data-habit="${habitId}"]`);
-            if (todayHabits[habitId]) {
-                checkbox.classList.add('checked');
-                checkbox.textContent = '✓';
-            } else {
-                checkbox.classList.remove('checked');
-                checkbox.textContent = '';
-            }
-        }
-
-        function toggleDailyTask() {
-            document.getElementById('dailyTaskCard').classList.toggle('expanded');
-        }
-
-        function renderWeekView(data) {
-            const tbody = document.getElementById('weekTableBody');
-            const weekData = data.week || {};
-            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-
-            let html = '';
-            HABITS.forEach(h => {
-                html += `<tr><td>${h.icon} ${h.name}</td>`;
-                days.forEach(day => {
-                    const checked = weekData[day]?.[h.id] ? 'checked' : 'unchecked';
-                    html += `<td class="${checked}"></td>`;
-                });
-                html += '</tr>';
-            });
-
-            html += '<tr><td>達成率</td>';
-            days.forEach(day => {
-                const dayData = weekData[day] || {};
-                const checkedCount = Object.values(dayData).filter(v => v).length;
-                const rate = Math.round((checkedCount / HABITS.length) * 100);
-                html += `<td>${rate}%</td>`;
-            });
-            html += '</tr>';
-
-            tbody.innerHTML = html;
-        }
-
-        function renderHabitAnalysis(data) {
-            const weekProgress = data.week_progress || 0;
-            document.getElementById('weekProgressValue').textContent = `${weekProgress}%`;
-            document.getElementById('weekProgressBar').style.width = `${weekProgress}%`;
-
-            const ctx = document.getElementById('habitChart').getContext('2d');
-            if (habitChart) habitChart.destroy();
-
-            const habitStats = data.habit_stats || HABITS.map(h => ({
-                name: h.name,
-                goal: 7,
-                actual: Math.floor(Math.random() * 7)
-            }));
-
-            habitChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: habitStats.map(h => h.name),
-                    datasets: [
-                        {
-                            label: '目標',
-                            data: habitStats.map(h => h.goal),
-                            backgroundColor: '#3a3a6e',
-                            borderColor: '#5a5a9e',
-                            borderWidth: 2
-                        },
-                        {
-                            label: '実績',
-                            data: habitStats.map(h => h.actual),
-                            backgroundColor: '#2a6a2a',
-                            borderColor: '#4ada4a',
-                            borderWidth: 2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            max: 7,
-                            grid: { color: '#2a2a4e' },
-                            ticks: { color: '#8a8aaa' }
-                        },
-                        y: {
-                            grid: { color: '#2a2a4e' },
-                            ticks: { color: '#8a8aaa' }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: '#8a8aaa' }
+                            if (remind_at) {
+                                // 日時あり → ラベルを作る/更新
+                                if (!label) {
+                                    label = document.createElement("div");
+                                    label.className = "remindAt";
+                                    const handleEl = rightBox.querySelector(".handle");
+                                    rightBox.insertBefore(label, handleEl || null);
+                                }
+                                label.textContent = formatRemindLabel(remind_at);
+                            } else {
+                                // 日時なし（リセット）→ ラベルを消す
+                                if (label) {
+                                    label.remove();
+                                }
+                            }
                         }
                     }
+
+                    // ★ 3) サーバー側にも保存
+                    await action("remind_custom", currentDetailTask.id, {
+                        remind_at,                             // null もそのまま送る
+                        kind: remind_at ? "custom_datetime" : "clear",
+                    });
                 }
-            });
-        }
 
-        function renderStatus(data) {
-            const user = data.user || {};
-            const stats = data.stats || {};
 
-            document.getElementById('statusAvatar').textContent = getAvatarEmoji(user.level || 1);
-            document.getElementById('statusUserName').textContent = user.name || '筋肉戦士';
-            document.getElementById('statusUserTitle').textContent = getTitle(user.level || 1);
-            document.getElementById('statusLevelBadge').textContent = `Lv.${user.level || 1}`;
-
-            const ctx = document.getElementById('radarChart').getContext('2d');
-            if (radarChart) radarChart.destroy();
-
-            radarChart = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: ['筋力', '体力', '技術', '意志力', '知識', '継続運'],
-                    datasets: [{
-                        label: 'ステータス',
-                        data: [
-                            stats.strength || 0,
-                            stats.endurance || 0,
-                            stats.skill || 0,
-                            stats.mental || 0,
-                            stats.knowledge || 0,
-                            stats.consistency || 0
-                        ],
-                        backgroundColor: 'rgba(74, 218, 74, 0.2)',
-                        borderColor: '#4ada4a',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#4ada4a',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                stepSize: 20,
-                                color: '#6a6a9a',
-                                backdropColor: 'transparent'
-                            },
-                            grid: { color: '#2a2a4e' },
-                            angleLines: { color: '#2a2a4e' },
-                            pointLabels: { color: '#aaaaff', font: { size: 11 } }
-                        }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-
-        function renderJournals(data) {
-            const container = document.getElementById('journalList');
-            const journals = data.journals || [];
-
-            if (journals.length === 0) {
-                container.innerHTML = '<div style="text-align:center;color:#6a6a9a;padding:20px;">まだ冒険記録がありません</div>';
-                return;
-            }
-
-            container.innerHTML = journals.map(j => `
-                <div class="journal-card" data-id="${j.id}" onclick="toggleJournalCard(this)">
-                    <div class="journal-card-header">
-                        <div class="journal-date">📅 ${formatDate(j.date)}</div>
-                        <div class="journal-tasks-count">✓ ${j.tasks_completed_count || 0}クエスト達成</div>
-                    </div>
-                    <div class="journal-title-text">${j.title || '無題'}</div>
-                    <div class="journal-preview">${(j.content || '').substring(0, 50)}...</div>
-                    <div class="journal-card-expand">
-                        <div class="journal-full-content">
-                            ${j.completed_tasks ? `
-                                <div class="journal-tasks-label">達成したクエスト:</div>
-                                ${j.completed_tasks.map(t => `<div class="journal-task-item">◆ ${t}</div>`).join('')}
-                            ` : ''}
-                            <div class="journal-body">${j.content || ''}</div>
-                            <button class="journal-edit-btn" onclick="editJournal('${j.id}')">編集する</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function toggleJournalCard(card) {
-            card.classList.toggle('expanded');
-        }
-
-        async function addTask() {
-            const input = document.getElementById('newTaskInput');
-            const title = input.value.trim();
-            if (!title) return;
-
-            try {
-                await fetch(`${API_BASE}/action`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, action: 'create', task_name: title })
-                });
-                input.value = '';
-                await loadTasks();
-            } catch (e) {
-                console.error('タスク追加エラー:', e);
-            }
-        }
-
-        async function toggleTaskComplete(taskId) {
-            try {
-                const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
-                const isCompleted = card.classList.contains('completed');
-                await fetch(`${API_BASE}/action`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        action: isCompleted ? 'uncomplete' : 'complete',
-                        task_id: taskId
-                    })
-                });
-                await loadTasks();
-            } catch (e) {
-                console.error('タスク更新エラー:', e);
-            }
-        }
-
-        async function completeMission() {
-            try {
-                await fetch(`${API_BASE}/mission/complete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId })
-                });
-                await loadMission();
-            } catch (e) {
-                console.error('ミッション完了エラー:', e);
-            }
-        }
-
-        async function saveHabits() {
-            try {
-                await fetch(`${API_BASE}/habits/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        date: new Date().toISOString().split('T')[0],
-                        habits: todayHabits
-                    })
-                });
-                document.getElementById('dailyTaskCard').classList.remove('expanded');
-                await loadHabits();
-                alert('保存しました!');
-            } catch (e) {
-                console.error('習慣保存エラー:', e);
-            }
-        }
-
-        async function saveJournal() {
-            const date = document.getElementById('journalDate').value;
-            const title = document.getElementById('journalTitle').value.trim();
-            const content = document.getElementById('journalContent').value.trim();
-
-            if (!title || !content) {
-                alert('タイトルと内容を入力してください');
-                return;
-            }
-
-            try {
-                await fetch(`${API_BASE}/journals/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, date, title, content })
-                });
-                document.getElementById('journalTitle').value = '';
-                document.getElementById('journalContent').value = '';
-                await loadJournals();
-                alert('記録しました!');
-            } catch (e) {
-                console.error('ジャーナル保存エラー:', e);
-            }
-        }
-
-        function editJournal(journalId) {
-            alert('編集機能は次のバージョンで実装予定です');
-        }
-
-        function formatRemind(iso) {
-            if (!iso) return '';
-            const d = new Date(iso);
-            return `🔔 ${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
-        }
-
-        function formatDate(dateStr) {
-            const d = new Date(dateStr);
-            return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
-        }
-
-        function getAvatarEmoji(level) {
-            if (level >= 50) return '👑';
-            if (level >= 30) return '⚔️';
-            if (level >= 20) return '🦸';
-            if (level >= 10) return '🏋️';
-            if (level >= 5) return '💪';
-            return '🦾';
-        }
-
-        function getTitle(level) {
-            if (level >= 50) return '筋肉神';
-            if (level >= 30) return '筋肉王';
-            if (level >= 20) return '筋肉魔導士';
-            if (level >= 10) return '脚の覇者';
-            if (level >= 5) return '胸の勇者';
-            return '筋肉の新芽';
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.add('hidden');
-        }
-
-        function loadDemoData() {
-            renderTasks({
-                active: [
-                    { id: '1', task_name: 'プッシュアップ15回', pinned: true },
-                    { id: '2', task_name: 'スクワット20回' },
-                    { id: '3', task_name: 'プランク1分' }
-                ],
-                completed: [{ id: '4', task_name: 'ストレッチ5分' }]
-            });
-
-            renderMission({
-                title: '毎日5分のストレッチを続けよう!',
-                description: '柔軟性を高めて怪我を予防せよ。7日間続けてミッションクリア!',
-                completed: false,
-                completion_count: 42
-            });
-
-            renderWeekView(getDemoHabitData());
-            renderHabitAnalysis(getDemoHabitData());
-            renderStatus(getDemoStatusData());
-            renderJournals(getDemoJournalData());
-        }
-
-        function getDemoHabitData() {
-            return {
-                week: {
-                    mon: { early_wake: true, mission: true, reading: true, journal: false, no_alcohol: true, workout: true },
-                    tue: { early_wake: true, mission: false, reading: true, journal: true, no_alcohol: true, workout: false },
-                    wed: { early_wake: false, mission: true, reading: false, journal: false, no_alcohol: true, workout: true },
-                    thu: { early_wake: true, mission: true, reading: true, journal: true, no_alcohol: true, workout: true },
-                    fri: {}, sat: {}, sun: {}
-                },
-                week_progress: 58,
-                habit_stats: [
-                    { name: '早起き', goal: 7, actual: 3 },
-                    { name: 'ミッション', goal: 7, actual: 3 },
-                    { name: '読書/学習', goal: 7, actual: 3 },
-                    { name: 'ジャーナル', goal: 7, actual: 2 },
-                    { name: '禁酒', goal: 7, actual: 5 },
-                    { name: '今日トレ', goal: 7, actual: 3 }
-                ]
+                // 最後にモーダル閉じる
+                close();
             };
         }
 
-        function getDemoStatusData() {
-            return {
-                user: { name: '筋肉戦士', level: 5, xp: 800, streak: 7 },
-                stats: { strength: 45, endurance: 35, skill: 25, mental: 40, knowledge: 20, consistency: 55 }
-            };
+        /* ==========================
+          LIST API
+        ========================== */
+        async function loadList() {
+            const url = `${API_BASE}/list?user_id=${encodeURIComponent(userId)}`;
+            console.log("[LIST] request:", url);
+
+            try {
+                const res = await fetch(url);
+                console.log("[LIST] status:", res.status);
+
+                const text = await res.text();
+                console.log("[LIST] raw response:", JSON.stringify(text));
+
+                if (!res.ok) {
+                    console.error("[LIST] http error:", res.status, text);
+                    alert("タスク一覧の取得に失敗しました（HTTPエラー）");
+                    return;
+                }
+
+                if (!text) {
+                    console.warn("[LIST] 空レスポンスでした");
+                    renderList({ pinned: [], active: [], completed: [] });
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    console.error("[LIST] JSONパースエラー:", e);
+                    alert("サーバーからJSONが返ってきていません");
+                    return;
+                }
+
+                console.log("[LIST] parsed json:", data);
+                renderList(data);
+
+            } catch (e) {
+                console.error("[LIST] fetch error:", e);
+                alert("タスク一覧の取得に失敗しました（通信エラー）");
+            }
         }
 
-        function getDemoJournalData() {
-            return {
-                journals: [
-                    {
-                        id: '1',
-                        date: '2025-01-15',
-                        title: '充実した冒険の日',
-                        content: '今日は朝早く起きてストレッチから始められた。プッシュアップも目標回数をクリアできて嬉しい。明日も頑張ろう!',
-                        tasks_completed_count: 5,
-                        completed_tasks: ['プッシュアップ15回', 'スクワット20回', 'ストレッチ5分']
-                    },
-                    {
-                        id: '2',
-                        date: '2025-01-14',
-                        title: '休息の日',
-                        content: '仕事が忙しくて筋トレの時間が取れなかった。でも明日は必ずやる!',
-                        tasks_completed_count: 2,
-                        completed_tasks: ['ストレッチ5分']
+        function renderList(payload) {
+            pinnedEl.innerHTML = "";
+            activeEl.innerHTML = "";
+            completedEl.innerHTML = "";
+
+            const pinned = Array.isArray(payload.pinned) ? payload.pinned : [];
+            const active = Array.isArray(payload.active) ? payload.active : [];
+            const completed = Array.isArray(payload.completed) ? payload.completed : [];
+
+            pinned.forEach(t => pinnedEl.appendChild(taskCard(t, false)));
+            active.forEach(t => activeEl.appendChild(taskCard(t, false)));
+            completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
+        }
+
+        /* ==========================
+          並び順をサーバーへ保存
+        ========================== */
+        async function saveSortOrder() {
+            if (!userId) return;
+
+            const orders = [];
+
+            pinnedEl.querySelectorAll(".card").forEach((card, index) => {
+                const t = card.__taskData;
+                if (!t) return;
+                orders.push({ id: t.id, sort_order: index, section: "pinned" });
+            });
+            activeEl.querySelectorAll(".card").forEach((card, index) => {
+                const t = card.__taskData;
+                if (!t) return;
+                orders.push({ id: t.id, sort_order: index, section: "active" });
+            });
+            completedEl.querySelectorAll(".card").forEach((card, index) => {
+                const t = card.__taskData;
+                if (!t) return;
+                orders.push({ id: t.id, sort_order: index, section: "completed" });
+            });
+
+            console.log("[SORT_UPDATE] orders:", orders);
+            await action("sort_update", null, { orders });
+        }
+
+        /* ==========================
+          TASK CARD
+        ========================== */
+        function taskCard(t, isCompleted = false) {
+            const wrap = document.createElement("div");
+            wrap.className = "card";
+            if (isCompleted) wrap.classList.add("completed");
+
+            // 背面レール
+            const rail = document.createElement("div");
+            rail.className = "actions-rail";
+
+            const left = document.createElement("div");
+            left.className = "actions-left";
+
+            if (!isCompleted) {
+                left.append(
+                    mkBtn("完了", () => action("complete", t.id), "btn-complete"),
+                    // ★ 「通知」ボタンを押したら openRemind(t) を呼ぶ
+                    mkBtn("通知", () => openRemind(t), "btn-plus2h")
+                );
+            } else {
+                left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
+            }
+
+            const right = document.createElement("div");
+            right.className = "actions-right";
+            right.append(
+                mkBtn("詳細", () => openDetail(t), "btn-detail"),
+                mkBtn(t.pinned ? "📍解除" : "📍ピン", () => action("toggle_pin", t.id), "btn-pin"),
+                mkBtn("削除", () => {
+                    if (t.pinned) return alert("ピンを外してください！");
+                    action("delete", t.id);
+                }, "btn-delete")
+            );
+
+            rail.append(left, right);
+
+            // 前面
+            const sl = document.createElement("div");
+            sl.className = "sl";
+
+            const titleEl = document.createElement("div");
+            titleEl.className = "title";
+
+            const name = t.task_name || t.title || "(無題)";
+            titleEl.textContent = t.pinned ? "📍 " + name : name;
+
+            // 左（タイトル）と右（リマインド＋ハンドル）に分割
+            const leftBox = document.createElement("div");
+            leftBox.style.flex = "1";
+            leftBox.appendChild(titleEl);
+
+            const rightBox = document.createElement("div");
+            rightBox.className = "rightBox";           // ★ 追加
+            rightBox.style.display = "flex";
+            rightBox.style.alignItems = "center";
+
+            if (t.remind_at) {
+                const remindEl = document.createElement("div");
+                remindEl.className = "remindAt";
+                remindEl.textContent = formatRemindLabel(t.remind_at);
+                rightBox.appendChild(remindEl);
+            }
+
+            const handle = document.createElement("div");
+            handle.className = "handle";
+            handle.textContent = "☰";
+            handle.style.marginLeft = "8px";
+
+            rightBox.appendChild(handle);
+
+            sl.append(leftBox, rightBox);
+            wrap.append(rail, sl);
+
+
+            // ===== ボタン幅を測って data に保存（端を揃える用） =====
+            requestAnimationFrame(() => {
+                const lRect = left.getBoundingClientRect();
+                const rRect = right.getBoundingClientRect();
+                wrap.dataset.leftWidth = lRect.width || 140;
+                wrap.dataset.rightWidth = rRect.width || 140;
+            });
+
+            let holdTimer = null;
+            handle.addEventListener("pointerdown", e => {
+                holdTimer = setTimeout(() => startDrag(e), 500);
+            });
+
+            handle.addEventListener("pointerup", () => clearTimeout(holdTimer));
+            handle.addEventListener("pointerleave", () => clearTimeout(holdTimer));
+
+
+            /* ==========================
+                PC版 クリックでスワイプ
+            ========================== */
+            if (!/Mobi|Android/i.test(navigator.userAgent)) {
+                sl.addEventListener("click", e => {
+                    const rect = sl.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+
+                    const leftW = Number(wrap.dataset.leftWidth) || 140;
+                    const rightW = Number(wrap.dataset.rightWidth) || 140;
+
+                    if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
+                        wrap.classList.remove("open-left", "open-right");
+                        sl.style.transform = "translateX(0)";
+                        return;
                     }
-                ]
+
+                    if (x < rect.width / 2) {
+                        wrap.classList.add("open-left");
+                        wrap.classList.remove("open-right");
+                        sl.style.transform = `translateX(${leftW}px)`;
+                    } else {
+                        wrap.classList.add("open-right");
+                        wrap.classList.remove("open-left");
+                        sl.style.transform = `translateX(${-rightW}px)`;
+                    }
+                });
+            }
+
+            /* ==========================
+                スマホ版 スワイプ
+            ========================== */
+            let startX = 0, dx = 0;
+            let isHandleDrag = false;  // ← 追加：☰ から始まったかどうか
+
+            wrap.addEventListener("touchstart", e => {
+                // ボタンをタップしている場合はスワイプ処理を起動しない
+                if (e.target.closest("button")) {
+                    return;
+                }
+
+                // ☰（.handle）から始まったタッチなら、スワイプ処理は一切しない
+                if (e.target.closest(".handle")) {
+                    isHandleDrag = true;
+                    return;
+                } else {
+                    isHandleDrag = false;
+                }
+
+                startX = e.touches[0].clientX;
+                dx = 0;
+                sl.style.transition = "none";
+            }, { passive: true });
+
+            wrap.addEventListener("touchmove", e => {
+                if (isHandleDrag) {
+                    // ☰ をドラッグしてるときは、ここ（横スワイプ）には入らない
+                    return;
+                }
+                if (e.touches.length === 0) return;
+                dx = e.touches[0].clientX - startX;
+                if (Math.abs(dx) > 8) e.preventDefault();
+                sl.style.transform = `translateX(${dx}px)`;
+            }, { passive: false });
+
+            wrap.addEventListener("touchend", () => {
+                // ☰ ドラッグだった場合は、スワイプの後処理をしない
+                if (isHandleDrag) {
+                    isHandleDrag = false;
+                    sl.style.transition = "";
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+
+                sl.style.transition = "transform .15s";
+
+                const leftW = Number(wrap.dataset.leftWidth) || 140;
+                const rightW = Number(wrap.dataset.rightWidth) || 140;
+
+                const leftStrong = leftW * STRONG_RATIO;
+                const rightStrong = rightW * STRONG_RATIO;
+
+                // ここ以下は今のままの強スワイプ判定でOK
+                if (dx > leftStrong) {
+                    if (!isCompleted) {
+                        action("complete", t.id);
+                    } else {
+                        action("uncomplete", t.id);
+                    }
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+                if (dx < -rightStrong) {
+                    if (t.pinned) {
+                        alert("ピンを外してください！");
+                    } else {
+                        action("delete", t.id);
+                    }
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+
+                if (dx > SNAP_THRESHOLD) {
+                    wrap.classList.add("open-left");
+                    wrap.classList.remove("open-right");
+                    sl.style.transform = `translateX(${leftW}px)`;
+                } else if (dx < -SNAP_THRESHOLD) {
+                    wrap.classList.add("open-right");
+                    wrap.classList.remove("open-left");
+                    sl.style.transform = `translateX(${-rightW}px)`;
+                } else {
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                }
+            });
+
+            /* ==========================
+                ☰ で並び替え（ドラッグ）
+            ========================== */
+            const startDrag = (startEvent) => {
+                startEvent.preventDefault();
+                startEvent.stopPropagation();
+
+                const card = wrap;
+                const list = card.parentElement;
+                if (!list) return;
+
+                card.classList.add("dragging");
+                document.body.style.userSelect = "none";
+
+                const pointerId = startEvent.pointerId;
+
+                const getY = (ev) => ev.clientY;
+
+                const onMove = (ev) => {
+                    const y = getY(ev);
+                    const siblings = Array.from(list.children);
+                    const currentIndex = siblings.indexOf(card);
+                    if (currentIndex === -1) return;
+
+                    const prev = siblings[currentIndex - 1];
+                    const next = siblings[currentIndex + 1];
+
+                    if (prev) {
+                        const rect = prev.getBoundingClientRect();
+                        if (y < rect.top + rect.height / 2) {
+                            list.insertBefore(card, prev);
+                            return;
+                        }
+                    }
+                    if (next) {
+                        const rect = next.getBoundingClientRect();
+                        if (y > rect.top + rect.height / 2) {
+                            list.insertBefore(next, card);
+                            return;
+                        }
+                    }
+                };
+
+                const onUp = (ev) => {
+                    document.removeEventListener("pointermove", onMove);
+                    document.removeEventListener("pointerup", onUp);
+                    card.classList.remove("dragging");
+                    document.body.style.userSelect = "";
+                    saveSortOrder();
+                };
+
+                document.addEventListener("pointermove", onMove);
+                document.addEventListener("pointerup", onUp);
             };
+
+            if (window.PointerEvent) {
+                handle.addEventListener("pointerdown", startDrag);
+            } else {
+                // pointer未対応ブラウザ用のフォールバック（必要なら）
+                handle.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // ここで同様のロジックを実装してもOK（簡略のため省略）
+                }, { passive: false });
+            }
+
+            // 並び替え用にタスク情報を紐付け
+            // 並び替え用にタスク情報を紐付け
+            wrap.__taskData = t;
+            wrap.dataset.taskId = t.id;   // ★ 追加：DOMから逆引きする用
+
+            return wrap;
+
         }
+
+        /* ==========================
+           MODAL OPEN
+        ========================== */
+        function openDetail(t) {
+            modalMode = "detail";       // ★ ここでモード指定
+            currentDetailTask = t;
+
+            const name = t.task_name || t.title || "(無題)";
+            detailTaskTitle.textContent = name;
+            modalTitle.textContent = "タスク詳細";  // ★ モーダルタイトル
+
+            // ★ 表示切り替え：スコアのみ表示、リマインドは非表示
+            scoreGroup.style.display = "block";
+            remindGroup.style.display = "none";
+
+            inputPriority.value = t.priority ?? 0;
+            valPriority.textContent = inputPriority.value;
+
+            inputVision.value = t.vision_score ?? 0;
+            valVision.textContent = inputVision.value;
+
+            inputExcite.value = t.excite_score ?? 0;
+            valExcite.textContent = inputExcite.value;
+
+            inputGrowth.value = t.growth_score ?? 0;
+            valGrowth.textContent = inputGrowth.value;
+
+            detailModal.classList.add("visible");
+
+        }
+
+        function openRemind(t) {
+            modalMode = "remind";        // ★ 通知モード
+            currentDetailTask = t;
+
+            const name = t.task_name || t.title || "(無題)";
+            detailTaskTitle.textContent = name;
+            modalTitle.textContent = "通知設定";  // ★ モーダルタイトル
+
+            // ★ 表示切り替え：リマインドのみ表示、スコアは非表示
+            scoreGroup.style.display = "none";
+            remindGroup.style.display = "block";
+
+            // 既にremind_atがあれば初期値として入れる
+            if (t.remind_at) {
+                inputRemindAt.value = toLocalDatetimeValue(t.remind_at);
+                valRemindAt.textContent = formatRemindLabel(t.remind_at);
+            } else {
+                inputRemindAt.value = "";
+                valRemindAt.textContent = "";
+            }
+
+            detailModal.classList.add("visible");
+
+        }
+
+        /* ==========================
+           BUTTON HELPER
+        ========================== */
+        function mkBtn(label, onClick, cls) {
+            const b = document.createElement("button");
+            b.textContent = label;
+            if (cls) b.className = cls;
+
+            const handler = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onClick();
+            };
+
+            if ("ontouchend" in window) {
+                b.addEventListener("touchend", handler, { passive: false });
+            } else {
+                b.addEventListener("click", handler);
+            }
+
+            return b;
+        }
+
+        /* ==========================
+           API ACTION
+        ========================== */
+        async function action(kind, id, extra = {}) {
+            const url = `${API_BASE}/action`;
+            try {
+                const res = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        action: kind,
+                        task_id: id,
+                        ...extra
+                    })
+                });
+
+                const text = await res.text();
+                console.log("[ACTION]", kind, "status:", res.status, "resp:", text);
+
+                if (!res.ok) {
+                    alert("操作に失敗しました（" + res.status + "）");
+                    return;
+                }
+            } catch (e) {
+                console.error("[ACTION] fetch error:", e);
+                alert("通信エラーで操作に失敗しました");
+            } finally {
+                // ★ 通知設定のときはフロントで直接ラベル更新しているので再読み込みはしない
+                if (kind !== "remind_custom") {
+                    loadList();
+                }
+            }
+        }
+
 
         init();
     </script>
 </body>
 </html>
+
+
+
