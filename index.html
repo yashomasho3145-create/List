@@ -1559,6 +1559,7 @@
             }, { passive: true });
 
             wrap.addEventListener("touchmove", e => {
+                if (isDraggingCard) return;
                 if (isHandleDrag) return;
                 if (e.touches.length === 0) return;
 
@@ -1578,6 +1579,8 @@
             }, { passive: false });
 
             wrap.addEventListener("touchend", () => {
+                if (isDraggingCard) return;
+
                 if (isHandleDrag) {
                     isHandleDrag = false;
                     sl.style.transition = "";
@@ -1633,6 +1636,11 @@
                 if (!list) return;
 
                 isDraggingCard = true;
+
+                // スワイプ状態をリセット
+                card.classList.remove("open-left", "open-right");
+                sl.style.transition = "";
+                sl.style.transform = "translateX(0)";
 
                 // 初期位置を記録
                 const cardRect = card.getBoundingClientRect();
@@ -1703,7 +1711,7 @@
                     document.removeEventListener("touchmove", onMove);
                     document.removeEventListener("touchend", onUp);
 
-                    // カードをプレースホルダーの位置に挿入
+                    // カードのスタイルをリセット
                     card.classList.remove("dragging");
                     card.style.position = "";
                     card.style.left = "";
@@ -1712,8 +1720,25 @@
                     card.style.height = "";
                     card.style.pointerEvents = "";
 
-                    list.insertBefore(card, placeholder);
-                    placeholder.remove();
+                    // スワイプ状態もリセット
+                    card.classList.remove("open-left", "open-right");
+                    const slEl = card.querySelector(".sl");
+                    if (slEl) {
+                        slEl.style.transition = "";
+                        slEl.style.transform = "translateX(0)";
+                    }
+
+                    // プレースホルダーが存在し、リスト内にある場合のみ挿入
+                    if (placeholder && placeholder.parentNode === list) {
+                        list.insertBefore(card, placeholder);
+                        placeholder.remove();
+                    } else if (list) {
+                        // プレースホルダーがない場合はリストの末尾に追加
+                        list.appendChild(card);
+                        if (placeholder && placeholder.parentNode) {
+                            placeholder.remove();
+                        }
+                    }
 
                     document.body.style.userSelect = "";
 
