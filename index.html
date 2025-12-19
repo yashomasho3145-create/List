@@ -1303,6 +1303,18 @@
 
         // ========== ミッションタスク機能 ==========
         async function loadMissionTask() {
+            // デモデータ（APIがない場合に使用）
+            const demoData = {
+                mission: {
+                    id: 'demo',
+                    title: '今週のミッション',
+                    description: '毎日10分間の瞑想を行い、心を落ち着けよう',
+                    expires_at: getNextSunday()
+                },
+                completed_today: false,
+                today_completions: 42
+            };
+
             try {
                 const res = await fetch(`${API_BASE}/mission?user_id=${encodeURIComponent(userId)}`);
                 if (!res.ok) throw new Error('API Error');
@@ -1311,18 +1323,11 @@
                 missionCompletedToday = data.completed_today || false;
                 renderMissionTask(data);
             } catch (e) {
-                console.error("[MISSION] error:", e);
+                console.log("[MISSION] API not available, showing demo:", e.message);
                 // デモデータを表示
-                renderMissionTask({
-                    mission: {
-                        id: 'demo',
-                        title: '今週のミッション',
-                        description: '毎日10分間の瞑想を行い、心を落ち着けよう',
-                        expires_at: getNextSunday()
-                    },
-                    completed_today: false,
-                    today_completions: 42
-                });
+                currentMission = demoData.mission;
+                missionCompletedToday = demoData.completed_today;
+                renderMissionTask(demoData);
             }
         }
 
@@ -1380,6 +1385,16 @@
         }
 
         async function completeMission(missionId) {
+            // デモモードまたはAPI呼び出し
+            const updateUI = () => {
+                missionCompletedToday = true;
+                const btn = document.getElementById('missionCompleteBtn');
+                if (btn) {
+                    btn.classList.add('completed');
+                    btn.textContent = '✓ 達成済み';
+                }
+            };
+
             try {
                 const res = await fetch(`${API_BASE}/mission/complete`, {
                     method: 'POST',
@@ -1392,15 +1407,14 @@
                 if (res.ok) {
                     missionCompletedToday = true;
                     await loadMissionTask();
+                } else {
+                    // API失敗時はローカルで更新
+                    updateUI();
                 }
             } catch (e) {
-                console.error("[MISSION] complete error:", e);
+                console.log("[MISSION] complete - demo mode:", e.message);
                 // デモ用：ローカルで完了状態を更新
-                const btn = document.getElementById('missionCompleteBtn');
-                if (btn) {
-                    btn.classList.add('completed');
-                    btn.textContent = '✓ 達成済み';
-                }
+                updateUI();
             }
         }
 
