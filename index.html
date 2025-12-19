@@ -4,35 +4,41 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>💪 ムキムキタスくん</title>
-    <!-- Google Fonts: 記録感のある明朝体 + 力強いゴシック -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             /* ===== ムキムキタスくん カラーパレット ===== */
-            /* 筋肉的な力強さ（深紺/ダークトーン） */
             --dark-navy: #0d1b2a;
             --deep-navy: #1b263b;
             --navy-blue: #415a77;
             --slate-gray: #778da9;
-            /* 成長へのポジティブさ（ビタミンカラー） */
             --energy-orange: #ff9f43;
             --golden-yellow: #feca57;
             --power-red: #ff6b6b;
             --success-green: #26de81;
             --muscle-purple: #a55eea;
-            /* グラデーション */
+            /* 優先順位カラー */
+            --priority-critical-bg: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%);
+            --priority-critical-border: #ff3333;
+            --priority-critical-glow: rgba(255, 51, 51, 0.6);
+            --priority-high-bg: linear-gradient(135deg, #1a1a0a 0%, #2d2d0a 50%, #1a1a0a 100%);
+            --priority-high-border: #ffa500;
+            --priority-high-glow: rgba(255, 165, 0, 0.4);
+            /* ミッション用（漆黒×赤炎） */
+            --mission-dark: #0a0a0a;
+            --mission-steel: #1a1a1a;
+            --mission-ember: #cc2200;
+            --mission-flame: #ff4422;
             --gradient-power: linear-gradient(135deg, #ff9f43 0%, #ff6b6b 100%);
             --gradient-energy: linear-gradient(135deg, #feca57 0%, #ff9f43 100%);
             --gradient-muscle: linear-gradient(135deg, #a55eea 0%, #ff6b6b 100%);
             --gradient-dark: linear-gradient(180deg, #1b263b 0%, #0d1b2a 100%);
-            /* テキスト */
             --text-primary: #0d1b2a;
             --text-secondary: #415a77;
             --text-muted: #778da9;
             --text-light: #e0e1dd;
-            /* 背景 */
             --bg-main: #f8f9fa;
             --bg-card: #ffffff;
             --bg-dark: #0d1b2a;
@@ -49,13 +55,12 @@
             color: var(--text-primary);
         }
 
-        /* ===== タイポグラフィ：記録感のある見出し ===== */
         .heading-serif {
             font-family: 'Noto Serif JP', serif;
             font-weight: 700;
         }
 
-        /* ========== タブナビゲーション（上部インデックス付箋風） ========== */
+        /* ========== タブナビゲーション ========== */
         .tab-nav {
             position: sticky;
             top: 0;
@@ -214,10 +219,6 @@
                 transform: rotate(180deg);
             }
 
-            .bar-btn:active {
-                transform: rotate(180deg) scale(0.95);
-            }
-
         /* ========== リストタブ ========== */
         .add {
             display: flex;
@@ -244,10 +245,6 @@
                     box-shadow: 0 0 0 4px rgba(255, 159, 67, 0.15);
                 }
 
-                .add input::placeholder {
-                    color: var(--text-muted);
-                }
-
             .add button {
                 padding: 12px 20px;
                 border-radius: 12px;
@@ -266,56 +263,175 @@
                     box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
                 }
 
-                .add button:active {
-                    transform: translateY(0) scale(0.98);
-                }
-
         .list {
             display: flex;
             flex-direction: column;
         }
 
+        /* ========== カード基本スタイル ========== */
         .card {
             position: relative;
             background: var(--bg-card);
             border-bottom: 1px solid rgba(13, 27, 42, 0.06);
-            height: 64px;
+            height: 68px;
             overflow: hidden;
             touch-action: pan-y;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
 
             .card:hover {
                 background: rgba(255, 159, 67, 0.03);
             }
 
-            .card.completed .title {
-                color: var(--text-muted);
-                text-decoration: line-through;
+            /* ========== 優先順位別カードスタイル ========== */
+            /* 最重要（CRITICAL） */
+            .card.priority-critical {
+                background: var(--priority-critical-bg);
+                border-left: 4px solid var(--priority-critical-border);
+                box-shadow: inset 0 0 30px rgba(255, 51, 51, 0.1), 0 0 15px var(--priority-critical-glow);
+                animation: criticalPulse 3s infinite;
             }
 
-            .card.completed {
-                background: rgba(38, 222, 129, 0.05);
-            }
-
-            .card.dragging {
-                opacity: 0.95;
-                box-shadow: 0 12px 30px rgba(13, 27, 42, 0.25);
-                z-index: 100;
-                transform: scale(1.02);
-                background: var(--bg-card);
-                border-radius: 12px;
-            }
-
-            .card.drag-placeholder {
-                background: rgba(255, 159, 67, 0.1);
-                border: 2px dashed var(--energy-orange);
-            }
-
-                .card.drag-placeholder .sl,
-                .card.drag-placeholder .actions-rail {
-                    visibility: hidden;
+                .card.priority-critical .sl {
+                    background: transparent;
                 }
+
+                .card.priority-critical .title {
+                    color: #fff;
+                    font-weight: 700;
+                    text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+                }
+
+                .card.priority-critical .priority-badge {
+                    background: linear-gradient(135deg, #ff3333 0%, #cc0000 100%);
+                    color: white;
+                    padding: 3px 10px;
+                    border-radius: 12px;
+                    font-size: 10px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.4);
+                    animation: badgeGlow 2s infinite;
+                }
+
+                .card.priority-critical::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+                    pointer-events: none;
+                    z-index: 0;
+                }
+
+        @keyframes criticalPulse {
+            0%, 100% {
+                box-shadow: inset 0 0 30px rgba(255, 51, 51, 0.1), 0 0 15px var(--priority-critical-glow);
+            }
+
+            50% {
+                box-shadow: inset 0 0 40px rgba(255, 51, 51, 0.15), 0 0 25px var(--priority-critical-glow);
+            }
+        }
+
+        @keyframes badgeGlow {
+            0%, 100% {
+                box-shadow: 0 2px 8px rgba(255, 51, 51, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 2px 15px rgba(255, 51, 51, 0.6);
+            }
+        }
+
+        /* 重要（HIGH） */
+        .card.priority-high {
+            background: var(--priority-high-bg);
+            border-left: 4px solid var(--priority-high-border);
+            box-shadow: inset 0 0 20px rgba(255, 165, 0, 0.08), 0 0 10px var(--priority-high-glow);
+        }
+
+            .card.priority-high .sl {
+                background: transparent;
+            }
+
+            .card.priority-high .title {
+                color: #f0f0f0;
+                font-weight: 600;
+            }
+
+            .card.priority-high .priority-badge {
+                background: linear-gradient(135deg, #ffa500 0%, #cc8400 100%);
+                color: #1a1a0a;
+                padding: 3px 10px;
+                border-radius: 12px;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .card.priority-high::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+                pointer-events: none;
+                z-index: 0;
+            }
+
+        /* ノーマル（デフォルト） */
+        .card.priority-normal {
+            background: var(--bg-card);
+        }
+
+        .priority-badge {
+            display: none;
+        }
+
+        .card.priority-critical .priority-badge,
+        .card.priority-high .priority-badge {
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .card.completed .title {
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .card.completed {
+            background: rgba(38, 222, 129, 0.05);
+        }
+
+            .card.completed.priority-critical,
+            .card.completed.priority-high {
+                opacity: 0.6;
+            }
+
+        .card.dragging {
+            opacity: 0.95;
+            box-shadow: 0 12px 30px rgba(13, 27, 42, 0.25);
+            z-index: 100;
+            transform: scale(1.02);
+            border-radius: 12px;
+        }
+
+        .card.drag-placeholder {
+            background: rgba(255, 159, 67, 0.1);
+            border: 2px dashed var(--energy-orange);
+        }
+
+            .card.drag-placeholder .sl,
+            .card.drag-placeholder .actions-rail {
+                visibility: hidden;
+            }
 
         .sl {
             position: relative;
@@ -356,24 +472,20 @@
         }
 
         .actions-right {
-            background: linear-gradient(90deg, #eb3b5a 0%, var(--power-red) 100%);
+            background: linear-gradient(90deg, #4a5568 0%, #2d3748 100%);
             justify-content: flex-end;
         }
 
         .actions-rail button {
             height: 100%;
-            min-width: 68px;
+            min-width: 60px;
             border: none;
             color: white;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
         }
-
-            .actions-rail button:active {
-                opacity: 0.8;
-            }
 
         .btn-complete {
             background: var(--success-green);
@@ -387,8 +499,8 @@
             background: var(--navy-blue);
         }
 
-        .btn-pin {
-            background: var(--energy-orange);
+        .btn-priority {
+            background: #e67e22;
         }
 
         .btn-delete {
@@ -399,10 +511,10 @@
             font-size: 15px;
             font-weight: 500;
             color: var(--text-primary);
+            flex: 1;
         }
 
         .handle {
-            margin-left: auto;
             cursor: grab;
             opacity: 0.3;
             padding: 0 8px;
@@ -411,10 +523,15 @@
             transition: all 0.2s ease;
         }
 
-            .handle:hover {
-                opacity: 0.6;
-                color: var(--energy-orange);
-            }
+        .card.priority-critical .handle,
+        .card.priority-high .handle {
+            color: #888;
+        }
+
+        .handle:hover {
+            opacity: 0.6;
+            color: var(--energy-orange);
+        }
 
         .divider-label {
             text-align: center;
@@ -450,170 +567,169 @@
             border-radius: 10px;
         }
 
-        /* ミッションタスク */
+        /* ========== ミッションタスク（漆黒×赤炎デザイン） ========== */
         .mission-task-wrapper {
             position: relative;
             margin: 16px;
         }
 
         .mission-task-card {
-            background: var(--gradient-muscle);
-            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(204, 34, 0, 0.15) 0%, transparent 30%, transparent 70%, rgba(204, 34, 0, 0.1) 100%), linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+            border-radius: 4px;
             padding: 20px;
-            color: white;
-            box-shadow: 0 8px 25px rgba(165, 94, 234, 0.35);
+            color: #e0e0e0;
             position: relative;
             overflow: hidden;
+            border: 1px solid #333;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
         }
-
+            /* 傷のついた鉄板テクスチャ */
             .mission-task-card::before {
-                content: '🏋️';
+                content: '';
                 position: absolute;
-                top: -20px;
-                right: -10px;
-                font-size: 80px;
-                opacity: 0.15;
-                transform: rotate(15deg);
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: repeating-linear-gradient( 90deg, transparent, transparent 2px, rgba(255, 255, 255, 0.01) 2px, rgba(255, 255, 255, 0.01) 4px ), repeating-linear-gradient( 0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.1) 2px, rgba(0, 0, 0, 0.1) 4px );
+                pointer-events: none;
+                z-index: 1;
             }
-
+            /* 赤い光のアクセント */
             .mission-task-card::after {
                 content: '';
                 position: absolute;
-                top: -50%;
-                right: -30%;
-                width: 120px;
-                height: 120px;
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 50%;
+                bottom: -50%;
+                left: -20%;
+                width: 60%;
+                height: 100%;
+                background: radial-gradient(ellipse, rgba(204, 34, 0, 0.3) 0%, transparent 70%);
+                pointer-events: none;
+                z-index: 0;
+                animation: emberGlow 4s ease-in-out infinite;
             }
+
+        @keyframes emberGlow {
+            0%, 100% {
+                opacity: 0.6;
+                transform: translateX(0);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translateX(10px);
+            }
+        }
 
         .mission-task-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
         }
 
         .mission-task-badge {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 6px 12px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
+            font-size: 11px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #cc2200 0%, #990000 100%);
+            padding: 6px 14px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: 1px solid #ff4422;
+            box-shadow: 0 0 15px rgba(204, 34, 0, 0.5);
         }
 
         .mission-task-title {
             font-family: 'Noto Serif JP', serif;
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 700;
             margin-bottom: 8px;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 2;
         }
 
         .mission-task-desc {
             font-size: 13px;
-            opacity: 0.9;
-            margin-bottom: 16px;
-            line-height: 1.5;
+            opacity: 0.8;
+            margin-bottom: 18px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 2;
         }
 
         .mission-task-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            z-index: 2;
         }
 
         .mission-complete-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            color: white;
-            padding: 10px 24px;
-            border-radius: 25px;
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            border: 2px solid #cc2200;
+            color: #ff4422;
+            padding: 12px 28px;
+            border-radius: 2px;
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
             .mission-complete-btn:hover {
-                background: rgba(255, 255, 255, 0.3);
+                background: linear-gradient(135deg, #cc2200 0%, #990000 100%);
+                color: white;
+                box-shadow: 0 6px 25px rgba(204, 34, 0, 0.4), 0 0 30px rgba(204, 34, 0, 0.2);
                 transform: translateY(-2px);
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             }
 
             .mission-complete-btn.completed {
-                background: rgba(255, 255, 255, 0.95);
-                color: var(--muscle-purple);
-                border-color: transparent;
-                animation: completePulse 0.5s ease;
+                background: linear-gradient(135deg, #1a3a1a 0%, #0a2a0a 100%);
+                border-color: #26de81;
+                color: #26de81;
+                box-shadow: 0 0 20px rgba(38, 222, 129, 0.3);
             }
-
-        @keyframes completePulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.05);
-            }
-        }
 
         .mission-expire {
             font-size: 12px;
-            opacity: 0.85;
+            color: #888;
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
 
             .mission-expire::before {
-                content: '⏱️';
+                content: '⏱';
+                font-size: 14px;
             }
-        /* 達成者数の吹き出し */
+
+        /* 達成者数バッジ */
         .mission-achievement-bubble {
             position: absolute;
-            top: -10px;
-            right: -10px;
-            background: var(--gradient-energy);
-            color: var(--dark-navy);
+            top: -8px;
+            right: -8px;
+            background: linear-gradient(135deg, #cc2200 0%, #ff4422 100%);
+            color: white;
             padding: 8px 14px;
-            border-radius: 20px;
-            font-size: 12px;
+            border-radius: 2px;
+            font-size: 11px;
             font-weight: 700;
-            box-shadow: 0 4px 15px rgba(255, 159, 67, 0.4);
-            animation: bubblePulse 2s infinite;
+            box-shadow: 0 4px 15px rgba(204, 34, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
             z-index: 5;
-        }
-
-            .mission-achievement-bubble::before {
-                content: '';
-                position: absolute;
-                bottom: -6px;
-                left: 24px;
-                width: 0;
-                height: 0;
-                border-left: 6px solid transparent;
-                border-right: 6px solid transparent;
-                border-top: 8px solid var(--golden-yellow);
-            }
-
-        @keyframes bubblePulse {
-            0%, 100% {
-                transform: scale(1) rotate(0deg);
-            }
-
-            25% {
-                transform: scale(1.02) rotate(1deg);
-            }
-
-            75% {
-                transform: scale(1.02) rotate(-1deg);
-            }
+            border: 1px solid #ff6644;
         }
 
         /* ========== ステータスタブ ========== */
@@ -697,10 +813,6 @@
                 background: rgba(255, 159, 67, 0.08);
             }
 
-            .habit-item:active {
-                transform: scale(0.98);
-            }
-
             .habit-item.checked {
                 background: rgba(38, 222, 129, 0.12);
                 border-color: rgba(38, 222, 129, 0.3);
@@ -714,7 +826,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
             font-size: 14px;
             font-weight: 700;
             color: var(--success-green);
@@ -742,7 +853,6 @@
             flex: 1;
             font-size: 14px;
             font-weight: 500;
-            color: var(--text-primary);
         }
 
         .habit-icon {
@@ -771,10 +881,6 @@
             color: var(--text-secondary);
             border-color: rgba(13, 27, 42, 0.1);
         }
-
-            .daily-btn-cancel:hover {
-                background: rgba(13, 27, 42, 0.05);
-            }
 
         .daily-btn-save {
             background: var(--gradient-power);
@@ -805,7 +911,6 @@
                 color: var(--text-muted);
                 font-weight: 600;
                 font-size: 10px;
-                text-transform: uppercase;
             }
 
                 .week-table td:first-child, .week-table th:first-child {
@@ -849,7 +954,6 @@
             background: rgba(13, 27, 42, 0.08);
             border-radius: 6px;
             overflow: hidden;
-            position: relative;
         }
 
         .progress-bar-fill {
@@ -867,7 +971,7 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
                 animation: shimmer 2s infinite;
             }
 
@@ -948,10 +1052,6 @@
                 box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
             }
 
-            .journal-submit-btn:active {
-                transform: translateY(0) scale(0.98);
-            }
-
         .journal-list {
             margin: 0 12px;
         }
@@ -1009,50 +1109,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            line-height: 1.4;
         }
-
-        .journal-card-expand {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .journal-card.expanded .journal-card-expand {
-            max-height: 500px;
-        }
-
-        .journal-full-content {
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 1px solid rgba(13, 27, 42, 0.08);
-        }
-
-        .journal-body {
-            font-size: 14px;
-            color: var(--text-primary);
-            line-height: 1.7;
-            white-space: pre-wrap;
-        }
-
-        .journal-edit-btn {
-            margin-top: 14px;
-            width: 100%;
-            padding: 10px;
-            background: var(--bg-main);
-            border: 2px solid rgba(13, 27, 42, 0.1);
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-            .journal-edit-btn:hover {
-                border-color: var(--energy-orange);
-                color: var(--energy-orange);
-            }
 
         /* ========== モーダル ========== */
         .modal-root {
@@ -1133,7 +1190,7 @@
                     font-weight: 700;
                     color: var(--energy-orange);
                 }
-        /* スライダーのスタイリング */
+
         input[type="range"] {
             -webkit-appearance: none;
             width: 100%;
@@ -1151,12 +1208,7 @@
                 background: var(--gradient-power);
                 cursor: pointer;
                 box-shadow: 0 2px 10px rgba(255, 107, 107, 0.4);
-                transition: all 0.2s ease;
             }
-
-                input[type="range"]::-webkit-slider-thumb:hover {
-                    transform: scale(1.1);
-                }
 
         .modal-footer {
             display: flex;
@@ -1172,13 +1224,8 @@
             background: var(--bg-main);
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
             color: var(--text-secondary);
         }
-
-            .btn-secondary:hover {
-                background: rgba(13, 27, 42, 0.05);
-            }
 
         .btn-primary-solid {
             padding: 12px 24px;
@@ -1188,7 +1235,6 @@
             border: none;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
         }
 
@@ -1197,7 +1243,89 @@
                 box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
             }
 
-        /* ========== ローディング ========== */
+        /* 優先順位選択モーダル */
+        .priority-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .priority-option {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+            .priority-option:hover {
+                transform: translateX(4px);
+            }
+
+            .priority-option.critical {
+                background: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 100%);
+                border-color: #ff3333;
+            }
+
+                .priority-option.critical:hover {
+                    box-shadow: 0 0 20px rgba(255, 51, 51, 0.3);
+                }
+
+            .priority-option.high {
+                background: linear-gradient(135deg, #1a1a0a 0%, #2d2d0a 100%);
+                border-color: #ffa500;
+            }
+
+                .priority-option.high:hover {
+                    box-shadow: 0 0 20px rgba(255, 165, 0, 0.3);
+                }
+
+            .priority-option.normal {
+                background: var(--bg-main);
+                border-color: rgba(13, 27, 42, 0.15);
+            }
+
+        .priority-option-icon {
+            font-size: 24px;
+        }
+
+        .priority-option-text {
+            flex: 1;
+        }
+
+        .priority-option-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 2px;
+        }
+
+        .priority-option.critical .priority-option-title {
+            color: #ff4444;
+        }
+
+        .priority-option.high .priority-option-title {
+            color: #ffaa00;
+        }
+
+        .priority-option.normal .priority-option-title {
+            color: var(--text-primary);
+        }
+
+        .priority-option-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .priority-option.critical .priority-option-desc,
+        .priority-option.high .priority-option-desc {
+            color: #999;
+        }
+
+        /* ローディング・空状態 */
         .loading {
             text-align: center;
             padding: 40px;
@@ -1214,11 +1342,11 @@
 
         @keyframes loadingBounce {
             0%, 100% {
-                transform: translateY(0) rotate(0deg);
+                transform: translateY(0);
             }
 
             50% {
-                transform: translateY(-10px) rotate(10deg);
+                transform: translateY(-10px);
             }
         }
 
@@ -1237,7 +1365,7 @@
                 opacity: 0.5;
             }
 
-        /* ========== 月間分析モーダル ========== */
+        /* 月間分析・ジャーナル詳細モーダル（省略 - Part2に続く） */
         .monthly-analysis-header {
             display: flex;
             justify-content: space-between;
@@ -1270,7 +1398,6 @@
             .month-selector-btn:hover {
                 border-color: var(--energy-orange);
                 color: var(--energy-orange);
-                transform: scale(1.05);
             }
 
         .current-month {
@@ -1294,14 +1421,7 @@
             border-radius: 14px;
             padding: 14px;
             text-align: center;
-            border: 1px solid rgba(13, 27, 42, 0.05);
-            transition: all 0.3s ease;
         }
-
-            .monthly-stat-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 15px rgba(13, 27, 42, 0.08);
-            }
 
         .monthly-stat-value {
             font-size: 28px;
@@ -1316,7 +1436,6 @@
             font-size: 11px;
             color: var(--text-muted);
             margin-top: 4px;
-            font-weight: 500;
         }
 
         .monthly-table-container {
@@ -1378,14 +1497,8 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(165, 94, 234, 0.3);
         }
-
-            .detail-view-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(165, 94, 234, 0.4);
-            }
 
         .week-view-header {
             display: flex;
@@ -1394,7 +1507,6 @@
             margin-bottom: 12px;
         }
 
-        /* ========== ジャーナル詳細モーダル ========== */
         .journal-modal-header {
             display: flex;
             justify-content: space-between;
@@ -1407,7 +1519,6 @@
             font-size: 12px;
             color: var(--text-muted);
             margin-bottom: 6px;
-            font-weight: 500;
         }
 
         .journal-modal-title {
@@ -1422,7 +1533,6 @@
             border-radius: 14px;
             padding: 14px;
             margin-bottom: 18px;
-            border: 1px solid rgba(13, 27, 42, 0.05);
         }
 
         .journal-tasks-header {
@@ -1448,14 +1558,7 @@
             font-weight: 600;
             padding: 6px 14px;
             border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
         }
-
-            .journal-task-chip.not-completed {
-                background: rgba(13, 27, 42, 0.1);
-                color: var(--text-muted);
-                box-shadow: none;
-            }
 
         .journal-content-section {
             margin-bottom: 18px;
@@ -1487,7 +1590,6 @@
                 font-size: 15px;
                 font-weight: 600;
                 cursor: pointer;
-                transition: all 0.3s ease;
             }
 
         .journal-close-btn {
@@ -1496,21 +1598,11 @@
             color: var(--text-secondary);
         }
 
-            .journal-close-btn:hover {
-                background: rgba(13, 27, 42, 0.05);
-            }
-
         .journal-edit-modal-btn {
             background: var(--gradient-power);
             border: none;
             color: white;
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
         }
-
-            .journal-edit-modal-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
-            }
 
         .journal-edit-form {
             display: none;
@@ -1528,22 +1620,6 @@
                 display: none;
             }
 
-        /* ========== 追加のアニメーション効果 ========== */
-        @keyframes glow {
-            0%, 100% {
-                box-shadow: 0 0 5px var(--energy-orange);
-            }
-
-            50% {
-                box-shadow: 0 0 20px var(--energy-orange), 0 0 30px var(--golden-yellow);
-            }
-        }
-
-        .achievement-glow {
-            animation: glow 2s infinite;
-        }
-
-        /* スクロールバーのカスタマイズ */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -1558,33 +1634,19 @@
             background: var(--energy-orange);
             border-radius: 3px;
         }
-
-            ::-webkit-scrollbar-thumb:hover {
-                background: var(--power-red);
-            }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
 
-    <!-- ========== タブナビゲーション（上部） ========== -->
     <nav class="tab-nav">
-        <div class="tab-nav-item active" data-tab="list">
-            <span>📋</span>
-            リスト
-        </div>
-        <div class="tab-nav-item" data-tab="status">
-            <span>📊</span>
-            ステータス
-        </div>
-        <div class="tab-nav-item" data-tab="journal">
-            <span>📝</span>
-            ジャーナル
-        </div>
+        <div class="tab-nav-item active" data-tab="list"><span>📋</span>リスト</div>
+        <div class="tab-nav-item" data-tab="status"><span>📊</span>ステータス</div>
+        <div class="tab-nav-item" data-tab="journal"><span>📝</span>ジャーナル</div>
     </nav>
 
-    <!-- ========== リストタブ ========== -->
+    <!-- リストタブ -->
     <div id="tab-list" class="tab-content active">
         <header>
             <div class="bar">
@@ -1593,22 +1655,21 @@
             </div>
         </header>
         <main>
-            <!-- ミッションタスク -->
             <div id="missionTaskContainer"></div>
-
             <div class="add">
                 <input id="newTitle" placeholder="💪 今日も鍛えるタスクを入力…" />
                 <button id="btnAdd">追加</button>
             </div>
             <div class="divider-label">🎯 ToDoタスク</div>
-            <div id="pinned" class="list"></div>
+            <div id="critical" class="list"></div>
+            <div id="high" class="list"></div>
             <div id="active" class="list"></div>
             <div class="divider-label">✅ 達成タスク</div>
             <div id="completed" class="list"></div>
         </main>
     </div>
 
-    <!-- ========== ステータスタブ ========== -->
+    <!-- ステータスタブ -->
     <div id="tab-status" class="tab-content">
         <header>
             <div class="bar">
@@ -1617,12 +1678,9 @@
             </div>
         </header>
         <main>
-            <!-- デイリータスク -->
             <div class="status-section daily-task-card" id="dailyTaskCard">
                 <div class="daily-task-header">
-                    <div class="status-section-title">
-                        <span>🏋️</span> デイリートレーニング
-                    </div>
+                    <div class="status-section-title"><span>🏋️</span> デイリートレーニング</div>
                     <span class="daily-task-arrow">▼</span>
                 </div>
                 <div class="daily-task-content">
@@ -1633,53 +1691,30 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 週間ビュー -->
             <div class="status-section">
                 <div class="week-view-header">
-                    <div class="status-section-title" style="margin-bottom:0;">
-                        <span>📅</span> 週間トレーニングログ
-                    </div>
-                    <button class="detail-view-btn" id="openMonthlyAnalysis">
-                        <span>📊</span> 詳しく見る
-                    </button>
+                    <div class="status-section-title" style="margin-bottom:0;"><span>📅</span> 週間トレーニングログ</div>
+                    <button class="detail-view-btn" id="openMonthlyAnalysis"><span>📊</span> 詳しく見る</button>
                 </div>
                 <table class="week-table" id="weekTable">
-                    <thead>
-                        <tr>
-                            <th>習慣</th>
-                            <th>月</th>
-                            <th>火</th>
-                            <th>水</th>
-                            <th>木</th>
-                            <th>金</th>
-                            <th>土</th>
-                            <th>日</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>習慣</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日</th></tr></thead>
                     <tbody id="weekTableBody"></tbody>
                 </table>
             </div>
-
-            <!-- 分析 -->
             <div class="status-section">
-                <div class="status-section-title">
-                    <span>💪</span> 成長分析
-                </div>
+                <div class="status-section-title"><span>💪</span> 成長分析</div>
                 <div class="progress-bar-container">
                     <div class="progress-label">
                         <span class="progress-label-name">週間達成率</span>
                         <span class="progress-label-value" id="weekProgressValue">0%</span>
                     </div>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" id="weekProgressBar" style="width: 0%"></div>
-                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="weekProgressBar" style="width:0%"></div></div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- ========== ジャーナルタブ ========== -->
+    <!-- ジャーナルタブ -->
     <div id="tab-journal" class="tab-content">
         <header>
             <div class="bar">
@@ -1689,9 +1724,7 @@
         </header>
         <main>
             <div class="journal-form">
-                <div class="status-section-title" style="margin-bottom:16px;">
-                    <span>📝</span> 今日のトレーニング記録
-                </div>
+                <div class="status-section-title" style="margin-bottom:16px;"><span>📝</span> 今日のトレーニング記録</div>
                 <div class="form-group">
                     <label class="form-label">日付</label>
                     <input type="date" class="form-input" id="journalDate" />
@@ -1702,68 +1735,47 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">振り返り内容</label>
-                    <textarea class="form-textarea" id="journalContent" placeholder="今日の成長を記録しよう…&#10;&#10;良かった点:&#10;改善点:&#10;明日の目標:"></textarea>
+                    <textarea class="form-textarea" id="journalContent" placeholder="今日の成長を記録しよう…"></textarea>
                 </div>
                 <button class="journal-submit-btn" id="journalSubmitBtn">💪 記録を保存</button>
             </div>
-
             <div class="divider-label">📚 過去の記録</div>
             <div class="journal-list" id="journalList"></div>
         </main>
     </div>
 
-    <!-- ========== ジャーナル詳細モーダル ========== -->
+    <!-- ジャーナル詳細モーダル -->
     <div id="journalDetailModal" class="modal-root">
         <div class="modal-backdrop" id="journalDetailBackdrop"></div>
         <div class="modal-panel" style="max-height:80vh;overflow-y:auto;">
-            <!-- 表示モード -->
             <div id="journalViewContent" class="journal-view-content">
                 <div class="journal-modal-header">
                     <div>
-                        <div class="journal-modal-date" id="journalModalDate">2025年1月1日</div>
-                        <div class="journal-modal-title" id="journalModalTitle">今日のひとこと</div>
+                        <div class="journal-modal-date" id="journalModalDate"></div>
+                        <div class="journal-modal-title" id="journalModalTitle"></div>
                     </div>
                     <button id="closeJournalDetail" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
                 </div>
-
                 <div class="journal-tasks-section">
-                    <div class="journal-tasks-header">
-                        <span>✓</span> この日に達成したタスク
-                    </div>
-                    <div class="journal-tasks-list" id="journalModalTasks">
-                        <!-- タスクチップがここに入る -->
-                    </div>
+                    <div class="journal-tasks-header"><span>✓</span> この日に達成したタスク</div>
+                    <div class="journal-tasks-list" id="journalModalTasks"></div>
                 </div>
-
                 <div class="journal-content-section">
                     <div class="journal-content-label">振り返り内容</div>
-                    <div class="journal-content-body" id="journalModalContent">
-                        内容がここに表示されます
-                    </div>
+                    <div class="journal-content-body" id="journalModalContent"></div>
                 </div>
-
                 <div class="journal-modal-actions">
                     <button class="journal-close-btn" id="journalCloseBtn">閉じる</button>
                     <button class="journal-edit-modal-btn" id="journalEditBtn">✏️ 編集する</button>
                 </div>
             </div>
-
-            <!-- 編集モード -->
             <div id="journalEditContent" class="journal-edit-form">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;margin-top:10px;">
-                    <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;color:var(--dark-navy)">📝 ジャーナルを編集</div>
+                    <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;">📝 ジャーナルを編集</div>
                     <button id="closeJournalEdit" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">タイトル</label>
-                    <input type="text" class="form-input" id="editJournalTitle" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">内容</label>
-                    <textarea class="form-textarea" id="editJournalContent" style="min-height:150px;"></textarea>
-                </div>
-
+                <div class="form-group"><label class="form-label">タイトル</label><input type="text" class="form-input" id="editJournalTitle" /></div>
+                <div class="form-group"><label class="form-label">内容</label><textarea class="form-textarea" id="editJournalContent" style="min-height:150px;"></textarea></div>
                 <div class="journal-modal-actions">
                     <button class="journal-close-btn" id="journalCancelEditBtn">キャンセル</button>
                     <button class="journal-edit-modal-btn" id="journalSaveEditBtn">💪 保存する</button>
@@ -1772,105 +1784,55 @@
         </div>
     </div>
 
-    <!-- ========== 月間分析モーダル ========== -->
+    <!-- 月間分析モーダル -->
     <div id="monthlyAnalysisModal" class="modal-root">
         <div class="modal-backdrop" id="monthlyAnalysisBackdrop"></div>
         <div class="modal-panel" style="max-height:85vh;overflow-y:auto;">
             <div class="monthly-analysis-header">
-                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;color:var(--dark-navy)">📊 月間トレーニング分析</div>
+                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;">📊 月間トレーニング分析</div>
                 <button id="closeMonthlyAnalysis" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
             </div>
-
-            <!-- 月選択 -->
             <div class="month-selector">
                 <button class="month-selector-btn" id="prevMonthBtn">&lt;</button>
-                <div class="current-month" id="currentMonthLabel">2025年1月</div>
+                <div class="current-month" id="currentMonthLabel"></div>
                 <button class="month-selector-btn" id="nextMonthBtn">&gt;</button>
             </div>
-
-            <!-- サマリー統計 -->
             <div class="monthly-stats-summary" style="margin-top:16px;">
-                <div class="monthly-stat-card">
-                    <div class="monthly-stat-value" id="monthlyTotalDays">0</div>
-                    <div class="monthly-stat-label">記録日数</div>
-                </div>
-                <div class="monthly-stat-card">
-                    <div class="monthly-stat-value" id="monthlyAchievement">0%</div>
-                    <div class="monthly-stat-label">総合達成率</div>
-                </div>
-                <div class="monthly-stat-card">
-                    <div class="monthly-stat-value" id="monthlyBestStreak">0</div>
-                    <div class="monthly-stat-label">最長連続</div>
-                </div>
+                <div class="monthly-stat-card"><div class="monthly-stat-value" id="monthlyTotalDays">0</div><div class="monthly-stat-label">記録日数</div></div>
+                <div class="monthly-stat-card"><div class="monthly-stat-value" id="monthlyAchievement">0%</div><div class="monthly-stat-label">総合達成率</div></div>
+                <div class="monthly-stat-card"><div class="monthly-stat-value" id="monthlyBestStreak">0</div><div class="monthly-stat-label">最長連続</div></div>
             </div>
-
-            <!-- 月間テーブル -->
-            <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:14px;margin:16px 0 8px;color:var(--dark-navy)">📅 日別達成状況</div>
+            <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:14px;margin:16px 0 8px;">📅 日別達成状況</div>
             <div class="monthly-table-container">
                 <table class="monthly-table">
-                    <thead>
-                        <tr>
-                            <th>日付</th>
-                            <th>🌅</th>
-                            <th>🎯</th>
-                            <th>📚</th>
-                            <th>📝</th>
-                            <th>🚫</th>
-                            <th>💪</th>
-                            <th>達成</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>日付</th><th>🌅</th><th>🎯</th><th>📚</th><th>📝</th><th>🚫</th><th>💪</th><th>達成</th></tr></thead>
                     <tbody id="monthlyTableBody"></tbody>
                 </table>
             </div>
-
-            <!-- 折れ線グラフ -->
-            <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:14px;margin:16px 0 8px;color:var(--dark-navy)">📈 達成率の推移</div>
-            <div class="monthly-chart-container">
-                <canvas id="monthlyChart"></canvas>
-            </div>
+            <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:14px;margin:16px 0 8px;">📈 達成率の推移</div>
+            <div class="monthly-chart-container"><canvas id="monthlyChart"></canvas></div>
         </div>
     </div>
 
-    <!-- ========== 詳細モーダル ========== -->
+    <!-- 詳細モーダル -->
     <div id="detailModal" class="modal-root">
         <div id="detailBackdrop" class="modal-backdrop"></div>
         <div class="modal-panel">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;color:var(--dark-navy)" id="modalTitle">タスク詳細</div>
+                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;" id="modalTitle">タスク詳細</div>
                 <button id="detailCloseBtn" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
             </div>
             <div id="detailTaskTitle" style="font-size:14px;color:var(--text-secondary);margin:8px 0 16px;padding:10px;background:var(--bg-main);border-radius:10px;"></div>
-
-            <!-- スコア設定グループ -->
             <div id="scoreGroup">
-                <div class="slider-group">
-                    <div class="slider-label-row"><span>🎯 優先度</span><span class="value" id="valPriority"></span></div>
-                    <input id="inputPriority" type="range" min="0" max="10" step="1" style="width:100%" />
-                </div>
-                <div class="slider-group">
-                    <div class="slider-label-row"><span>🔮 ビジョン関連度</span><span class="value" id="valVision"></span></div>
-                    <input id="inputVision" type="range" min="0" max="10" step="1" style="width:100%" />
-                </div>
-                <div class="slider-group">
-                    <div class="slider-label-row"><span>✨ わくわく度</span><span class="value" id="valExcite"></span></div>
-                    <input id="inputExcite" type="range" min="0" max="10" step="1" style="width:100%" />
-                </div>
-                <div class="slider-group">
-                    <div class="slider-label-row"><span>💪 成長度</span><span class="value" id="valGrowth"></span></div>
-                    <input id="inputGrowth" type="range" min="0" max="10" step="1" style="width:100%" />
-                </div>
+                <div class="slider-group"><div class="slider-label-row"><span>🎯 優先度</span><span class="value" id="valPriority"></span></div><input id="inputPriority" type="range" min="0" max="10" step="1" style="width:100%" /></div>
+                <div class="slider-group"><div class="slider-label-row"><span>🔮 ビジョン関連度</span><span class="value" id="valVision"></span></div><input id="inputVision" type="range" min="0" max="10" step="1" style="width:100%" /></div>
+                <div class="slider-group"><div class="slider-label-row"><span>✨ わくわく度</span><span class="value" id="valExcite"></span></div><input id="inputExcite" type="range" min="0" max="10" step="1" style="width:100%" /></div>
+                <div class="slider-group"><div class="slider-label-row"><span>💪 成長度</span><span class="value" id="valGrowth"></span></div><input id="inputGrowth" type="range" min="0" max="10" step="1" style="width:100%" /></div>
             </div>
-
-            <!-- リマインド設定グループ -->
             <div id="remindGroup" class="slider-group">
-                <div class="slider-label-row">
-                    <span>🔔 リマインド日時</span>
-                    <span class="value" id="valRemindAt"></span>
-                </div>
-                <input id="inputRemindAt" type="datetime-local" style="width:100%;padding:12px;border:2px solid rgba(13,27,42,0.1);border-radius:12px;font-size:14px;font-family:inherit;" />
+                <div class="slider-label-row"><span>🔔 リマインド日時</span><span class="value" id="valRemindAt"></span></div>
+                <input id="inputRemindAt" type="datetime-local" style="width:100%;padding:12px;border:2px solid rgba(13,27,42,0.1);border-radius:12px;font-size:14px;" />
             </div>
-
             <div class="modal-footer">
                 <button id="detailCancelBtn" class="btn-secondary">キャンセル</button>
                 <button id="detailSaveBtn" class="btn-primary-solid">💪 保存</button>
@@ -1878,13 +1840,48 @@
         </div>
     </div>
 
+    <!-- 優先順位選択モーダル -->
+    <div id="priorityModal" class="modal-root">
+        <div id="priorityBackdrop" class="modal-backdrop"></div>
+        <div class="modal-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;margin-bottom:10px;">
+                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;">⚡ 優先順位を設定</div>
+                <button id="priorityCloseBtn" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
+            </div>
+            <div id="priorityTaskTitle" style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;"></div>
+            <div class="priority-selector">
+                <div class="priority-option critical" data-priority="critical">
+                    <div class="priority-option-icon">🔥</div>
+                    <div class="priority-option-text">
+                        <div class="priority-option-title">最重要</div>
+                        <div class="priority-option-desc">今すぐ取り組むべき最優先タスク</div>
+                    </div>
+                </div>
+                <div class="priority-option high" data-priority="high">
+                    <div class="priority-option-icon">⚡</div>
+                    <div class="priority-option-text">
+                        <div class="priority-option-title">重要</div>
+                        <div class="priority-option-desc">優先的に処理すべきタスク</div>
+                    </div>
+                </div>
+                <div class="priority-option normal" data-priority="normal">
+                    <div class="priority-option-icon">📌</div>
+                    <div class="priority-option-text">
+                        <div class="priority-option-title">ノーマル</div>
+                        <div class="priority-option-desc">通常の優先度に戻す</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ========== 設定 ==========
         const LIFF_ID = "2008372898-2q9qWmxv";
         const API_BASE = "https://lumicreate.xvps.jp/webhook";
 
         let userId = null;
         let currentDetailTask = null;
+        let currentPriorityTask = null;
         let modalMode = "detail";
 
         const HABITS = [
@@ -1902,55 +1899,39 @@
         let missionCompletedToday = false;
         let selectedMonth = new Date();
         let monthlyChart = null;
-        let monthlyHabitsData = {};
         let currentEditJournal = null;
         let journalsData = [];
 
-        // スワイプ設定
         const STRONG_RATIO = 0.85;
         const SNAP_THRESHOLD = 40;
-
-        // ドラッグ中フラグ（スワイプを無効化するため）
         let isDraggingCard = false;
 
-        // DOM要素
-        const pinnedEl = document.getElementById("pinned");
+        const criticalEl = document.getElementById("critical");
+        const highEl = document.getElementById("high");
         const activeEl = document.getElementById("active");
         const completedEl = document.getElementById("completed");
 
-        // ========== 初期化 ==========
         async function init() {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                    return;
-                }
+                if (!liff.isLoggedIn()) { liff.login(); return; }
                 const profile = await liff.getProfile();
                 userId = profile.userId;
             } catch (e) {
                 console.error("LIFF初期化エラー:", e);
                 userId = "demo_user";
             }
-
             bindUI();
             await loadAllData();
         }
 
         function bindUI() {
-            // タブナビゲーション
             document.querySelectorAll('.tab-nav-item').forEach(item => {
                 item.addEventListener('click', () => switchTab(item.dataset.tab));
             });
-
-            // リストタブ
             document.getElementById('refreshBtn').onclick = loadList;
             document.getElementById('btnAdd').onclick = addTask;
-            document.getElementById('newTitle').addEventListener('keypress', e => {
-                if (e.key === 'Enter') addTask();
-            });
-
-            // ステータスタブ
+            document.getElementById('newTitle').addEventListener('keypress', e => { if (e.key === 'Enter') addTask(); });
             document.getElementById('statusRefreshBtn').onclick = loadHabits;
             document.getElementById('dailyTaskCard').addEventListener('click', e => {
                 if (!e.target.closest('.habit-checkbox') && !e.target.closest('.daily-btn')) {
@@ -1958,20 +1939,15 @@
                 }
             });
             document.getElementById('habitSaveBtn').onclick = saveHabits;
-            document.getElementById('habitCancelBtn').onclick = () => {
-                document.getElementById('dailyTaskCard').classList.remove('expanded');
-            };
+            document.getElementById('habitCancelBtn').onclick = () => document.getElementById('dailyTaskCard').classList.remove('expanded');
             renderHabitList();
-
-            // ジャーナルタブ
             document.getElementById('journalRefreshBtn').onclick = loadJournals;
             document.getElementById('journalDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('journalSubmitBtn').onclick = saveJournal;
-
-            // モーダル
             bindModalUI();
             bindMonthlyAnalysisUI();
             bindJournalDetailModalUI();
+            bindPriorityModalUI();
         }
 
         function switchTab(tabId) {
@@ -1982,28 +1958,16 @@
         }
 
         async function loadAllData() {
-            await Promise.all([
-                loadList(),
-                loadMissionTask(),
-                loadHabits(),
-                loadJournals()
-            ]);
+            await Promise.all([loadList(), loadMissionTask(), loadHabits(), loadJournals()]);
         }
 
-        // ========== ミッションタスク機能 ==========
+        // ミッションタスク
         async function loadMissionTask() {
-            // デモデータ（APIがない場合に使用）
             const demoData = {
-                mission: {
-                    id: 'demo',
-                    title: '今週のミッション',
-                    description: '毎日10分間の瞑想を行い、心を落ち着けよう',
-                    expires_at: getNextSunday()
-                },
+                mission: { id: 'demo', title: '今週のミッション', description: '毎日10分間の瞑想を行い、心を落ち着けよう', expires_at: getNextSunday() },
                 completed_today: false,
                 today_completions: 42
             };
-
             try {
                 const res = await fetch(`${API_BASE}/mission?user_id=${encodeURIComponent(userId)}`);
                 if (!res.ok) throw new Error('API Error');
@@ -2012,8 +1976,6 @@
                 missionCompletedToday = data.completed_today || false;
                 renderMissionTask(data);
             } catch (e) {
-                console.log("[MISSION] API not available, showing demo:", e.message);
-                // デモデータを表示
                 currentMission = demoData.mission;
                 missionCompletedToday = demoData.completed_today;
                 renderMissionTask(demoData);
@@ -2022,8 +1984,7 @@
 
         function getNextSunday() {
             const today = new Date();
-            const dayOfWeek = today.getDay();
-            const daysUntilSunday = (7 - dayOfWeek) % 7 || 7;
+            const daysUntilSunday = (7 - today.getDay()) % 7 || 7;
             const nextSunday = new Date(today);
             nextSunday.setDate(today.getDate() + daysUntilSunday);
             nextSunday.setHours(23, 59, 59);
@@ -2032,41 +1993,29 @@
 
         function renderMissionTask(data) {
             const container = document.getElementById('missionTaskContainer');
-            if (!data.mission) {
-                container.innerHTML = '';
-                return;
-            }
-
+            if (!data.mission) { container.innerHTML = ''; return; }
             const mission = data.mission;
             const completedToday = data.completed_today;
             const todayCount = data.today_completions || 0;
-            const expiresAt = new Date(mission.expires_at);
-            const daysLeft = Math.ceil((expiresAt - new Date()) / (1000 * 60 * 60 * 24));
+            const daysLeft = Math.ceil((new Date(mission.expires_at) - new Date()) / (1000 * 60 * 60 * 24));
 
             container.innerHTML = `
                     <div class="mission-task-wrapper">
-                        <div class="mission-achievement-bubble">
-                            今日は${todayCount}人が達成🔥
-                        </div>
+                        <div class="mission-achievement-bubble">🔥 ${todayCount}人が達成</div>
                         <div class="mission-task-card">
                             <div class="mission-task-header">
-                                <div class="mission-task-badge">
-                                    <span>🎯</span>
-                                    <span>週間ミッション</span>
-                                </div>
+                                <div class="mission-task-badge"><span>🎯</span><span>WEEKLY MISSION</span></div>
                             </div>
                             <div class="mission-task-title">${mission.title || '今週のミッション'}</div>
                             <div class="mission-task-desc">${mission.description || ''}</div>
                             <div class="mission-task-actions">
                                 <button class="mission-complete-btn ${completedToday ? 'completed' : ''}" id="missionCompleteBtn">
-                                    ${completedToday ? '✓ 達成済み' : '💪 達成する'}
+                                    ${completedToday ? '✓ COMPLETED' : '💪 CHALLENGE'}
                                 </button>
                                 <div class="mission-expire">残り${daysLeft}日</div>
                             </div>
                         </div>
-                    </div>
-                `;
-
+                    </div>`;
             document.getElementById('missionCompleteBtn').addEventListener('click', async () => {
                 if (completedToday) return;
                 await completeMission(mission.id);
@@ -2074,63 +2023,50 @@
         }
 
         async function completeMission(missionId) {
-            // デモモードまたはAPI呼び出し
             const updateUI = () => {
                 missionCompletedToday = true;
                 const btn = document.getElementById('missionCompleteBtn');
-                if (btn) {
-                    btn.classList.add('completed');
-                    btn.textContent = '✓ 達成済み';
-                }
+                if (btn) { btn.classList.add('completed'); btn.textContent = '✓ COMPLETED'; }
             };
-
             try {
                 const res = await fetch(`${API_BASE}/mission/complete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        mission_id: missionId
-                    })
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, mission_id: missionId })
                 });
-                if (res.ok) {
-                    missionCompletedToday = true;
-                    await loadMissionTask();
-                } else {
-                    // API失敗時はローカルで更新
-                    updateUI();
-                }
-            } catch (e) {
-                console.log("[MISSION] complete - demo mode:", e.message);
-                // デモ用：ローカルで完了状態を更新
-                updateUI();
-            }
+                if (res.ok) { missionCompletedToday = true; await loadMissionTask(); }
+                else updateUI();
+            } catch (e) { updateUI(); }
         }
 
-        // ========== リスト機能 ==========
+        // リスト
         async function loadList() {
             try {
                 const res = await fetch(`${API_BASE}/list?user_id=${encodeURIComponent(userId)}`);
                 if (!res.ok) throw new Error('API Error');
-                const data = await res.json();
-                renderList(data);
+                renderList(await res.json());
             } catch (e) {
-                console.error("[LIST] error:", e);
-                renderList({ pinned: [], active: [], completed: [] });
+                renderList({ critical: [], high: [], active: [], completed: [] });
             }
         }
 
         function renderList(payload) {
-            pinnedEl.innerHTML = "";
+            criticalEl.innerHTML = "";
+            highEl.innerHTML = "";
             activeEl.innerHTML = "";
             completedEl.innerHTML = "";
 
-            const pinned = Array.isArray(payload.pinned) ? payload.pinned : [];
+            const critical = Array.isArray(payload.critical) ? payload.critical : [];
+            const high = Array.isArray(payload.high) ? payload.high : [];
             const active = Array.isArray(payload.active) ? payload.active : [];
             const completed = Array.isArray(payload.completed) ? payload.completed : [];
 
-            pinned.forEach(t => pinnedEl.appendChild(taskCard(t, false)));
-            active.forEach(t => activeEl.appendChild(taskCard(t, false)));
+            // 旧ピン付きタスクを優先順位に変換
+            const pinned = Array.isArray(payload.pinned) ? payload.pinned : [];
+            pinned.forEach(t => { t.priority_level = t.priority_level || 'high'; });
+
+            [...critical, ...pinned.filter(t => t.priority_level === 'critical')].forEach(t => { t.priority_level = 'critical'; criticalEl.appendChild(taskCard(t, false)); });
+            [...high, ...pinned.filter(t => t.priority_level === 'high')].forEach(t => { t.priority_level = 'high'; highEl.appendChild(taskCard(t, false)); });
+            active.filter(t => !t.priority_level || t.priority_level === 'normal').forEach(t => { t.priority_level = 'normal'; activeEl.appendChild(taskCard(t, false)); });
             completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
         }
 
@@ -2145,6 +2081,8 @@
         function taskCard(t, isCompleted = false) {
             const wrap = document.createElement("div");
             wrap.className = "card";
+            const priorityLevel = t.priority_level || 'normal';
+            wrap.classList.add(`priority-${priorityLevel}`);
             if (isCompleted) wrap.classList.add("completed");
 
             const rail = document.createElement("div");
@@ -2153,10 +2091,7 @@
             const left = document.createElement("div");
             left.className = "actions-left";
             if (!isCompleted) {
-                left.append(
-                    mkBtn("完了", () => action("complete", t.id), "btn-complete"),
-                    mkBtn("通知", () => openRemind(t), "btn-plus2h")
-                );
+                left.append(mkBtn("完了", () => action("complete", t.id), "btn-complete"), mkBtn("通知", () => openRemind(t), "btn-plus2h"));
             } else {
                 left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
             }
@@ -2165,11 +2100,8 @@
             right.className = "actions-right";
             right.append(
                 mkBtn("詳細", () => openDetail(t), "btn-detail"),
-                mkBtn(t.pinned ? "📍解除" : "📍ピン", () => action("toggle_pin", t.id), "btn-pin"),
-                mkBtn("削除", () => {
-                    if (t.pinned) return alert("ピンを外してください！");
-                    action("delete", t.id);
-                }, "btn-delete")
+                mkBtn("優先", () => openPriorityModal(t), "btn-priority"),
+                mkBtn("削除", () => action("delete", t.id), "btn-delete")
             );
 
             rail.append(left, right);
@@ -2177,19 +2109,29 @@
             const sl = document.createElement("div");
             sl.className = "sl";
 
+            const leftBox = document.createElement("div");
+            leftBox.style.cssText = "display:flex;align-items:center;gap:8px;flex:1;";
+
+            // 優先順位バッジ
+            if (priorityLevel === 'critical') {
+                const badge = document.createElement("span");
+                badge.className = "priority-badge";
+                badge.textContent = "最重要";
+                leftBox.appendChild(badge);
+            } else if (priorityLevel === 'high') {
+                const badge = document.createElement("span");
+                badge.className = "priority-badge";
+                badge.textContent = "重要";
+                leftBox.appendChild(badge);
+            }
+
             const titleEl = document.createElement("div");
             titleEl.className = "title";
-            const name = t.task_name || t.title || "(無題)";
-            titleEl.textContent = t.pinned ? "📍 " + name : name;
-
-            const leftBox = document.createElement("div");
-            leftBox.style.flex = "1";
+            titleEl.textContent = t.task_name || t.title || "(無題)";
             leftBox.appendChild(titleEl);
 
             const rightBox = document.createElement("div");
-            rightBox.className = "rightBox";
-            rightBox.style.display = "flex";
-            rightBox.style.alignItems = "center";
+            rightBox.style.cssText = "display:flex;align-items:center;";
 
             if (t.remind_at) {
                 const remindEl = document.createElement("div");
@@ -2206,7 +2148,6 @@
             sl.append(leftBox, rightBox);
             wrap.append(rail, sl);
 
-            // ボタン幅測定
             requestAnimationFrame(() => {
                 wrap.dataset.leftWidth = left.getBoundingClientRect().width || 140;
                 wrap.dataset.rightWidth = right.getBoundingClientRect().width || 140;
@@ -2219,297 +2160,156 @@
                     const x = e.clientX - rect.left;
                     const leftW = Number(wrap.dataset.leftWidth) || 140;
                     const rightW = Number(wrap.dataset.rightWidth) || 140;
-
                     if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
                         wrap.classList.remove("open-left", "open-right");
                         sl.style.transform = "translateX(0)";
                         return;
                     }
-                    if (x < rect.width / 2) {
-                        wrap.classList.add("open-left");
-                        sl.style.transform = `translateX(${leftW}px)`;
-                    } else {
-                        wrap.classList.add("open-right");
-                        sl.style.transform = `translateX(${-rightW}px)`;
-                    }
+                    if (x < rect.width / 2) { wrap.classList.add("open-left"); sl.style.transform = `translateX(${leftW}px)`; }
+                    else { wrap.classList.add("open-right"); sl.style.transform = `translateX(${-rightW}px)`; }
                 });
             }
 
-            // スマホ版スワイプ
-            let startX = 0, startY = 0, dx = 0, dy = 0;
-            let isHandleDrag = false;
-            let isScrolling = null;
-
+            // スマホスワイプ
+            let startX = 0, dx = 0, isScrolling = null, isHandleDrag = false;
             wrap.addEventListener("touchstart", e => {
-                // ドラッグ中はスワイプを無効化
-                if (isDraggingCard) return;
-                if (e.target.closest("button")) return;
-
-                // ☰（.handle）から始まったタッチならスワイプ処理しない
-                if (e.target.closest(".handle")) {
-                    isHandleDrag = true;
-                    return;
-                } else {
-                    isHandleDrag = false;
-                }
-
+                if (isDraggingCard || e.target.closest("button")) return;
+                if (e.target.closest(".handle")) { isHandleDrag = true; return; }
+                isHandleDrag = false;
                 startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                dx = 0;
-                dy = 0;
-                isScrolling = null;
+                dx = 0; isScrolling = null;
                 sl.style.transition = "none";
             }, { passive: true });
 
             wrap.addEventListener("touchmove", e => {
-                if (isDraggingCard) return;
-                if (isHandleDrag) return;
-                if (e.touches.length === 0) return;
-
+                if (isDraggingCard || isHandleDrag || !e.touches.length) return;
+                const dy = e.touches[0].clientY - (e.touches[0].clientY || 0);
                 dx = e.touches[0].clientX - startX;
-                dy = e.touches[0].clientY - startY;
-
-                // 方向がまだ確定していない場合、一定距離動いたら判定
-                if (isScrolling === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
-                    isScrolling = Math.abs(dy) > Math.abs(dx);
-                }
-
-                // 縦スクロール優位の場合は横スライドしない
+                if (isScrolling === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) isScrolling = Math.abs(dy) > Math.abs(dx);
                 if (isScrolling) return;
-
                 if (Math.abs(dx) > 8) e.preventDefault();
                 sl.style.transform = `translateX(${dx}px)`;
             }, { passive: false });
 
             wrap.addEventListener("touchend", () => {
                 if (isDraggingCard) return;
-
-                if (isHandleDrag) {
-                    isHandleDrag = false;
-                    sl.style.transition = "";
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-
-                if (isScrolling) {
-                    sl.style.transition = "";
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-
+                if (isHandleDrag || isScrolling) { isHandleDrag = false; sl.style.transition = ""; sl.style.transform = "translateX(0)"; return; }
                 sl.style.transition = "transform .15s";
                 const leftW = Number(wrap.dataset.leftWidth) || 140;
                 const rightW = Number(wrap.dataset.rightWidth) || 140;
-
-                if (dx > leftW * STRONG_RATIO) {
-                    isCompleted ? action("uncomplete", t.id) : action("complete", t.id);
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-                if (dx < -rightW * STRONG_RATIO) {
-                    if (t.pinned) alert("ピンを外してください！");
-                    else action("delete", t.id);
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                    return;
-                }
-
-                if (dx > SNAP_THRESHOLD) {
-                    wrap.classList.add("open-left");
-                    wrap.classList.remove("open-right");
-                    sl.style.transform = `translateX(${leftW}px)`;
-                } else if (dx < -SNAP_THRESHOLD) {
-                    wrap.classList.add("open-right");
-                    wrap.classList.remove("open-left");
-                    sl.style.transform = `translateX(${-rightW}px)`;
-                } else {
-                    wrap.classList.remove("open-left", "open-right");
-                    sl.style.transform = "translateX(0)";
-                }
+                if (dx > leftW * STRONG_RATIO) { isCompleted ? action("uncomplete", t.id) : action("complete", t.id); wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; return; }
+                if (dx < -rightW * STRONG_RATIO) { action("delete", t.id); wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; return; }
+                if (dx > SNAP_THRESHOLD) { wrap.classList.add("open-left"); wrap.classList.remove("open-right"); sl.style.transform = `translateX(${leftW}px)`; }
+                else if (dx < -SNAP_THRESHOLD) { wrap.classList.add("open-right"); wrap.classList.remove("open-left"); sl.style.transform = `translateX(${-rightW}px)`; }
+                else { wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; }
             });
 
-            // ☰ で並び替え（ドラッグ）- 改善版
+            // ドラッグ（並び替え）
             const startDrag = (startEvent) => {
                 startEvent.preventDefault();
                 startEvent.stopPropagation();
-
-                const card = wrap;
-                const list = card.parentElement;
+                const card = wrap, list = card.parentElement;
                 if (!list) return;
-
                 isDraggingCard = true;
-
-                // スワイプ状態をリセット
                 card.classList.remove("open-left", "open-right");
-                sl.style.transition = "";
-                sl.style.transform = "translateX(0)";
-
-                // 初期位置を記録
+                sl.style.transition = ""; sl.style.transform = "translateX(0)";
                 const cardRect = card.getBoundingClientRect();
                 const startY = startEvent.clientY || (startEvent.touches && startEvent.touches[0].clientY);
-                const cardStartTop = cardRect.top;
-                const cardHeight = cardRect.height;
-
-                // プレースホルダーを作成（元の位置を示す）
+                const cardStartTop = cardRect.top, cardHeight = cardRect.height;
                 const placeholder = document.createElement("div");
                 placeholder.className = "card drag-placeholder";
                 placeholder.style.height = cardHeight + "px";
                 list.insertBefore(placeholder, card);
-
-                // カードを浮かせる（position: fixed で画面に固定）
                 card.classList.add("dragging");
-                card.style.position = "fixed";
-                card.style.left = cardRect.left + "px";
-                card.style.top = cardRect.top + "px";
-                card.style.width = cardRect.width + "px";
-                card.style.height = cardHeight + "px";
-                card.style.pointerEvents = "none";
-
+                card.style.cssText = `position:fixed;left:${cardRect.left}px;top:${cardRect.top}px;width:${cardRect.width}px;height:${cardHeight}px;pointer-events:none;`;
                 document.body.style.userSelect = "none";
                 document.body.appendChild(card);
 
-                const getY = (ev) => {
-                    if (ev.touches && ev.touches.length > 0) {
-                        return ev.touches[0].clientY;
-                    }
-                    return ev.clientY;
-                };
-
-                const onMove = (ev) => {
-                    const currentY = getY(ev);
-                    const deltaY = currentY - startY;
-
-                    // カードを指に追従させる
+                const getY = ev => ev.touches?.length ? ev.touches[0].clientY : ev.clientY;
+                const onMove = ev => {
+                    const currentY = getY(ev), deltaY = currentY - startY;
                     card.style.top = (cardStartTop + deltaY) + "px";
-
-                    // プレースホルダーの位置を更新
                     const cardCenterY = cardStartTop + deltaY + cardHeight / 2;
                     const siblings = Array.from(list.querySelectorAll(".card:not(.dragging)"));
-
-                    for (let i = 0; i < siblings.length; i++) {
-                        const sibling = siblings[i];
+                    for (const sibling of siblings) {
                         if (sibling === placeholder) continue;
-
                         const siblingRect = sibling.getBoundingClientRect();
-                        const siblingCenterY = siblingRect.top + siblingRect.height / 2;
-
-                        if (cardCenterY < siblingCenterY) {
-                            if (placeholder.nextSibling !== sibling) {
-                                list.insertBefore(placeholder, sibling);
-                            }
-                            return;
-                        }
+                        if (cardCenterY < siblingRect.top + siblingRect.height / 2) { if (placeholder.nextSibling !== sibling) list.insertBefore(placeholder, sibling); return; }
                     }
-
-                    // 全てのカードより下なら、最後に移動
-                    if (placeholder.nextSibling !== null) {
-                        list.appendChild(placeholder);
-                    }
+                    if (placeholder.nextSibling !== null) list.appendChild(placeholder);
                 };
-
                 const onUp = () => {
                     document.removeEventListener("pointermove", onMove);
                     document.removeEventListener("pointerup", onUp);
                     document.removeEventListener("touchmove", onMove);
                     document.removeEventListener("touchend", onUp);
-
-                    // カードのスタイルをリセット
                     card.classList.remove("dragging");
-                    card.style.position = "";
-                    card.style.left = "";
-                    card.style.top = "";
-                    card.style.width = "";
-                    card.style.height = "";
-                    card.style.pointerEvents = "";
-
-                    // スワイプ状態もリセット
+                    card.style.cssText = "";
                     card.classList.remove("open-left", "open-right");
                     const slEl = card.querySelector(".sl");
-                    if (slEl) {
-                        slEl.style.transition = "";
-                        slEl.style.transform = "translateX(0)";
-                    }
-
-                    // プレースホルダーが存在し、リスト内にある場合のみ挿入
-                    if (placeholder && placeholder.parentNode === list) {
-                        list.insertBefore(card, placeholder);
-                        placeholder.remove();
-                    } else if (list) {
-                        // プレースホルダーがない場合はリストの末尾に追加
-                        list.appendChild(card);
-                        if (placeholder && placeholder.parentNode) {
-                            placeholder.remove();
-                        }
-                    }
-
+                    if (slEl) { slEl.style.transition = ""; slEl.style.transform = "translateX(0)"; }
+                    if (placeholder?.parentNode === list) { list.insertBefore(card, placeholder); placeholder.remove(); }
+                    else if (list) { list.appendChild(card); placeholder?.parentNode?.removeChild(placeholder); }
                     document.body.style.userSelect = "";
-
-                    // ドラッグ終了フラグをOFF（少し遅延させて誤作動防止）
-                    setTimeout(() => {
-                        isDraggingCard = false;
-                    }, 100);
-
+                    setTimeout(() => isDraggingCard = false, 100);
                     saveSortOrder();
                 };
-
                 document.addEventListener("pointermove", onMove);
                 document.addEventListener("pointerup", onUp);
                 document.addEventListener("touchmove", onMove, { passive: false });
                 document.addEventListener("touchend", onUp);
             };
-
-            // PointerEventとTouchEventの両方をサポート
-            handle.addEventListener("pointerdown", (e) => {
-                e.preventDefault();
-                startDrag(e);
-            });
-            handle.addEventListener("touchstart", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                startDrag(e);
-            }, { passive: false });
+            handle.addEventListener("pointerdown", e => { e.preventDefault(); startDrag(e); });
+            handle.addEventListener("touchstart", e => { e.preventDefault(); e.stopPropagation(); startDrag(e); }, { passive: false });
 
             wrap.__taskData = t;
             wrap.dataset.taskId = t.id;
             return wrap;
         }
 
-        // 並び順保存
         async function saveSortOrder() {
             if (!userId) return;
-
             const orders = [];
-            [pinnedEl, activeEl, completedEl].forEach((listEl, sectionIdx) => {
-                const section = ['pinned', 'active', 'completed'][sectionIdx];
+            [criticalEl, highEl, activeEl, completedEl].forEach((listEl, idx) => {
+                const section = ['critical', 'high', 'active', 'completed'][idx];
                 listEl.querySelectorAll('.card').forEach((card, index) => {
                     const t = card.__taskData;
                     if (t) orders.push({ id: t.id, sort_order: index, section });
                 });
             });
-
-            if (orders.length > 0) {
-                await action("sort_update", null, { orders });
-            }
+            if (orders.length) await action("sort_update", null, { orders });
         }
 
-        // ========== ステータス機能 ==========
+        // 優先順位モーダル
+        function bindPriorityModalUI() {
+            const modal = document.getElementById('priorityModal');
+            const close = () => { modal.classList.remove('visible'); currentPriorityTask = null; };
+            document.getElementById('priorityBackdrop').onclick = close;
+            document.getElementById('priorityCloseBtn').onclick = close;
+            document.querySelectorAll('.priority-option').forEach(opt => {
+                opt.addEventListener('click', async () => {
+                    if (!currentPriorityTask) return;
+                    const priority = opt.dataset.priority;
+                    await action("set_priority", currentPriorityTask.id, { priority_level: priority });
+                    close();
+                });
+            });
+        }
+
+        function openPriorityModal(t) {
+            currentPriorityTask = t;
+            document.getElementById('priorityTaskTitle').textContent = t.task_name || t.title || "(無題)";
+            document.getElementById('priorityModal').classList.add('visible');
+        }
+
+        // ステータス
         function renderHabitList() {
             const container = document.getElementById('habitList');
-            container.innerHTML = HABITS.map(h => `
-                    <div class="habit-item" data-habit="${h.id}">
-                        <div class="habit-checkbox" data-habit="${h.id}"></div>
-                        <span class="habit-name">${h.name}</span>
-                        <span class="habit-icon">${h.icon}</span>
-                    </div>
-                `).join('');
-
-            // カード全体でクリック可能に
+            container.innerHTML = HABITS.map(h => `<div class="habit-item" data-habit="${h.id}"><div class="habit-checkbox" data-habit="${h.id}"></div><span class="habit-name">${h.name}</span><span class="habit-icon">${h.icon}</span></div>`).join('');
             container.querySelectorAll('.habit-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.stopPropagation(); // モーダル閉じを防止
-                    const id = item.dataset.habit;
-                    const cb = item.querySelector('.habit-checkbox');
+                item.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const id = item.dataset.habit, cb = item.querySelector('.habit-checkbox');
                     todayHabits[id] = !todayHabits[id];
                     cb.classList.toggle('checked', todayHabits[id]);
                     cb.textContent = todayHabits[id] ? '✓' : '';
@@ -2521,25 +2321,19 @@
         async function loadHabits() {
             try {
                 const res = await fetch(`${API_BASE}/habits?user_id=${encodeURIComponent(userId)}`);
-                if (!res.ok) throw new Error('API Error');
+                if (!res.ok) throw new Error();
                 const data = await res.json();
                 weekHabitsData = data.week || {};
                 todayHabits = data.today || {};
                 renderWeekView();
                 renderHabitAnalysis(data);
                 updateHabitCheckboxes();
-            } catch (e) {
-                console.error("[HABITS] error:", e);
-                renderWeekView();
-                renderHabitAnalysis({ week_progress: 0 });
-            }
+            } catch (e) { renderWeekView(); renderHabitAnalysis({ week_progress: 0 }); }
         }
 
         function updateHabitCheckboxes() {
             document.querySelectorAll('.habit-item').forEach(item => {
-                const id = item.dataset.habit;
-                const cb = item.querySelector('.habit-checkbox');
-                const isChecked = !!todayHabits[id];
+                const id = item.dataset.habit, cb = item.querySelector('.habit-checkbox'), isChecked = !!todayHabits[id];
                 cb.classList.toggle('checked', isChecked);
                 cb.textContent = isChecked ? '✓' : '';
                 item.classList.toggle('checked', isChecked);
@@ -2549,17 +2343,7 @@
         function renderWeekView() {
             const tbody = document.getElementById('weekTableBody');
             const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-
-            let html = '';
-            HABITS.forEach(h => {
-                html += `<tr><td>${h.icon} ${h.name}</td>`;
-                days.forEach(day => {
-                    const checked = weekHabitsData[day]?.[h.id] ? 'checked' : 'unchecked';
-                    html += `<td class="${checked}">${checked === 'checked' ? '●' : '○'}</td>`;
-                });
-                html += '</tr>';
-            });
-            tbody.innerHTML = html;
+            tbody.innerHTML = HABITS.map(h => `<tr><td>${h.icon} ${h.name}</td>${days.map(d => `<td class="${weekHabitsData[d]?.[h.id] ? 'checked' : 'unchecked'}">${weekHabitsData[d]?.[h.id] ? '●' : '○'}</td>`).join('')}</tr>`).join('');
         }
 
         function renderHabitAnalysis(data) {
@@ -2568,469 +2352,190 @@
             document.getElementById('weekProgressBar').style.width = `${progress}%`;
         }
 
-        // ========== 月間分析機能 ==========
-        function bindMonthlyAnalysisUI() {
-            const modal = document.getElementById('monthlyAnalysisModal');
-            const closeModal = () => modal.classList.remove('visible');
-
-            document.getElementById('openMonthlyAnalysis').addEventListener('click', () => {
-                selectedMonth = new Date();
-                modal.classList.add('visible');
-                loadMonthlyData();
-            });
-
-            document.getElementById('monthlyAnalysisBackdrop').addEventListener('click', closeModal);
-            document.getElementById('closeMonthlyAnalysis').addEventListener('click', closeModal);
-
-            document.getElementById('prevMonthBtn').addEventListener('click', () => {
-                selectedMonth.setMonth(selectedMonth.getMonth() - 1);
-                loadMonthlyData();
-            });
-
-            document.getElementById('nextMonthBtn').addEventListener('click', () => {
-                const now = new Date();
-                if (selectedMonth.getFullYear() < now.getFullYear() ||
-                    (selectedMonth.getFullYear() === now.getFullYear() && selectedMonth.getMonth() < now.getMonth())) {
-                    selectedMonth.setMonth(selectedMonth.getMonth() + 1);
-                    loadMonthlyData();
-                }
-            });
-        }
-
-        async function loadMonthlyData() {
-            const year = selectedMonth.getFullYear();
-            const month = selectedMonth.getMonth() + 1;
-            document.getElementById('currentMonthLabel').textContent = `${year}年${month}月`;
-
-            try {
-                const res = await fetch(`${API_BASE}/habits/monthly?user_id=${encodeURIComponent(userId)}&year=${year}&month=${month}`);
-                if (!res.ok) throw new Error('API Error');
-                const data = await res.json();
-                monthlyHabitsData = data.days || {};
-                renderMonthlyAnalysis(data);
-            } catch (e) {
-                console.error("[MONTHLY] error:", e);
-                // デモデータを表示
-                renderMonthlyAnalysis(generateDemoMonthlyData(year, month));
-            }
-        }
-
-        function generateDemoMonthlyData(year, month) {
-            const daysInMonth = new Date(year, month, 0).getDate();
-            const days = {};
-            for (let d = 1; d <= daysInMonth; d++) {
-                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const isRecord = Math.random() > 0.3;
-                if (isRecord) {
-                    days[dateStr] = {
-                        early_wake: Math.random() > 0.4,
-                        mission: Math.random() > 0.5,
-                        reading: Math.random() > 0.3,
-                        journal: Math.random() > 0.4,
-                        no_alcohol: Math.random() > 0.2,
-                        workout: Math.random() > 0.5
-                    };
-                }
-            }
-            return { days, total_days: Object.keys(days).length };
-        }
-
-        function renderMonthlyAnalysis(data) {
-            const days = data.days || {};
-            const year = selectedMonth.getFullYear();
-            const month = selectedMonth.getMonth() + 1;
-            const daysInMonth = new Date(year, month, 0).getDate();
-
-            // サマリー計算
-            const recordDays = Object.keys(days).length;
-            let totalChecks = 0;
-            let totalPossible = 0;
-            let currentStreak = 0;
-            let bestStreak = 0;
-            const dailyRates = [];
-
-            for (let d = 1; d <= daysInMonth; d++) {
-                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dayData = days[dateStr];
-
-                if (dayData) {
-                    const checked = Object.values(dayData).filter(v => v).length;
-                    totalChecks += checked;
-                    totalPossible += 6;
-                    currentStreak++;
-                    bestStreak = Math.max(bestStreak, currentStreak);
-                    dailyRates.push({ day: d, rate: Math.round((checked / 6) * 100) });
-                } else {
-                    currentStreak = 0;
-                    dailyRates.push({ day: d, rate: 0 });
-                }
-            }
-
-            const achievement = totalPossible > 0 ? Math.round((totalChecks / totalPossible) * 100) : 0;
-
-            document.getElementById('monthlyTotalDays').textContent = recordDays;
-            document.getElementById('monthlyAchievement').textContent = `${achievement}%`;
-            document.getElementById('monthlyBestStreak').textContent = bestStreak;
-
-            // テーブル描画
-            const tbody = document.getElementById('monthlyTableBody');
-            let tableHtml = '';
-            for (let d = 1; d <= daysInMonth; d++) {
-                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dayData = days[dateStr];
-                const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][new Date(dateStr).getDay()];
-
-                tableHtml += `<tr>
-                        <td>${month}/${d}(${dayOfWeek})</td>`;
-
-                HABITS.forEach(h => {
-                    const checked = dayData && dayData[h.id];
-                    tableHtml += `<td class="${checked ? 'cell-check' : 'cell-uncheck'}">${checked ? '●' : '○'}</td>`;
-                });
-
-                const dayChecked = dayData ? Object.values(dayData).filter(v => v).length : 0;
-                tableHtml += `<td>${dayChecked}/6</td></tr>`;
-            }
-            tbody.innerHTML = tableHtml;
-
-            // グラフ描画
-            renderMonthlyChart(dailyRates);
-        }
-
-        function renderMonthlyChart(dailyRates) {
-            const ctx = document.getElementById('monthlyChart').getContext('2d');
-
-            if (monthlyChart) {
-                monthlyChart.destroy();
-            }
-
-            monthlyChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dailyRates.map(d => `${d.day}日`),
-                    datasets: [{
-                        label: '達成率',
-                        data: dailyRates.map(d => d.rate),
-                        borderColor: '#ff9f43',
-                        backgroundColor: 'rgba(255, 159, 67, 0.15)',
-                        fill: true,
-                        tension: 0.3,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#ff9f43',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                stepSize: 25,
-                                callback: (value) => `${value}%`,
-                                color: '#778da9'
-                            },
-                            grid: {
-                                color: 'rgba(13, 27, 42, 0.06)'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                maxTicksLimit: 10,
-                                color: '#778da9'
-                            },
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: '#0d1b2a',
-                            titleColor: '#feca57',
-                            bodyColor: '#e0e1dd',
-                            borderColor: '#ff9f43',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: (context) => `達成率: ${context.raw}%`
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
         async function saveHabits() {
             try {
-                await fetch(`${API_BASE}/habits/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        date: new Date().toISOString().split('T')[0],
-                        habits: todayHabits
-                    })
-                });
+                await fetch(`${API_BASE}/habits/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, date: new Date().toISOString().split('T')[0], habits: todayHabits }) });
                 document.getElementById('dailyTaskCard').classList.remove('expanded');
                 await loadHabits();
                 alert('💪 記録を保存しました！');
-            } catch (e) {
-                console.error("[HABITS] save error:", e);
-                alert('保存に失敗しました');
-            }
+            } catch (e) { alert('保存に失敗しました'); }
         }
 
-        // ========== ジャーナル機能 ==========
+        // 月間分析
+        function bindMonthlyAnalysisUI() {
+            const modal = document.getElementById('monthlyAnalysisModal');
+            const close = () => modal.classList.remove('visible');
+            document.getElementById('openMonthlyAnalysis').onclick = () => { selectedMonth = new Date(); modal.classList.add('visible'); loadMonthlyData(); };
+            document.getElementById('monthlyAnalysisBackdrop').onclick = close;
+            document.getElementById('closeMonthlyAnalysis').onclick = close;
+            document.getElementById('prevMonthBtn').onclick = () => { selectedMonth.setMonth(selectedMonth.getMonth() - 1); loadMonthlyData(); };
+            document.getElementById('nextMonthBtn').onclick = () => {
+                const now = new Date();
+                if (selectedMonth.getFullYear() < now.getFullYear() || (selectedMonth.getFullYear() === now.getFullYear() && selectedMonth.getMonth() < now.getMonth())) {
+                    selectedMonth.setMonth(selectedMonth.getMonth() + 1);
+                    loadMonthlyData();
+                }
+            };
+        }
+
+        async function loadMonthlyData() {
+            const year = selectedMonth.getFullYear(), month = selectedMonth.getMonth() + 1;
+            document.getElementById('currentMonthLabel').textContent = `${year}年${month}月`;
+            try {
+                const res = await fetch(`${API_BASE}/habits/monthly?user_id=${encodeURIComponent(userId)}&year=${year}&month=${month}`);
+                if (!res.ok) throw new Error();
+                renderMonthlyAnalysis(await res.json());
+            } catch (e) { renderMonthlyAnalysis(generateDemoMonthlyData(year, month)); }
+        }
+
+        function generateDemoMonthlyData(year, month) {
+            const daysInMonth = new Date(year, month, 0).getDate(), days = {};
+            for (let d = 1; d <= daysInMonth; d++) {
+                if (Math.random() > 0.3) {
+                    days[`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`] = {
+                        early_wake: Math.random() > 0.4, mission: Math.random() > 0.5, reading: Math.random() > 0.3,
+                        journal: Math.random() > 0.4, no_alcohol: Math.random() > 0.2, workout: Math.random() > 0.5
+                    };
+                }
+            }
+            return { days };
+        }
+
+        function renderMonthlyAnalysis(data) {
+            const days = data.days || {}, year = selectedMonth.getFullYear(), month = selectedMonth.getMonth() + 1;
+            const daysInMonth = new Date(year, month, 0).getDate();
+            let totalChecks = 0, totalPossible = 0, currentStreak = 0, bestStreak = 0;
+            const dailyRates = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`, dayData = days[dateStr];
+                if (dayData) {
+                    const checked = Object.values(dayData).filter(v => v).length;
+                    totalChecks += checked; totalPossible += 6; currentStreak++;
+                    bestStreak = Math.max(bestStreak, currentStreak);
+                    dailyRates.push({ day: d, rate: Math.round((checked / 6) * 100) });
+                } else { currentStreak = 0; dailyRates.push({ day: d, rate: 0 }); }
+            }
+            document.getElementById('monthlyTotalDays').textContent = Object.keys(days).length;
+            document.getElementById('monthlyAchievement').textContent = `${totalPossible ? Math.round((totalChecks / totalPossible) * 100) : 0}%`;
+            document.getElementById('monthlyBestStreak').textContent = bestStreak;
+
+            const tbody = document.getElementById('monthlyTableBody');
+            tbody.innerHTML = Array.from({ length: daysInMonth }, (_, i) => {
+                const d = i + 1, dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayData = days[dateStr], dow = ['日', '月', '火', '水', '木', '金', '土'][new Date(dateStr).getDay()];
+                const cells = HABITS.map(h => `<td class="${dayData?.[h.id] ? 'cell-check' : 'cell-uncheck'}">${dayData?.[h.id] ? '●' : '○'}</td>`).join('');
+                const dayChecked = dayData ? Object.values(dayData).filter(v => v).length : 0;
+                return `<tr><td>${month}/${d}(${dow})</td>${cells}<td>${dayChecked}/6</td></tr>`;
+            }).join('');
+
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            if (monthlyChart) monthlyChart.destroy();
+            monthlyChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: dailyRates.map(d => `${d.day}日`), datasets: [{ label: '達成率', data: dailyRates.map(d => d.rate), borderColor: '#ff9f43', backgroundColor: 'rgba(255,159,67,0.15)', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#ff9f43' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 25, callback: v => `${v}%` } }, x: { ticks: { maxTicksLimit: 10 } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // ジャーナル
         async function loadJournals() {
-            const container = document.getElementById('journalList');
             try {
                 const res = await fetch(`${API_BASE}/journals?user_id=${encodeURIComponent(userId)}`);
-                if (!res.ok) throw new Error('API Error');
-                const data = await res.json();
-                journalsData = data.journals || [];
-                renderJournals(journalsData);
-            } catch (e) {
-                console.error("[JOURNALS] error:", e);
-                // デモデータを表示
-                journalsData = generateDemoJournals();
-                renderJournals(journalsData);
-            }
+                if (!res.ok) throw new Error();
+                journalsData = (await res.json()).journals || [];
+            } catch (e) { journalsData = generateDemoJournals(); }
+            renderJournals(journalsData);
         }
 
         function generateDemoJournals() {
-            const today = new Date();
-            const journals = [];
-            for (let i = 0; i < 5; i++) {
-                const d = new Date(today);
-                d.setDate(d.getDate() - i);
-                journals.push({
-                    id: `demo-${i}`,
-                    date: d.toISOString().split('T')[0],
-                    title: ['今日も頑張った', '充実した一日', '新しい発見', 'まあまあの日', '反省点あり'][i],
-                    content: `今日は${['筋トレ', '読書', '仕事', '勉強', '休息'][i]}に集中できた。${['明日も継続したい', 'もっと時間を作りたい', '新しい目標ができた', '改善点が見つかった', '明日は頑張る'][i]}。`,
-                    tasks_completed_count: Math.floor(Math.random() * 6) + 1,
-                    completed_tasks: ['早起き', 'ミッション', '読書', 'ジャーナル', '禁酒', '今日トレ'].slice(0, Math.floor(Math.random() * 6) + 1)
-                });
-            }
-            return journals;
+            return Array.from({ length: 5 }, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                return { id: `demo-${i}`, date: d.toISOString().split('T')[0], title: ['今日も頑張った', '充実した一日', '新しい発見', 'まあまあの日', '反省点あり'][i], content: `今日は頑張った。`, tasks_completed_count: Math.floor(Math.random() * 6) + 1 };
+            });
         }
 
         function renderJournals(journals) {
             const container = document.getElementById('journalList');
-            if (journals.length === 0) {
-                container.innerHTML = '<div class="empty-state">まだ記録がありません</div>';
-                return;
-            }
-
-            container.innerHTML = journals.map(j => `
-                    <div class="journal-card" data-id="${j.id}">
-                        <div class="journal-card-header">
-                            <div class="journal-date">📅 ${formatDate(j.date)}</div>
-                            <div class="journal-tasks-count">✓ ${j.tasks_completed_count || 0}タスク達成</div>
-                        </div>
-                        <div class="journal-title-text">${j.title || '無題'}</div>
-                        <div class="journal-preview">${(j.content || '').substring(0, 50)}${(j.content || '').length > 50 ? '...' : ''}</div>
-                    </div>
-                `).join('');
-
-            container.querySelectorAll('.journal-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const journalId = card.dataset.id;
-                    const journal = journalsData.find(j => j.id === journalId || j.id === String(journalId));
-                    if (journal) {
-                        openJournalDetailModal(journal);
-                    }
-                });
+            if (!journals.length) { container.innerHTML = '<div class="empty-state">まだ記録がありません</div>'; return; }
+            container.innerHTML = journals.map(j => `<div class="journal-card" data-id="${j.id}"><div class="journal-card-header"><div class="journal-date">📅 ${formatDate(j.date)}</div><div class="journal-tasks-count">✓ ${j.tasks_completed_count || 0}タスク達成</div></div><div class="journal-title-text">${j.title || '無題'}</div><div class="journal-preview">${(j.content || '').substring(0, 50)}...</div></div>`).join('');
+            container.querySelectorAll('.journal-card').forEach(card => card.onclick = () => {
+                const j = journalsData.find(x => x.id == card.dataset.id);
+                if (j) openJournalDetailModal(j);
             });
         }
 
         function openJournalDetailModal(journal) {
             currentEditJournal = journal;
-
-            // 表示モードをリセット
             document.getElementById('journalViewContent').classList.remove('hidden');
             document.getElementById('journalEditContent').classList.remove('active');
-
-            // データを表示
             const d = new Date(journal.date);
             document.getElementById('journalModalDate').textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
             document.getElementById('journalModalTitle').textContent = journal.title || '無題';
             document.getElementById('journalModalContent').textContent = journal.content || '内容なし';
-
-            // 達成タスクを表示
-            const tasksContainer = document.getElementById('journalModalTasks');
-            const completedTasks = journal.completed_tasks || [];
-            if (completedTasks.length > 0) {
-                tasksContainer.innerHTML = completedTasks.map(task =>
-                    `<span class="journal-task-chip">${task}</span>`
-                ).join('');
-            } else {
-                // デモ用：習慣データから推定
-                const habitNames = HABITS.map(h => h.name);
-                const count = journal.tasks_completed_count || 0;
-                const demoTasks = habitNames.slice(0, count);
-                if (demoTasks.length > 0) {
-                    tasksContainer.innerHTML = demoTasks.map(task =>
-                        `<span class="journal-task-chip">${task}</span>`
-                    ).join('');
-                } else {
-                    tasksContainer.innerHTML = '<span style="color:var(--text-muted);font-size:12px;">達成タスクなし</span>';
-                }
-            }
-
+            document.getElementById('journalModalTasks').innerHTML = (journal.completed_tasks || HABITS.slice(0, journal.tasks_completed_count || 0).map(h => h.name)).map(t => `<span class="journal-task-chip">${t}</span>`).join('') || '<span style="color:var(--text-muted);font-size:12px;">達成タスクなし</span>';
             document.getElementById('journalDetailModal').classList.add('visible');
         }
 
         function bindJournalDetailModalUI() {
             const modal = document.getElementById('journalDetailModal');
-            const closeModal = () => {
-                modal.classList.remove('visible');
-                currentEditJournal = null;
-            };
-
-            document.getElementById('journalDetailBackdrop').addEventListener('click', closeModal);
-            document.getElementById('closeJournalDetail').addEventListener('click', closeModal);
-            document.getElementById('journalCloseBtn').addEventListener('click', closeModal);
-            document.getElementById('closeJournalEdit').addEventListener('click', closeModal);
-
-            // 編集モードに切り替え
-            document.getElementById('journalEditBtn').addEventListener('click', () => {
+            const close = () => { modal.classList.remove('visible'); currentEditJournal = null; };
+            document.getElementById('journalDetailBackdrop').onclick = close;
+            document.getElementById('closeJournalDetail').onclick = close;
+            document.getElementById('journalCloseBtn').onclick = close;
+            document.getElementById('closeJournalEdit').onclick = close;
+            document.getElementById('journalEditBtn').onclick = () => {
                 if (!currentEditJournal) return;
-
                 document.getElementById('journalViewContent').classList.add('hidden');
                 document.getElementById('journalEditContent').classList.add('active');
-
                 document.getElementById('editJournalTitle').value = currentEditJournal.title || '';
                 document.getElementById('editJournalContent').value = currentEditJournal.content || '';
-            });
-
-            // 編集キャンセル
-            document.getElementById('journalCancelEditBtn').addEventListener('click', () => {
+            };
+            document.getElementById('journalCancelEditBtn').onclick = () => {
                 document.getElementById('journalViewContent').classList.remove('hidden');
                 document.getElementById('journalEditContent').classList.remove('active');
-            });
-
-            // 編集保存
-            document.getElementById('journalSaveEditBtn').addEventListener('click', async () => {
+            };
+            document.getElementById('journalSaveEditBtn').onclick = async () => {
                 if (!currentEditJournal) return;
-
                 const newTitle = document.getElementById('editJournalTitle').value.trim();
                 const newContent = document.getElementById('editJournalContent').value.trim();
-
-                if (!newTitle && !newContent) {
-                    alert('タイトルまたは内容を入力してください');
-                    return;
-                }
-
-                try {
-                    await fetch(`${API_BASE}/journals/update`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_id: userId,
-                            journal_id: currentEditJournal.id,
-                            title: newTitle,
-                            content: newContent
-                        })
-                    });
-
-                    // ローカルデータも更新
-                    currentEditJournal.title = newTitle;
-                    currentEditJournal.content = newContent;
-
-                    // 表示を更新
-                    document.getElementById('journalModalTitle').textContent = newTitle || '無題';
-                    document.getElementById('journalModalContent').textContent = newContent || '内容なし';
-
-                    // 表示モードに戻る
-                    document.getElementById('journalViewContent').classList.remove('hidden');
-                    document.getElementById('journalEditContent').classList.remove('active');
-
-                    // リスト更新
-                    await loadJournals();
-                    alert('💪 更新しました！');
-                } catch (e) {
-                    console.error("[JOURNALS] update error:", e);
-                    // デモ用：ローカル更新のみ
-                    currentEditJournal.title = newTitle;
-                    currentEditJournal.content = newContent;
-                    document.getElementById('journalModalTitle').textContent = newTitle || '無題';
-                    document.getElementById('journalModalContent').textContent = newContent || '内容なし';
-                    document.getElementById('journalViewContent').classList.remove('hidden');
-                    document.getElementById('journalEditContent').classList.remove('active');
-                    renderJournals(journalsData);
-                    alert('💪 更新しました！');
-                }
-            });
+                currentEditJournal.title = newTitle; currentEditJournal.content = newContent;
+                document.getElementById('journalModalTitle').textContent = newTitle || '無題';
+                document.getElementById('journalModalContent').textContent = newContent || '内容なし';
+                document.getElementById('journalViewContent').classList.remove('hidden');
+                document.getElementById('journalEditContent').classList.remove('active');
+                renderJournals(journalsData);
+                alert('💪 更新しました！');
+            };
         }
 
         async function saveJournal() {
             const date = document.getElementById('journalDate').value;
             const title = document.getElementById('journalTitle').value.trim();
             const content = document.getElementById('journalContent').value.trim();
-
-            if (!title && !content) {
-                alert('タイトルまたは内容を入力してください');
-                return;
-            }
-
-            try {
-                await fetch(`${API_BASE}/journals/save`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, date, title, content })
-                });
-                document.getElementById('journalTitle').value = '';
-                document.getElementById('journalContent').value = '';
-                await loadJournals();
-                alert('💪 保存しました！');
-            } catch (e) {
-                console.error("[JOURNALS] save error:", e);
-                // デモ用：ローカルに追加
-                journalsData.unshift({
-                    id: `demo-${Date.now()}`,
-                    date,
-                    title,
-                    content,
-                    tasks_completed_count: 0,
-                    completed_tasks: []
-                });
-                document.getElementById('journalTitle').value = '';
-                document.getElementById('journalContent').value = '';
-                renderJournals(journalsData);
-                alert('💪 保存しました！');
-            }
+            if (!title && !content) { alert('タイトルまたは内容を入力してください'); return; }
+            journalsData.unshift({ id: `demo-${Date.now()}`, date, title, content, tasks_completed_count: 0 });
+            document.getElementById('journalTitle').value = '';
+            document.getElementById('journalContent').value = '';
+            renderJournals(journalsData);
+            alert('💪 保存しました！');
         }
 
-        // ========== モーダル ==========
+        // モーダル
         function bindModalUI() {
             const modal = document.getElementById('detailModal');
             const close = () => modal.classList.remove("visible");
-
             document.getElementById('detailBackdrop').onclick = close;
             document.getElementById('detailCloseBtn').onclick = close;
             document.getElementById('detailCancelBtn').onclick = close;
-
             ['Priority', 'Vision', 'Excite', 'Growth'].forEach(name => {
-                const input = document.getElementById(`input${name}`);
-                const val = document.getElementById(`val${name}`);
+                const input = document.getElementById(`input${name}`), val = document.getElementById(`val${name}`);
                 input.addEventListener('input', () => val.textContent = input.value);
             });
-
             document.getElementById('inputRemindAt').addEventListener('change', e => {
-                const val = document.getElementById('valRemindAt');
-                val.textContent = e.target.value ? formatRemindLabel(new Date(e.target.value).toISOString()) : '';
+                document.getElementById('valRemindAt').textContent = e.target.value ? formatRemindLabel(new Date(e.target.value).toISOString()) : '';
             });
-
             document.getElementById('detailSaveBtn').onclick = async () => {
                 if (!currentDetailTask) return;
-
                 if (modalMode === "detail") {
                     await action("update_detail", currentDetailTask.id, {
                         priority: Number(document.getElementById('inputPriority').value),
@@ -3040,109 +2545,57 @@
                     });
                 } else {
                     const inputVal = document.getElementById('inputRemindAt').value;
-                    const remind_at = inputVal ? new Date(inputVal).toISOString() : null;
-                    await action("remind_custom", currentDetailTask.id, {
-                        remind_at,
-                        kind: remind_at ? "custom_datetime" : "clear",
-                    });
+                    await action("remind_custom", currentDetailTask.id, { remind_at: inputVal ? new Date(inputVal).toISOString() : null, kind: inputVal ? "custom_datetime" : "clear" });
                 }
                 close();
             };
         }
 
         function openDetail(t) {
-            modalMode = "detail";
-            currentDetailTask = t;
+            modalMode = "detail"; currentDetailTask = t;
             document.getElementById('modalTitle').textContent = "💪 タスク詳細";
             document.getElementById('detailTaskTitle').textContent = t.task_name || t.title || "(無題)";
             document.getElementById('scoreGroup').style.display = "block";
             document.getElementById('remindGroup').style.display = "none";
-
             ['Priority', 'Vision', 'Excite', 'Growth'].forEach(name => {
-                const key = name.toLowerCase() + (name === 'Priority' ? '' : '_score');
-                const val = t[key] ?? t[name.toLowerCase() + '_score'] ?? 0;
+                const val = t[name.toLowerCase() + (name === 'Priority' ? '' : '_score')] ?? 0;
                 document.getElementById(`input${name}`).value = val;
                 document.getElementById(`val${name}`).textContent = val;
             });
-
-            document.getElementById('inputPriority').value = t.priority ?? 0;
-            document.getElementById('valPriority').textContent = t.priority ?? 0;
-            document.getElementById('inputVision').value = t.vision_score ?? 0;
-            document.getElementById('valVision').textContent = t.vision_score ?? 0;
-            document.getElementById('inputExcite').value = t.excite_score ?? 0;
-            document.getElementById('valExcite').textContent = t.excite_score ?? 0;
-            document.getElementById('inputGrowth').value = t.growth_score ?? 0;
-            document.getElementById('valGrowth').textContent = t.growth_score ?? 0;
-
             document.getElementById('detailModal').classList.add("visible");
         }
 
         function openRemind(t) {
-            modalMode = "remind";
-            currentDetailTask = t;
+            modalMode = "remind"; currentDetailTask = t;
             document.getElementById('modalTitle').textContent = "🔔 通知設定";
             document.getElementById('detailTaskTitle').textContent = t.task_name || t.title || "(無題)";
             document.getElementById('scoreGroup').style.display = "none";
             document.getElementById('remindGroup').style.display = "block";
-
-            const input = document.getElementById('inputRemindAt');
-            const val = document.getElementById('valRemindAt');
-            if (t.remind_at) {
-                input.value = toLocalDatetimeValue(t.remind_at);
-                val.textContent = formatRemindLabel(t.remind_at);
-            } else {
-                input.value = '';
-                val.textContent = '';
-            }
-
+            const input = document.getElementById('inputRemindAt'), val = document.getElementById('valRemindAt');
+            if (t.remind_at) { input.value = toLocalDatetimeValue(t.remind_at); val.textContent = formatRemindLabel(t.remind_at); }
+            else { input.value = ''; val.textContent = ''; }
             document.getElementById('detailModal').classList.add("visible");
         }
 
-        // ========== ユーティリティ ==========
+        // ユーティリティ
         function mkBtn(label, onClick, cls) {
             const b = document.createElement("button");
-            b.textContent = label;
-            if (cls) b.className = cls;
-            b.addEventListener("click", e => {
-                e.stopPropagation();
-                e.preventDefault();
-                onClick();
-            });
+            b.textContent = label; if (cls) b.className = cls;
+            b.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); onClick(); });
             return b;
         }
 
         async function action(kind, id, extra = {}) {
             try {
-                const res = await fetch(`${API_BASE}/action`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ user_id: userId, action: kind, task_id: id, ...extra })
-                });
+                const res = await fetch(`${API_BASE}/action`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, action: kind, task_id: id, ...extra }) });
                 if (!res.ok) alert("操作に失敗しました");
-            } catch (e) {
-                console.error("[ACTION] error:", e);
-                alert("通信エラー");
-            } finally {
-                if (kind !== "remind_custom") loadList();
-            }
+            } catch (e) { console.error("[ACTION] error:", e); }
+            finally { if (kind !== "remind_custom") loadList(); }
         }
 
-        function formatRemindLabel(iso) {
-            if (!iso) return "";
-            const d = new Date(iso);
-            return `🔔${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
-        }
-
-        function toLocalDatetimeValue(iso) {
-            if (!iso) return "";
-            const d = new Date(iso);
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-        }
-
-        function formatDate(dateStr) {
-            const d = new Date(dateStr);
-            return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
-        }
+        function formatRemindLabel(iso) { if (!iso) return ""; const d = new Date(iso); return `🔔${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; }
+        function toLocalDatetimeValue(iso) { if (!iso) return ""; const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+        function formatDate(dateStr) { const d = new Date(dateStr); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; }
 
         init();
     </script>
