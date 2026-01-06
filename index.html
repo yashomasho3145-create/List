@@ -305,6 +305,252 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: rgba(13, 27, 42, 0.05); border-radius: 3px; }
         ::-webkit-scrollbar-thumb { background: var(--energy-orange); border-radius: 3px; }
+
+        /* ムキムキステータスカード（MSC） */
+        .msc-container { padding: 16px; }
+        .msc-card {
+            background: linear-gradient(135deg, #cc2200 0%, #ff4422 30%, #ff6644 100%);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(204, 34, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        .msc-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 80%;
+            height: 120%;
+            background: radial-gradient(ellipse, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .msc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+        }
+        .msc-header-left { display: flex; align-items: center; gap: 10px; }
+        .msc-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .msc-title-area {}
+        .msc-title {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        .msc-mbti-tag {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.25);
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .msc-mbti-tag:hover { background: rgba(255, 255, 255, 0.35); }
+        .msc-header-right { text-align: right; }
+        .msc-level-badge {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-bottom: 2px;
+        }
+        .msc-level-score {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+        .msc-stars { font-size: 14px; letter-spacing: -2px; }
+        .msc-score { font-size: 28px; font-weight: 700; }
+        .msc-exp-bar {
+            width: 80px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .msc-exp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #feca57, #ff9f43);
+            border-radius: 3px;
+            transition: width 0.8s ease;
+        }
+        .msc-exp-text {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        /* レーダーチャート */
+        .msc-radar-section {
+            position: relative;
+            z-index: 2;
+            margin: 20px 0;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+        }
+        .msc-radar-container {
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+            aspect-ratio: 1;
+        }
+        .msc-radar-date {
+            text-align: center;
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        /* 強み・弱み */
+        .msc-traits-section {
+            position: relative;
+            z-index: 2;
+            margin-bottom: 16px;
+        }
+        .msc-traits-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .msc-strength-title { color: #feca57; }
+        .msc-weakness-title { color: rgba(255, 255, 255, 0.7); }
+        .msc-trait-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .msc-trait-icon {
+            width: 28px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .msc-trait-content { flex: 1; }
+        .msc-trait-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 3px;
+        }
+        .msc-trait-name { font-size: 13px; font-weight: 700; }
+        .msc-trait-level {
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+        .msc-trait-desc {
+            font-size: 11px;
+            opacity: 0.85;
+            line-height: 1.5;
+        }
+
+        /* 生態メモ */
+        .msc-bio-section {
+            position: relative;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .msc-bio-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .msc-bio-text {
+            font-size: 13px;
+            line-height: 1.7;
+            text-align: center;
+            font-style: italic;
+        }
+        .msc-footer {
+            text-align: center;
+            font-size: 10px;
+            opacity: 0.5;
+            margin-top: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* MSC タブ切り替え */
+        .msc-tab-switch {
+            display: flex;
+            gap: 8px;
+            margin: 12px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 6px;
+        }
+        .msc-tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: var(--text-muted);
+        }
+        .msc-tab-btn.active {
+            background: var(--gradient-power);
+            color: white;
+            box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+        }
+
+        /* MBTI選択モーダル */
+        .mbti-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 16px 0;
+        }
+        .mbti-option {
+            padding: 12px 8px;
+            border: 2px solid rgba(13, 27, 42, 0.1);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-main);
+        }
+        .mbti-option:hover { border-color: var(--energy-orange); background: rgba(255, 159, 67, 0.1); }
+        .mbti-option.selected { border-color: var(--energy-orange); background: rgba(255, 159, 67, 0.2); }
+        .mbti-option-type { font-size: 14px; font-weight: 700; color: var(--dark-navy); }
+        .mbti-option-name { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -348,38 +594,135 @@
                 <button class="bar-btn" id="statusRefreshBtn">↻</button>
             </div>
         </header>
+        <div class="msc-tab-switch">
+            <button class="msc-tab-btn active" data-msc-tab="card">成長カード</button>
+            <button class="msc-tab-btn" data-msc-tab="log">トレーニングログ</button>
+        </div>
         <main>
-            <div class="status-section daily-task-card" id="dailyTaskCard">
-                <div class="daily-task-header">
-                    <div class="status-section-title"><span>🏋️</span> デイリートレーニング</div>
-                    <span class="daily-task-arrow">▼</span>
-                </div>
-                <div class="daily-task-content">
-                    <div class="habit-list" id="habitList"></div>
-                    <div class="daily-task-buttons">
-                        <button class="daily-btn daily-btn-cancel" id="habitCancelBtn">キャンセル</button>
-                        <button class="daily-btn daily-btn-save" id="habitSaveBtn">💪 記録する</button>
+            <!-- MSC 成長カード -->
+            <div id="msc-card-view" class="msc-view">
+                <div class="msc-container">
+                    <div class="msc-card">
+                        <!-- ヘッダー -->
+                        <div class="msc-header">
+                            <div class="msc-header-left">
+                                <div class="msc-icon">💪</div>
+                                <div class="msc-title-area">
+                                    <div class="msc-title">ムキムキ属性</div>
+                                    <div class="msc-mbti-tag" id="mscMbtiTag" onclick="openMbtiModal()">MBTI未設定</div>
+                                </div>
+                            </div>
+                            <div class="msc-header-right">
+                                <div class="msc-level-badge" id="mscLevelBadge">Lv.1 見習いトレーニー</div>
+                                <div class="msc-level-score">
+                                    <span class="msc-stars" id="mscStars">★★★★☆</span>
+                                    <span class="msc-score" id="mscScore">3.5</span>
+                                </div>
+                                <div class="msc-exp-bar"><div class="msc-exp-fill" id="mscExpFill" style="width:35%"></div></div>
+                                <div class="msc-exp-text" id="mscExpText">350 / 1000 EXP</div>
+                            </div>
+                        </div>
+
+                        <!-- レーダーチャート -->
+                        <div class="msc-radar-section">
+                            <div class="msc-radar-container">
+                                <canvas id="mscRadarChart"></canvas>
+                            </div>
+                            <div class="msc-radar-date" id="mscRadarDate">※累計データ基準</div>
+                        </div>
+
+                        <!-- 強み -->
+                        <div class="msc-traits-section">
+                            <div class="msc-traits-title msc-strength-title">強み</div>
+                            <div id="mscStrengths">
+                                <div class="msc-trait-item">
+                                    <div class="msc-trait-icon">🌅</div>
+                                    <div class="msc-trait-content">
+                                        <div class="msc-trait-header">
+                                            <span class="msc-trait-name">規律シールド</span>
+                                            <span class="msc-trait-level">Lv.4.2</span>
+                                        </div>
+                                        <div class="msc-trait-desc">早起きと禁酒を継続し、規律正しい生活を送っている。</div>
+                                    </div>
+                                </div>
+                                <div class="msc-trait-item">
+                                    <div class="msc-trait-icon">📚</div>
+                                    <div class="msc-trait-content">
+                                        <div class="msc-trait-header">
+                                            <span class="msc-trait-name">探究ブースト</span>
+                                            <span class="msc-trait-level">Lv.3.8</span>
+                                        </div>
+                                        <div class="msc-trait-desc">読書・学習習慣が根付いており、知的好奇心が旺盛。</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 弱み -->
+                        <div class="msc-traits-section">
+                            <div class="msc-traits-title msc-weakness-title">弱み</div>
+                            <div id="mscWeaknesses">
+                                <div class="msc-trait-item">
+                                    <div class="msc-trait-icon">📝</div>
+                                    <div class="msc-trait-content">
+                                        <div class="msc-trait-header">
+                                            <span class="msc-trait-name">内省タイム</span>
+                                            <span class="msc-trait-level">Lv.2.1</span>
+                                        </div>
+                                        <div class="msc-trait-desc">ジャーナル記録が不安定。振り返りの習慣化が課題。</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 生態メモ -->
+                        <div class="msc-bio-section">
+                            <div class="msc-bio-title">生態メモ</div>
+                            <div class="msc-bio-text" id="mscBioText">
+                                朝型の生活リズムを好み、コツコツと積み上げることを大切にしている。
+                                知識欲が強く、常に新しいことを学ぼうとする姿勢を持つ。
+                            </div>
+                        </div>
+
+                        <div class="msc-footer">©2025 ムキムキタスくん</div>
                     </div>
                 </div>
             </div>
-            <div class="status-section">
-                <div class="week-view-header">
-                    <div class="status-section-title" style="margin-bottom:0;"><span>📅</span> 週間トレーニングログ</div>
-                    <button class="detail-view-btn" id="openMonthlyAnalysis"><span>📊</span> 詳しく見る</button>
-                </div>
-                <table class="week-table" id="weekTable">
-                    <thead><tr><th>習慣</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日</th></tr></thead>
-                    <tbody id="weekTableBody"></tbody>
-                </table>
-            </div>
-            <div class="status-section">
-                <div class="status-section-title"><span>💪</span> 成長分析</div>
-                <div class="progress-bar-container">
-                    <div class="progress-label">
-                        <span class="progress-label-name">週間達成率</span>
-                        <span class="progress-label-value" id="weekProgressValue">0%</span>
+
+            <!-- トレーニングログ -->
+            <div id="msc-log-view" class="msc-view" style="display:none;">
+                <div class="status-section daily-task-card" id="dailyTaskCard">
+                    <div class="daily-task-header">
+                        <div class="status-section-title"><span>🏋️</span> デイリートレーニング</div>
+                        <span class="daily-task-arrow">▼</span>
                     </div>
-                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="weekProgressBar" style="width:0%"></div></div>
+                    <div class="daily-task-content">
+                        <div class="habit-list" id="habitList"></div>
+                        <div class="daily-task-buttons">
+                            <button class="daily-btn daily-btn-cancel" id="habitCancelBtn">キャンセル</button>
+                            <button class="daily-btn daily-btn-save" id="habitSaveBtn">💪 記録する</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-section">
+                    <div class="week-view-header">
+                        <div class="status-section-title" style="margin-bottom:0;"><span>📅</span> 週間トレーニングログ</div>
+                        <button class="detail-view-btn" id="openMonthlyAnalysis"><span>📊</span> 詳しく見る</button>
+                    </div>
+                    <table class="week-table" id="weekTable">
+                        <thead><tr><th>習慣</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日</th></tr></thead>
+                        <tbody id="weekTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="status-section">
+                    <div class="status-section-title"><span>💪</span> 成長分析</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-label">
+                            <span class="progress-label-name">週間達成率</span>
+                            <span class="progress-label-value" id="weekProgressValue">0%</span>
+                        </div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="weekProgressBar" style="width:0%"></div></div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -511,6 +854,40 @@
         </div>
     </div>
 
+    <!-- MBTI選択モーダル -->
+    <div id="mbtiModal" class="modal-root">
+        <div id="mbtiBackdrop" class="modal-backdrop"></div>
+        <div class="modal-panel" style="max-height:80vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;margin-bottom:10px;">
+                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;">🧠 MBTIタイプを選択</div>
+                <button id="mbtiCloseBtn" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">あなたの性格タイプを選んでください</div>
+            <div class="mbti-grid" id="mbtiGrid">
+                <div class="mbti-option" data-mbti="INTJ"><div class="mbti-option-type">INTJ</div><div class="mbti-option-name">建築家</div></div>
+                <div class="mbti-option" data-mbti="INTP"><div class="mbti-option-type">INTP</div><div class="mbti-option-name">論理学者</div></div>
+                <div class="mbti-option" data-mbti="ENTJ"><div class="mbti-option-type">ENTJ</div><div class="mbti-option-name">指揮官</div></div>
+                <div class="mbti-option" data-mbti="ENTP"><div class="mbti-option-type">ENTP</div><div class="mbti-option-name">討論者</div></div>
+                <div class="mbti-option" data-mbti="INFJ"><div class="mbti-option-type">INFJ</div><div class="mbti-option-name">提唱者</div></div>
+                <div class="mbti-option" data-mbti="INFP"><div class="mbti-option-type">INFP</div><div class="mbti-option-name">仲介者</div></div>
+                <div class="mbti-option" data-mbti="ENFJ"><div class="mbti-option-type">ENFJ</div><div class="mbti-option-name">主人公</div></div>
+                <div class="mbti-option" data-mbti="ENFP"><div class="mbti-option-type">ENFP</div><div class="mbti-option-name">広報運動家</div></div>
+                <div class="mbti-option" data-mbti="ISTJ"><div class="mbti-option-type">ISTJ</div><div class="mbti-option-name">管理者</div></div>
+                <div class="mbti-option" data-mbti="ISFJ"><div class="mbti-option-type">ISFJ</div><div class="mbti-option-name">擁護者</div></div>
+                <div class="mbti-option" data-mbti="ESTJ"><div class="mbti-option-type">ESTJ</div><div class="mbti-option-name">幹部</div></div>
+                <div class="mbti-option" data-mbti="ESFJ"><div class="mbti-option-type">ESFJ</div><div class="mbti-option-name">領事官</div></div>
+                <div class="mbti-option" data-mbti="ISTP"><div class="mbti-option-type">ISTP</div><div class="mbti-option-name">巨匠</div></div>
+                <div class="mbti-option" data-mbti="ISFP"><div class="mbti-option-type">ISFP</div><div class="mbti-option-name">冒険家</div></div>
+                <div class="mbti-option" data-mbti="ESTP"><div class="mbti-option-type">ESTP</div><div class="mbti-option-name">起業家</div></div>
+                <div class="mbti-option" data-mbti="ESFP"><div class="mbti-option-type">ESFP</div><div class="mbti-option-name">エンターテイナー</div></div>
+            </div>
+            <div class="modal-footer">
+                <button id="mbtiClearBtn" class="btn-secondary">クリア</button>
+                <button id="mbtiSaveBtn" class="btn-primary-solid">💪 保存</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 優先順位選択モーダル -->
     <div id="priorityModal" class="modal-root">
         <div id="priorityBackdrop" class="modal-backdrop"></div>
@@ -575,6 +952,39 @@
         let journalsGrouped = [];
         let openMonthKey = null;
 
+        // MSC関連
+        let mscRadarChart = null;
+        let userMbti = null;
+        let selectedMbti = null;
+        let mscData = {
+            level: 1,
+            exp: 0,
+            totalExp: 1000,
+            score: 0,
+            radarData: { discipline: 0, purpose: 0, curiosity: 0, reflection: 0, action: 0, consistency: 0 },
+            strengths: [],
+            weaknesses: [],
+            bio: ''
+        };
+
+        const MBTI_NAMES = {
+            'INTJ': '建築家', 'INTP': '論理学者', 'ENTJ': '指揮官', 'ENTP': '討論者',
+            'INFJ': '提唱者', 'INFP': '仲介者', 'ENFJ': '主人公', 'ENFP': '広報運動家',
+            'ISTJ': '管理者', 'ISFJ': '擁護者', 'ESTJ': '幹部', 'ESFJ': '領事官',
+            'ISTP': '巨匠', 'ISFP': '冒険家', 'ESTP': '起業家', 'ESFP': 'エンターテイナー'
+        };
+
+        const LEVEL_TITLES = [
+            { min: 1, max: 5, title: '見習いトレーニー' },
+            { min: 6, max: 10, title: 'ルーキーファイター' },
+            { min: 11, max: 20, title: 'レギュラーウォリアー' },
+            { min: 21, max: 35, title: 'シルバーチャンピオン' },
+            { min: 36, max: 50, title: 'ゴールドマスター' },
+            { min: 51, max: 75, title: 'プラチナエリート' },
+            { min: 76, max: 100, title: 'ダイヤモンドレジェンド' },
+            { min: 101, max: 999, title: 'ムキムキ神' }
+        ];
+
         const STRONG_RATIO = 0.85;
         const SNAP_THRESHOLD = 40;
         let isDraggingCard = false;
@@ -621,6 +1031,8 @@
             bindMonthlyAnalysisUI();
             bindJournalDetailModalUI();
             bindPriorityModalUI();
+            bindMscUI();
+            bindMbtiModalUI();
         }
 
         function switchTab(tabId) {
@@ -631,7 +1043,7 @@
         }
 
         async function loadAllData() {
-            await Promise.all([loadList(), loadMissionTask(), loadHabits(), loadJournals()]);
+            await Promise.all([loadList(), loadMissionTask(), loadHabits(), loadJournals(), loadMscData()]);
         }
 
         // ミッションタスク
@@ -1336,8 +1748,318 @@
         function toLocalDatetimeValue(iso) { if (!iso) return ""; const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
         function formatDate(dateStr) { const d = new Date(dateStr); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; }
 
+        // =====================
+        // MSC（ムキムキステータスカード）関連
+        // =====================
+
+        function bindMscUI() {
+            // タブ切り替え
+            document.querySelectorAll('.msc-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.msc-tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const tab = btn.dataset.mscTab;
+                    if (tab === 'card') {
+                        document.getElementById('msc-card-view').style.display = 'block';
+                        document.getElementById('msc-log-view').style.display = 'none';
+                    } else {
+                        document.getElementById('msc-card-view').style.display = 'none';
+                        document.getElementById('msc-log-view').style.display = 'block';
+                    }
+                });
+            });
+        }
+
+        async function loadMscData() {
+            try {
+                const res = await fetch(`${API_BASE}/msc?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('MSC API not available');
+                const data = await res.json();
+                mscData = data;
+                userMbti = data.mbti || null;
+            } catch (e) {
+                console.log('MSC API unavailable, calculating from habits data');
+                // APIがない場合は習慣データから計算
+                await calculateMscFromHabits();
+            }
+            renderMsc();
+        }
+
+        async function calculateMscFromHabits() {
+            // 習慣データがロードされていない場合はデフォルト値を使用
+            const habitData = weekHabitsData || {};
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+            // 各習慣の達成率を計算
+            let disciplineScore = 0; // 早起き + 禁酒
+            let purposeScore = 0;    // ミッション
+            let curiosityScore = 0;  // 読書/学習
+            let reflectionScore = 0; // ジャーナル
+            let actionScore = 0;     // 今日トレ
+            let activeDays = 0;
+
+            days.forEach(day => {
+                const dayData = habitData[day];
+                if (dayData) {
+                    if (dayData.early_wake) disciplineScore++;
+                    if (dayData.no_alcohol) disciplineScore++;
+                    if (dayData.mission) purposeScore++;
+                    if (dayData.reading) curiosityScore++;
+                    if (dayData.journal) reflectionScore++;
+                    if (dayData.workout) actionScore++;
+                    if (Object.values(dayData).some(v => v)) activeDays++;
+                }
+            });
+
+            // スコアを5段階に正規化（最大7日分）
+            const maxDiscipline = 14; // 2項目 × 7日
+            const maxOther = 7; // 1項目 × 7日
+
+            mscData.radarData = {
+                discipline: Math.round((disciplineScore / maxDiscipline) * 5 * 10) / 10,
+                purpose: Math.round((purposeScore / maxOther) * 5 * 10) / 10,
+                curiosity: Math.round((curiosityScore / maxOther) * 5 * 10) / 10,
+                reflection: Math.round((reflectionScore / maxOther) * 5 * 10) / 10,
+                action: Math.round((actionScore / maxOther) * 5 * 10) / 10,
+                consistency: Math.round((activeDays / 7) * 5 * 10) / 10
+            };
+
+            // 総合スコア計算
+            const values = Object.values(mscData.radarData);
+            mscData.score = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100;
+
+            // レベル・EXP計算（簡易版：総合スコア × 週数を想定）
+            const totalWeeks = 4; // 仮の週数
+            mscData.exp = Math.round(mscData.score * 200 * totalWeeks);
+            mscData.level = Math.floor(mscData.exp / 1000) + 1;
+            mscData.totalExp = mscData.level * 1000;
+
+            // 強み・弱みを分析
+            analyzeMscTraits();
+        }
+
+        function analyzeMscTraits() {
+            const traits = [
+                { key: 'discipline', name: '規律シールド', icon: '🌅', desc: '早起きと禁酒を継続し、規律正しい生活を送っている。' },
+                { key: 'purpose', name: '目的ブースト', icon: '🎯', desc: 'ミッション達成への意識が高く、目標に向かって進んでいる。' },
+                { key: 'curiosity', name: '探究パワー', icon: '📚', desc: '読書・学習習慣が根付いており、知的好奇心が旺盛。' },
+                { key: 'reflection', name: '内省タイム', icon: '📝', desc: 'ジャーナルで振り返りを行い、自己理解を深めている。' },
+                { key: 'action', name: '行動エナジー', icon: '💪', desc: 'トレーニングを継続し、行動力を発揮している。' },
+                { key: 'consistency', name: '継続マインド', icon: '🔥', desc: '空白日が少なく、コンスタントに取り組んでいる。' }
+            ];
+
+            const scores = traits.map(t => ({ ...t, score: mscData.radarData[t.key] }));
+            scores.sort((a, b) => b.score - a.score);
+
+            // 強み：上位2つ（スコア2.5以上）
+            mscData.strengths = scores.filter(s => s.score >= 2.5).slice(0, 2);
+            // 弱み：下位2つ（スコア3.0未満）
+            mscData.weaknesses = scores.filter(s => s.score < 3.0).slice(-2).reverse();
+
+            // 生態メモを生成
+            generateBioMemo();
+        }
+
+        function generateBioMemo() {
+            const strengths = mscData.strengths.map(s => s.name).join('と');
+            const topTrait = mscData.strengths[0];
+
+            const bios = [
+                `${topTrait ? topTrait.name.replace(/シールド|ブースト|パワー|タイム|エナジー|マインド/, '') : '成長'}への情熱を持ち、日々の積み重ねを大切にしている。`,
+                '一歩一歩着実に前進し、自分のペースで成長を続けるタイプ。',
+                '困難があっても諦めず、粘り強く取り組む姿勢が光る。'
+            ];
+
+            if (mscData.radarData.discipline >= 3.5) {
+                bios.push('朝型の生活リズムを好み、コツコツと積み上げることを得意とする。');
+            }
+            if (mscData.radarData.curiosity >= 3.5) {
+                bios.push('知識欲が強く、常に新しいことを学ぼうとする姿勢を持つ。');
+            }
+            if (mscData.radarData.action >= 3.5) {
+                bios.push('思い立ったら即行動。エネルギッシュに動き回るタイプ。');
+            }
+
+            mscData.bio = bios.slice(0, 2).join('\n');
+        }
+
+        function renderMsc() {
+            // MBTI
+            const mbtiTag = document.getElementById('mscMbtiTag');
+            if (userMbti && MBTI_NAMES[userMbti]) {
+                mbtiTag.textContent = `${userMbti} (${MBTI_NAMES[userMbti]})`;
+            } else {
+                mbtiTag.textContent = 'MBTIを設定';
+            }
+
+            // レベル・EXP
+            const levelTitle = LEVEL_TITLES.find(l => mscData.level >= l.min && mscData.level <= l.max)?.title || '見習い';
+            document.getElementById('mscLevelBadge').textContent = `Lv.${mscData.level} ${levelTitle}`;
+
+            const score = mscData.score || 0;
+            const fullStars = Math.floor(score);
+            const halfStar = score % 1 >= 0.5 ? 1 : 0;
+            const emptyStars = 5 - fullStars - halfStar;
+            document.getElementById('mscStars').textContent = '★'.repeat(fullStars) + (halfStar ? '☆' : '') + '☆'.repeat(emptyStars);
+            document.getElementById('mscScore').textContent = score.toFixed(2);
+
+            const expInLevel = mscData.exp % 1000;
+            document.getElementById('mscExpFill').style.width = `${(expInLevel / 1000) * 100}%`;
+            document.getElementById('mscExpText').textContent = `${expInLevel} / 1000 EXP`;
+
+            // レーダーチャート
+            renderMscRadarChart();
+
+            // 強み
+            const strengthsHtml = mscData.strengths.length > 0
+                ? mscData.strengths.map(s => `
+                    <div class="msc-trait-item">
+                        <div class="msc-trait-icon">${s.icon}</div>
+                        <div class="msc-trait-content">
+                            <div class="msc-trait-header">
+                                <span class="msc-trait-name">${s.name}</span>
+                                <span class="msc-trait-level">Lv.${s.score.toFixed(1)}</span>
+                            </div>
+                            <div class="msc-trait-desc">${s.desc}</div>
+                        </div>
+                    </div>
+                `).join('')
+                : '<div class="msc-trait-item"><div class="msc-trait-desc">データを蓄積中...</div></div>';
+            document.getElementById('mscStrengths').innerHTML = strengthsHtml;
+
+            // 弱み
+            const weaknessesHtml = mscData.weaknesses.length > 0
+                ? mscData.weaknesses.map(w => `
+                    <div class="msc-trait-item">
+                        <div class="msc-trait-icon">${w.icon}</div>
+                        <div class="msc-trait-content">
+                            <div class="msc-trait-header">
+                                <span class="msc-trait-name">${w.name}</span>
+                                <span class="msc-trait-level">Lv.${w.score.toFixed(1)}</span>
+                            </div>
+                            <div class="msc-trait-desc">${w.desc.replace('している', 'が課題')}</div>
+                        </div>
+                    </div>
+                `).join('')
+                : '<div class="msc-trait-item"><div class="msc-trait-desc">データを蓄積中...</div></div>';
+            document.getElementById('mscWeaknesses').innerHTML = weaknessesHtml;
+
+            // 生態メモ
+            document.getElementById('mscBioText').textContent = mscData.bio || 'まだデータが少ないです。日々のトレーニングを続けて、あなたの特性を分析しましょう。';
+        }
+
+        function renderMscRadarChart() {
+            const ctx = document.getElementById('mscRadarChart').getContext('2d');
+
+            if (mscRadarChart) {
+                mscRadarChart.destroy();
+            }
+
+            const data = mscData.radarData;
+
+            mscRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['規律力', '目的力', '探究力', '内省力', '行動力', '継続力'],
+                    datasets: [{
+                        label: 'ムキムキ指数',
+                        data: [data.discipline, data.purpose, data.curiosity, data.reflection, data.action, data.consistency],
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        borderColor: 'rgba(254, 202, 87, 1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgba(254, 202, 87, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 5,
+                            ticks: {
+                                stepSize: 1,
+                                display: false
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.2)'
+                            },
+                            angleLines: {
+                                color: 'rgba(255, 255, 255, 0.2)'
+                            },
+                            pointLabels: {
+                                color: 'rgba(255, 255, 255, 0.9)',
+                                font: {
+                                    size: 11,
+                                    weight: '600'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // MBTI関連
+        function bindMbtiModalUI() {
+            const modal = document.getElementById('mbtiModal');
+            const close = () => { modal.classList.remove('visible'); selectedMbti = null; };
+
+            document.getElementById('mbtiBackdrop').onclick = close;
+            document.getElementById('mbtiCloseBtn').onclick = close;
+
+            document.querySelectorAll('.mbti-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    document.querySelectorAll('.mbti-option').forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    selectedMbti = opt.dataset.mbti;
+                });
+            });
+
+            document.getElementById('mbtiClearBtn').onclick = () => {
+                document.querySelectorAll('.mbti-option').forEach(o => o.classList.remove('selected'));
+                selectedMbti = null;
+            };
+
+            document.getElementById('mbtiSaveBtn').onclick = async () => {
+                userMbti = selectedMbti;
+                await saveMbti();
+                renderMsc();
+                close();
+            };
+        }
+
+        function openMbtiModal() {
+            selectedMbti = userMbti;
+            document.querySelectorAll('.mbti-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.dataset.mbti === userMbti);
+            });
+            document.getElementById('mbtiModal').classList.add('visible');
+        }
+
+        async function saveMbti() {
+            try {
+                await fetch(`${API_BASE}/msc/mbti`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, mbti: userMbti })
+                });
+            } catch (e) {
+                console.log('MBTI save to API failed, storing locally');
+                // ローカルストレージにも保存
+                localStorage.setItem(`msc_mbti_${userId}`, userMbti || '');
+            }
+        }
+
         init();
     </script>
 </body>
 </html>
-
