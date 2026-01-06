@@ -68,6 +68,33 @@
         .bar-btn { padding: 8px 14px; border-radius: 20px; border: 2px solid var(--energy-orange); font-size: 14px; font-weight: 600; cursor: pointer; background: transparent; color: var(--energy-orange); transition: all 0.3s ease; }
         .bar-btn:hover { background: var(--energy-orange); color: white; transform: rotate(180deg); }
 
+        /* MSC開くボタン */
+        .msc-open-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 2px solid #cc2200;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            background: linear-gradient(135deg, #1a0a0a 0%, #2d0808 100%);
+            color: #ff4422;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(204, 34, 0, 0.3), inset 0 1px 0 rgba(255, 68, 34, 0.2);
+            text-shadow: 0 0 8px rgba(255, 68, 34, 0.5);
+        }
+        .msc-open-btn:hover {
+            background: linear-gradient(135deg, #cc2200 0%, #ff4422 100%);
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 68, 34, 0.5), 0 0 40px rgba(204, 34, 0, 0.3);
+        }
+        .msc-open-btn.active {
+            background: linear-gradient(135deg, #cc2200 0%, #990000 100%);
+            color: white;
+            border-color: #ff4422;
+        }
+
         /* リストタブ */
         .add { display: flex; gap: 8px; padding: 16px; background: var(--bg-card); border-bottom: 1px solid rgba(13, 27, 42, 0.05); }
         .add input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 2px solid rgba(13, 27, 42, 0.1); font-size: 16px; font-family: inherit; transition: all 0.3s ease; background: var(--bg-main); }
@@ -306,26 +333,81 @@
         ::-webkit-scrollbar-track { background: rgba(13, 27, 42, 0.05); border-radius: 3px; }
         ::-webkit-scrollbar-thumb { background: var(--energy-orange); border-radius: 3px; }
 
-        /* ムキムキステータスカード（MSC） */
+        /* ムキムキステータスカード（MSC）- 漆黒×深紅 炎と鉄板デザイン */
         .msc-container { padding: 16px; }
         .msc-card {
-            background: linear-gradient(135deg, #cc2200 0%, #ff4422 30%, #ff6644 100%);
-            border-radius: 16px;
+            background:
+                /* 鉄板テクスチャ風グラデーション */
+                repeating-linear-gradient(
+                    90deg,
+                    rgba(40, 40, 40, 0.1) 0px,
+                    rgba(40, 40, 40, 0.1) 1px,
+                    transparent 1px,
+                    transparent 20px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(40, 40, 40, 0.1) 0px,
+                    rgba(40, 40, 40, 0.1) 1px,
+                    transparent 1px,
+                    transparent 20px
+                ),
+                /* メインの漆黒グラデーション */
+                linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 30%, #0d0505 70%, #050505 100%);
+            border-radius: 4px;
             padding: 20px;
-            color: white;
+            color: #e8e8e8;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(204, 34, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border: 2px solid #2a1a1a;
+            box-shadow:
+                0 15px 50px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 68, 34, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(204, 34, 0, 0.2);
         }
+        /* 炎のエフェクト - 下部 */
         .msc-card::before {
             content: '';
             position: absolute;
-            top: -50%;
-            right: -30%;
-            width: 80%;
-            height: 120%;
-            background: radial-gradient(ellipse, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+            bottom: -30%;
+            left: -10%;
+            width: 120%;
+            height: 60%;
+            background:
+                radial-gradient(ellipse at 20% 100%, rgba(255, 68, 34, 0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 100%, rgba(204, 34, 0, 0.5) 0%, transparent 40%),
+                radial-gradient(ellipse at 80% 100%, rgba(255, 100, 50, 0.3) 0%, transparent 45%);
             pointer-events: none;
+            animation: flameFlicker 3s ease-in-out infinite;
+            z-index: 0;
+        }
+        /* 炎のエフェクト - 上部アクセント */
+        .msc-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                #cc2200 20%,
+                #ff4422 50%,
+                #cc2200 80%,
+                transparent 100%);
+            box-shadow: 0 0 15px rgba(255, 68, 34, 0.8), 0 0 30px rgba(204, 34, 0, 0.5);
+            animation: topGlow 2s ease-in-out infinite;
+        }
+        @keyframes flameFlicker {
+            0%, 100% { opacity: 0.7; transform: translateY(0) scale(1); }
+            25% { opacity: 0.9; transform: translateY(-5px) scale(1.02); }
+            50% { opacity: 0.8; transform: translateY(-2px) scale(1.01); }
+            75% { opacity: 1; transform: translateY(-8px) scale(1.03); }
+        }
+        @keyframes topGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 68, 34, 0.8), 0 0 30px rgba(204, 34, 0, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(255, 68, 34, 1), 0 0 50px rgba(204, 34, 0, 0.8); }
         }
         .msc-header {
             display: flex;
@@ -337,74 +419,152 @@
         }
         .msc-header-left { display: flex; align-items: center; gap: 10px; }
         .msc-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, rgba(204, 34, 0, 0.4) 0%, rgba(100, 20, 10, 0.6) 100%);
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 24px;
+            border: 2px solid rgba(204, 34, 0, 0.5);
+            box-shadow: 0 0 15px rgba(255, 68, 34, 0.3), inset 0 1px 0 rgba(255, 100, 50, 0.2);
         }
         .msc-title-area {}
         .msc-title {
             font-family: 'Noto Serif JP', serif;
             font-size: 18px;
             font-weight: 700;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(255, 68, 34, 0.4), 0 2px 4px rgba(0, 0, 0, 0.5);
+            letter-spacing: 1px;
         }
         .msc-mbti-tag {
             display: inline-block;
-            background: rgba(255, 255, 255, 0.25);
-            padding: 3px 10px;
-            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(204, 34, 0, 0.4) 0%, rgba(100, 20, 10, 0.6) 100%);
+            padding: 4px 12px;
+            border-radius: 2px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
+            border: 1px solid rgba(204, 34, 0, 0.5);
+            color: #ff8866;
+            text-shadow: 0 0 6px rgba(255, 68, 34, 0.4);
+            letter-spacing: 1px;
         }
-        .msc-mbti-tag:hover { background: rgba(255, 255, 255, 0.35); }
+        .msc-mbti-tag:hover {
+            background: linear-gradient(135deg, #cc2200 0%, #990000 100%);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(204, 34, 0, 0.5);
+        }
         .msc-header-right { text-align: right; }
         .msc-level-badge {
             font-size: 11px;
-            opacity: 0.8;
-            margin-bottom: 2px;
+            color: #ff8866;
+            margin-bottom: 4px;
+            text-shadow: 0 0 8px rgba(255, 68, 34, 0.4);
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
         .msc-level-score {
             display: flex;
             align-items: baseline;
             gap: 4px;
+            justify-content: flex-end;
         }
-        .msc-stars { font-size: 14px; letter-spacing: -2px; }
-        .msc-score { font-size: 28px; font-weight: 700; }
+        .msc-stars {
+            font-size: 14px;
+            letter-spacing: -2px;
+            color: #ff6644;
+            text-shadow: 0 0 10px rgba(255, 68, 34, 0.6);
+        }
+        .msc-score {
+            font-size: 30px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 68, 34, 0.5), 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
         .msc-exp-bar {
             width: 80px;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-            margin-top: 4px;
+            height: 8px;
+            background: rgba(50, 30, 30, 0.8);
+            border-radius: 2px;
+            margin-top: 6px;
             overflow: hidden;
+            border: 1px solid rgba(204, 34, 0, 0.4);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
         }
         .msc-exp-fill {
             height: 100%;
-            background: linear-gradient(90deg, #feca57, #ff9f43);
-            border-radius: 3px;
+            background: linear-gradient(90deg, #cc2200, #ff4422, #ff6644);
+            border-radius: 2px;
             transition: width 0.8s ease;
+            box-shadow: 0 0 10px rgba(255, 68, 34, 0.6);
+            position: relative;
+        }
+        .msc-exp-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
         }
         .msc-exp-text {
             font-size: 10px;
-            opacity: 0.7;
-            margin-top: 2px;
+            color: #ff8866;
+            margin-top: 4px;
+            text-shadow: 0 0 6px rgba(255, 68, 34, 0.3);
         }
 
-        /* レーダーチャート */
+        /* レーダーチャート - 鉄板×炎デザイン */
         .msc-radar-section {
             position: relative;
             z-index: 2;
             margin: 20px 0;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            padding: 20px;
+            background:
+                /* 鉄板テクスチャ */
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(60, 40, 40, 0.1) 0px,
+                    rgba(60, 40, 40, 0.1) 1px,
+                    transparent 1px,
+                    transparent 10px
+                ),
+                linear-gradient(180deg, rgba(40, 25, 25, 0.95) 0%, rgba(20, 12, 12, 0.98) 100%);
+            border-radius: 4px;
+            border: 1px solid rgba(204, 34, 0, 0.4);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 100, 50, 0.08),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                0 4px 12px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        .msc-radar-section::before {
+            content: '⚔ POWER ANALYSIS ⚔';
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: 700;
+            color: #cc2200;
+            letter-spacing: 3px;
+            text-shadow: 0 0 8px rgba(204, 34, 0, 0.5);
+        }
+        .msc-radar-section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #cc2200, #ff4422, #cc2200, transparent);
+            box-shadow: 0 0 15px rgba(255, 68, 34, 0.6);
         }
         .msc-radar-container {
             width: 100%;
@@ -433,27 +593,77 @@
             align-items: center;
             gap: 6px;
         }
-        .msc-strength-title { color: #feca57; }
-        .msc-weakness-title { color: rgba(255, 255, 255, 0.7); }
+        .msc-strength-title {
+            color: #ff6644;
+            text-shadow: 0 0 10px rgba(255, 68, 34, 0.5);
+            letter-spacing: 1px;
+        }
+        .msc-strength-title::before {
+            content: '🔥';
+            margin-right: 4px;
+        }
+        .msc-weakness-title {
+            color: #888;
+            letter-spacing: 1px;
+        }
+        .msc-weakness-title::before {
+            content: '⚠';
+            margin-right: 4px;
+        }
         .msc-trait-item {
             display: flex;
             align-items: flex-start;
             gap: 10px;
-            padding: 10px 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            margin-bottom: 8px;
+            padding: 12px 14px;
+            background:
+                linear-gradient(135deg, rgba(204, 34, 0, 0.15) 0%, transparent 50%, rgba(204, 34, 0, 0.1) 100%),
+                linear-gradient(180deg, rgba(40, 20, 20, 0.9) 0%, rgba(20, 10, 10, 0.95) 100%);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(204, 34, 0, 0.4);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 100, 50, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                0 2px 8px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .msc-trait-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 68, 34, 0.5), transparent);
+        }
+        .msc-trait-item::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            left: 10%;
+            width: 80%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(204, 34, 0, 0.2) 0%, transparent 70%);
+            pointer-events: none;
+            animation: traitEmber 3s ease-in-out infinite;
+        }
+        @keyframes traitEmber {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
         }
         .msc-trait-icon {
-            width: 28px;
-            height: 28px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, rgba(204, 34, 0, 0.3) 0%, rgba(100, 20, 10, 0.5) 100%);
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 16px;
             flex-shrink: 0;
+            border: 1px solid rgba(204, 34, 0, 0.4);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 100, 50, 0.15);
         }
         .msc-trait-content { flex: 1; }
         .msc-trait-header {
@@ -462,46 +672,107 @@
             gap: 8px;
             margin-bottom: 3px;
         }
-        .msc-trait-name { font-size: 13px; font-weight: 700; }
+        .msc-trait-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ff9966;
+            text-shadow: 0 0 6px rgba(255, 100, 50, 0.3);
+            letter-spacing: 0.5px;
+        }
         .msc-trait-level {
             font-size: 10px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 2px 8px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #cc2200 0%, #990000 100%);
+            padding: 3px 10px;
+            border-radius: 2px;
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 6px rgba(204, 34, 0, 0.4);
         }
         .msc-trait-desc {
-            font-size: 11px;
-            opacity: 0.85;
-            line-height: 1.5;
+            font-size: 12px;
+            color: #c0b0a0;
+            line-height: 1.6;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
         }
 
-        /* 生態メモ */
+        /* 生態メモ - 鉄板×炎デザイン */
         .msc-bio-section {
             position: relative;
             z-index: 2;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 14px 16px;
+            background:
+                /* 鉄板リベット模様 */
+                radial-gradient(circle at 8px 8px, rgba(80, 80, 80, 0.3) 2px, transparent 2px),
+                radial-gradient(circle at calc(100% - 8px) 8px, rgba(80, 80, 80, 0.3) 2px, transparent 2px),
+                radial-gradient(circle at 8px calc(100% - 8px), rgba(80, 80, 80, 0.3) 2px, transparent 2px),
+                radial-gradient(circle at calc(100% - 8px) calc(100% - 8px), rgba(80, 80, 80, 0.3) 2px, transparent 2px),
+                /* 金属グラデーション */
+                linear-gradient(180deg, rgba(50, 30, 30, 0.95) 0%, rgba(25, 15, 15, 0.98) 50%, rgba(40, 25, 25, 0.95) 100%);
+            border-radius: 4px;
+            padding: 18px 20px;
+            border: 2px solid rgba(204, 34, 0, 0.5);
+            box-shadow:
+                inset 0 2px 4px rgba(255, 100, 50, 0.1),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+                0 4px 15px rgba(0, 0, 0, 0.5),
+                0 0 20px rgba(204, 34, 0, 0.15);
+            overflow: hidden;
+        }
+        .msc-bio-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #cc2200, #ff4422, #cc2200);
+            box-shadow: 0 0 10px rgba(255, 68, 34, 0.8);
+        }
+        .msc-bio-section::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: radial-gradient(ellipse at 50% 100%, rgba(255, 68, 34, 0.25) 0%, transparent 60%);
+            pointer-events: none;
+            animation: bioFlame 4s ease-in-out infinite;
+        }
+        @keyframes bioFlame {
+            0%, 100% { opacity: 0.6; transform: scaleY(1); }
+            50% { opacity: 1; transform: scaleY(1.1); }
         }
         .msc-bio-title {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             text-align: center;
+            color: #ff6644;
+            text-shadow: 0 0 10px rgba(255, 68, 34, 0.5);
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
         .msc-bio-text {
-            font-size: 13px;
-            line-height: 1.7;
+            font-size: 14px;
+            line-height: 1.8;
             text-align: center;
             font-style: italic;
+            color: #f0e0d0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
         }
         .msc-footer {
             text-align: center;
             font-size: 10px;
-            opacity: 0.5;
-            margin-top: 16px;
+            color: #666;
+            margin-top: 20px;
             position: relative;
             z-index: 2;
+            padding-top: 12px;
+            border-top: 1px solid rgba(204, 34, 0, 0.2);
+            letter-spacing: 1px;
         }
 
         /* MSC タブ切り替え */
@@ -591,16 +862,13 @@
         <header>
             <div class="bar">
                 <div class="bar-title">ステータス</div>
+                <button class="msc-open-btn" id="mscOpenBtn">MSC</button>
                 <button class="bar-btn" id="statusRefreshBtn">↻</button>
             </div>
         </header>
-        <div class="msc-tab-switch">
-            <button class="msc-tab-btn active" data-msc-tab="card">成長カード</button>
-            <button class="msc-tab-btn" data-msc-tab="log">トレーニングログ</button>
-        </div>
         <main>
-            <!-- MSC 成長カード -->
-            <div id="msc-card-view" class="msc-view">
+            <!-- MSC 成長カード（デフォルト非表示） -->
+            <div id="msc-card-view" class="msc-view" style="display:none;">
                 <div class="msc-container">
                     <div class="msc-card">
                         <!-- ヘッダー -->
@@ -689,8 +957,8 @@
                 </div>
             </div>
 
-            <!-- トレーニングログ -->
-            <div id="msc-log-view" class="msc-view" style="display:none;">
+            <!-- トレーニングログ（デフォルト表示） -->
+            <div id="msc-log-view" class="msc-view">
                 <div class="status-section daily-task-card" id="dailyTaskCard">
                     <div class="daily-task-header">
                         <div class="status-section-title"><span>🏋️</span> デイリートレーニング</div>
@@ -1753,20 +2021,23 @@
         // =====================
 
         function bindMscUI() {
-            // タブ切り替え
-            document.querySelectorAll('.msc-tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.msc-tab-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    const tab = btn.dataset.mscTab;
-                    if (tab === 'card') {
-                        document.getElementById('msc-card-view').style.display = 'block';
-                        document.getElementById('msc-log-view').style.display = 'none';
-                    } else {
-                        document.getElementById('msc-card-view').style.display = 'none';
-                        document.getElementById('msc-log-view').style.display = 'block';
-                    }
-                });
+            // MSCボタンでカード表示切り替え
+            const mscOpenBtn = document.getElementById('mscOpenBtn');
+            let mscVisible = false;
+
+            mscOpenBtn.addEventListener('click', () => {
+                mscVisible = !mscVisible;
+                if (mscVisible) {
+                    document.getElementById('msc-card-view').style.display = 'block';
+                    document.getElementById('msc-log-view').style.display = 'none';
+                    mscOpenBtn.classList.add('active');
+                    mscOpenBtn.textContent = '← 戻る';
+                } else {
+                    document.getElementById('msc-card-view').style.display = 'none';
+                    document.getElementById('msc-log-view').style.display = 'block';
+                    mscOpenBtn.classList.remove('active');
+                    mscOpenBtn.textContent = 'MSC';
+                }
             });
         }
 
