@@ -1637,7 +1637,7 @@
                 else { wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; }
             });
 
-            // ドラッグ（並び替え）- 改良版
+            // ドラッグ（並び替え）- 高速版
             const startDrag = (startEvent) => {
                 startEvent.preventDefault();
                 startEvent.stopPropagation();
@@ -1645,78 +1645,68 @@
                 if (!list) return;
                 isDraggingCard = true;
                 card.classList.remove("open-left", "open-right");
-                sl.style.transition = ""; sl.style.transform = "translateX(0)";
+                sl.style.transition = "none"; sl.style.transform = "translateX(0)";
 
                 const cardRect = card.getBoundingClientRect();
                 const dragStartY = startEvent.clientY || (startEvent.touches && startEvent.touches[0].clientY);
                 const cardStartTop = cardRect.top, cardHeight = cardRect.height, cardWidth = cardRect.width;
 
-                // プレースホルダーを作成
-                const placeholder = document.createElement("div");
-                placeholder.className = "card drag-placeholder";
-                placeholder.style.height = cardHeight + "px";
-                placeholder.style.transition = "none";
+                // ドラッグ用のクローンを作成（元カードは非表示にしない）
+                const dragClone = card.cloneNode(true);
+                dragClone.style.cssText = `position:fixed;left:${cardRect.left}px;top:${cardRect.top}px;width:${cardWidth}px;height:${cardHeight}px;pointer-events:none;z-index:1000;opacity:0.95;box-shadow:0 8px 20px rgba(0,0,0,0.3);transition:none;`;
+                dragClone.classList.add("dragging");
+                document.body.appendChild(dragClone);
 
-                // まずカードのスタイルを設定してから移動（視覚的な消失を防ぐ）
-                card.style.cssText = `position:fixed;left:${cardRect.left}px;top:${cardRect.top}px;width:${cardWidth}px;height:${cardHeight}px;pointer-events:none;z-index:1000;opacity:0.95;box-shadow:0 8px 20px rgba(0,0,0,0.3);`;
-                card.classList.add("dragging");
-
-                // プレースホルダーを挿入し、カードをbodyに移動
-                list.insertBefore(placeholder, card);
-                document.body.appendChild(card);
+                // 元カードを透明にしてプレースホルダーとして使用
+                card.style.opacity = "0.3";
+                card.style.transition = "none";
                 document.body.style.userSelect = "none";
 
                 let currentY = dragStartY;
-                let rafId = null;
 
                 const getY = ev => ev.touches?.length ? ev.touches[0].clientY : ev.clientY;
 
-                const updatePosition = () => {
-                    const deltaY = currentY - dragStartY;
-                    card.style.top = (cardStartTop + deltaY) + "px";
+                const updatePosition = (y) => {
+                    const deltaY = y - dragStartY;
+                    // 直接DOMを更新（RAFを使わず即座に反映）
+                    dragClone.style.top = (cardStartTop + deltaY) + "px";
 
-                    const cardCenterY = cardStartTop + deltaY + cardHeight / 2;
-                    const siblings = Array.from(list.querySelectorAll(".card:not(.dragging)"));
+                    const cloneCenterY = cardStartTop + deltaY + cardHeight / 2;
+                    const siblings = Array.from(list.querySelectorAll(".card"));
 
                     for (const sibling of siblings) {
-                        if (sibling === placeholder) continue;
+                        if (sibling === card) continue;
                         const siblingRect = sibling.getBoundingClientRect();
-                        if (cardCenterY < siblingRect.top + siblingRect.height / 2) {
-                            if (placeholder.nextSibling !== sibling) list.insertBefore(placeholder, sibling);
+                        if (cloneCenterY < siblingRect.top + siblingRect.height / 2) {
+                            if (card.nextSibling !== sibling) list.insertBefore(card, sibling);
                             return;
                         }
                     }
-                    if (placeholder.nextSibling !== null) list.appendChild(placeholder);
+                    // 最後に移動
+                    if (list.lastElementChild !== card) list.appendChild(card);
                 };
 
                 const onMove = ev => {
                     ev.preventDefault();
                     currentY = getY(ev);
-                    // requestAnimationFrameで滑らかな更新
-                    if (rafId) cancelAnimationFrame(rafId);
-                    rafId = requestAnimationFrame(updatePosition);
+                    updatePosition(currentY);
                 };
 
                 const onUp = () => {
-                    if (rafId) cancelAnimationFrame(rafId);
                     document.removeEventListener("pointermove", onMove);
                     document.removeEventListener("pointerup", onUp);
                     document.removeEventListener("touchmove", onMove);
                     document.removeEventListener("touchend", onUp);
 
-                    card.classList.remove("dragging");
-                    card.style.cssText = "";
+                    // クローンを削除
+                    dragClone.remove();
+
+                    // 元カードを復元
+                    card.style.opacity = "";
+                    card.style.transition = "";
                     card.classList.remove("open-left", "open-right");
                     const slEl = card.querySelector(".sl");
                     if (slEl) { slEl.style.transition = ""; slEl.style.transform = "translateX(0)"; }
-
-                    if (placeholder?.parentNode === list) {
-                        list.insertBefore(card, placeholder);
-                        placeholder.remove();
-                    } else if (list) {
-                        list.appendChild(card);
-                        placeholder?.parentNode?.removeChild(placeholder);
-                    }
 
                     document.body.style.userSelect = "";
                     setTimeout(() => isDraggingCard = false, 50);
@@ -1981,7 +1971,15 @@
             container.querySelectorAll('.journal-card').forEach(card => {
                 card.onclick = (e) => {
                     e.stopPropagation();
-                    const j = journalsData.find(x => x.id == card.dataset.id);
+                    const cardId = String(card.dataset.id);
+                    // journalsDataから検索、見つからなければgroupedからも検索
+                    let j = journalsData.find(x => String(x.id) === cardId);
+                    if (!j) {
+                        for (const group of journalsGrouped) {
+                            j = group.journals.find(x => String(x.id) === cardId);
+                            if (j) break;
+                        }
+                    }
                     if (j) openJournalDetailModal(j);
                 };
             });
