@@ -822,6 +822,59 @@
         .mbti-option.selected { border-color: var(--energy-orange); background: rgba(255, 159, 67, 0.2); }
         .mbti-option-type { font-size: 14px; font-weight: 700; color: var(--dark-navy); }
         .mbti-option-name { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+        /* MSCカード全画面表示（LIFF全体表示対応） */
+        #msc-card-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+            padding: 20px;
+        }
+        #msc-card-view.active {
+            display: flex;
+        }
+        #msc-card-view .msc-container {
+            transform: scale(0.67);
+            transform-origin: center center;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        #msc-card-view .msc-card {
+            max-width: 400px;
+            width: 100vw;
+        }
+        /* MSCカード閉じるボタン */
+        .msc-close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 68, 34, 0.5);
+            background: rgba(20, 10, 10, 0.9);
+            color: #ff6644;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .msc-close-btn:hover {
+            background: rgba(204, 34, 0, 0.3);
+            border-color: #ff4422;
+            transform: scale(1.1);
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -829,9 +882,9 @@
 <body>
 
     <nav class="tab-nav">
-        <div class="tab-nav-item active" data-tab="list"><span>📋</span>リスト</div>
-        <div class="tab-nav-item" data-tab="status"><span>📊</span>ステータス</div>
-        <div class="tab-nav-item" data-tab="journal"><span>📝</span>ジャーナル</div>
+        <div class="tab-nav-item active" data-tab="list">リスト</div>
+        <div class="tab-nav-item" data-tab="status">ステータス</div>
+        <div class="tab-nav-item" data-tab="journal">ジャーナル</div>
     </nav>
 
     <!-- リストタブ -->
@@ -867,8 +920,9 @@
             </div>
         </header>
         <main>
-            <!-- MSC 成長カード（デフォルト非表示） -->
-            <div id="msc-card-view" class="msc-view" style="display:none;">
+            <!-- MSC 成長カード（デフォルト非表示・全画面表示） -->
+            <div id="msc-card-view" class="msc-view">
+                <button class="msc-close-btn" id="mscCloseBtn">&times;</button>
                 <div class="msc-container">
                     <div class="msc-card">
                         <!-- ヘッダー -->
@@ -961,7 +1015,7 @@
             <div id="msc-log-view" class="msc-view">
                 <div class="status-section daily-task-card" id="dailyTaskCard">
                     <div class="daily-task-header">
-                        <div class="status-section-title"><span>🏋️</span> デイリートレーニング</div>
+                        <div class="status-section-title"><span>🏋️</span> デイリータスク</div>
                         <span class="daily-task-arrow">▼</span>
                     </div>
                     <div class="daily-task-content">
@@ -974,7 +1028,7 @@
                 </div>
                 <div class="status-section">
                     <div class="week-view-header">
-                        <div class="status-section-title" style="margin-bottom:0;"><span>📅</span> 週間トレーニングログ</div>
+                        <div class="status-section-title" style="margin-bottom:0;"><span>📅</span> 週間ログ</div>
                         <button class="detail-view-btn" id="openMonthlyAnalysis"><span>📊</span> 詳しく見る</button>
                     </div>
                     <table class="week-table" id="weekTable">
@@ -1315,7 +1369,29 @@
         }
 
         // ミッションタスク
+        function getNextSunday() {
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const daysUntilSunday = (7 - dayOfWeek) % 7 || 7;
+            const nextSunday = new Date(today);
+            nextSunday.setDate(today.getDate() + daysUntilSunday);
+            nextSunday.setHours(23, 59, 59);
+            return nextSunday.toISOString();
+        }
+
         async function loadMissionTask() {
+            // デモデータ（APIがない場合に使用）
+            const demoData = {
+                mission: {
+                    id: 'demo',
+                    title: '今週の限界突破ミッション',
+                    description: '毎日10分間の瞑想で心を鍛え、内なる炎を燃やせ',
+                    expires_at: getNextSunday()
+                },
+                completed_today: false,
+                today_completions: 42
+            };
+
             try {
                 const res = await fetch(`${API_BASE}/mission?user_id=${encodeURIComponent(userId)}`);
                 if (!res.ok) throw new Error('API Error');
@@ -1324,8 +1400,10 @@
                 missionCompletedToday = data.completed_today || false;
                 renderMissionTask(data);
             } catch (e) {
-                console.log('Mission API unavailable, hiding mission section');
-                document.getElementById('missionTaskContainer').innerHTML = '';
+                console.log('Mission API unavailable, showing demo mission');
+                currentMission = demoData.mission;
+                missionCompletedToday = demoData.completed_today;
+                renderMissionTask(demoData);
             }
         }
 
@@ -1361,6 +1439,15 @@
         }
 
         async function completeMission(missionId) {
+            const updateUI = () => {
+                missionCompletedToday = true;
+                const btn = document.getElementById('missionCompleteBtn');
+                if (btn) {
+                    btn.classList.add('completed');
+                    btn.textContent = '✓ COMPLETED';
+                }
+            };
+
             try {
                 const res = await fetch(`${API_BASE}/mission/complete`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1369,9 +1456,12 @@
                 if (res.ok) {
                     missionCompletedToday = true;
                     await loadMissionTask();
+                } else {
+                    updateUI();
                 }
             } catch (e) {
-                console.error('Mission complete error:', e);
+                console.log('Mission complete - demo mode');
+                updateUI();
             }
         }
 
@@ -1502,24 +1592,35 @@
                 });
             }
 
-            // スマホスワイプ
-            let startX = 0, dx = 0, isScrolling = null, isHandleDrag = false;
+            // スマホスワイプ（上下スクロール優先）
+            let startX = 0, startY = 0, dx = 0, dy = 0, isScrolling = null, isHandleDrag = false;
+            const SCROLL_THRESHOLD = 10; // スクロール判定の閾値
+
             wrap.addEventListener("touchstart", e => {
                 if (isDraggingCard || e.target.closest("button")) return;
                 if (e.target.closest(".handle")) { isHandleDrag = true; return; }
                 isHandleDrag = false;
                 startX = e.touches[0].clientX;
-                dx = 0; isScrolling = null;
+                startY = e.touches[0].clientY;
+                dx = 0; dy = 0; isScrolling = null;
                 sl.style.transition = "none";
             }, { passive: true });
 
             wrap.addEventListener("touchmove", e => {
                 if (isDraggingCard || isHandleDrag || !e.touches.length) return;
-                const dy = e.touches[0].clientY - (e.touches[0].clientY || 0);
+                dy = e.touches[0].clientY - startY;
                 dx = e.touches[0].clientX - startX;
-                if (isScrolling === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) isScrolling = Math.abs(dy) > Math.abs(dx);
-                if (isScrolling) return;
-                if (Math.abs(dx) > 8) e.preventDefault();
+                // 上下移動が横移動より大きい場合はスクロールとして判定
+                if (isScrolling === null && (Math.abs(dx) > SCROLL_THRESHOLD || Math.abs(dy) > SCROLL_THRESHOLD)) {
+                    isScrolling = Math.abs(dy) > Math.abs(dx);
+                }
+                // 上下スクロールの場合は何もしない（ブラウザのスクロールに任せる）
+                if (isScrolling) {
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
+                // 横スワイプの場合のみpreventDefaultでスクロールを止める
+                if (Math.abs(dx) > SCROLL_THRESHOLD) e.preventDefault();
                 sl.style.transform = `translateX(${dx}px)`;
             }, { passive: false });
 
@@ -1536,7 +1637,7 @@
                 else { wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; }
             });
 
-            // ドラッグ（並び替え）
+            // ドラッグ（並び替え）- 改良版
             const startDrag = (startEvent) => {
                 startEvent.preventDefault();
                 startEvent.stopPropagation();
@@ -1545,48 +1646,84 @@
                 isDraggingCard = true;
                 card.classList.remove("open-left", "open-right");
                 sl.style.transition = ""; sl.style.transform = "translateX(0)";
+
                 const cardRect = card.getBoundingClientRect();
-                const startY = startEvent.clientY || (startEvent.touches && startEvent.touches[0].clientY);
-                const cardStartTop = cardRect.top, cardHeight = cardRect.height;
+                const dragStartY = startEvent.clientY || (startEvent.touches && startEvent.touches[0].clientY);
+                const cardStartTop = cardRect.top, cardHeight = cardRect.height, cardWidth = cardRect.width;
+
+                // プレースホルダーを作成
                 const placeholder = document.createElement("div");
                 placeholder.className = "card drag-placeholder";
                 placeholder.style.height = cardHeight + "px";
-                list.insertBefore(placeholder, card);
+                placeholder.style.transition = "none";
+
+                // まずカードのスタイルを設定してから移動（視覚的な消失を防ぐ）
+                card.style.cssText = `position:fixed;left:${cardRect.left}px;top:${cardRect.top}px;width:${cardWidth}px;height:${cardHeight}px;pointer-events:none;z-index:1000;opacity:0.95;box-shadow:0 8px 20px rgba(0,0,0,0.3);`;
                 card.classList.add("dragging");
-                card.style.cssText = `position:fixed;left:${cardRect.left}px;top:${cardRect.top}px;width:${cardRect.width}px;height:${cardHeight}px;pointer-events:none;`;
-                document.body.style.userSelect = "none";
+
+                // プレースホルダーを挿入し、カードをbodyに移動
+                list.insertBefore(placeholder, card);
                 document.body.appendChild(card);
+                document.body.style.userSelect = "none";
+
+                let currentY = dragStartY;
+                let rafId = null;
 
                 const getY = ev => ev.touches?.length ? ev.touches[0].clientY : ev.clientY;
-                const onMove = ev => {
-                    const currentY = getY(ev), deltaY = currentY - startY;
+
+                const updatePosition = () => {
+                    const deltaY = currentY - dragStartY;
                     card.style.top = (cardStartTop + deltaY) + "px";
+
                     const cardCenterY = cardStartTop + deltaY + cardHeight / 2;
                     const siblings = Array.from(list.querySelectorAll(".card:not(.dragging)"));
+
                     for (const sibling of siblings) {
                         if (sibling === placeholder) continue;
                         const siblingRect = sibling.getBoundingClientRect();
-                        if (cardCenterY < siblingRect.top + siblingRect.height / 2) { if (placeholder.nextSibling !== sibling) list.insertBefore(placeholder, sibling); return; }
+                        if (cardCenterY < siblingRect.top + siblingRect.height / 2) {
+                            if (placeholder.nextSibling !== sibling) list.insertBefore(placeholder, sibling);
+                            return;
+                        }
                     }
                     if (placeholder.nextSibling !== null) list.appendChild(placeholder);
                 };
+
+                const onMove = ev => {
+                    ev.preventDefault();
+                    currentY = getY(ev);
+                    // requestAnimationFrameで滑らかな更新
+                    if (rafId) cancelAnimationFrame(rafId);
+                    rafId = requestAnimationFrame(updatePosition);
+                };
+
                 const onUp = () => {
+                    if (rafId) cancelAnimationFrame(rafId);
                     document.removeEventListener("pointermove", onMove);
                     document.removeEventListener("pointerup", onUp);
                     document.removeEventListener("touchmove", onMove);
                     document.removeEventListener("touchend", onUp);
+
                     card.classList.remove("dragging");
                     card.style.cssText = "";
                     card.classList.remove("open-left", "open-right");
                     const slEl = card.querySelector(".sl");
                     if (slEl) { slEl.style.transition = ""; slEl.style.transform = "translateX(0)"; }
-                    if (placeholder?.parentNode === list) { list.insertBefore(card, placeholder); placeholder.remove(); }
-                    else if (list) { list.appendChild(card); placeholder?.parentNode?.removeChild(placeholder); }
+
+                    if (placeholder?.parentNode === list) {
+                        list.insertBefore(card, placeholder);
+                        placeholder.remove();
+                    } else if (list) {
+                        list.appendChild(card);
+                        placeholder?.parentNode?.removeChild(placeholder);
+                    }
+
                     document.body.style.userSelect = "";
-                    setTimeout(() => isDraggingCard = false, 100);
+                    setTimeout(() => isDraggingCard = false, 50);
                     saveSortOrder();
                 };
-                document.addEventListener("pointermove", onMove);
+
+                document.addEventListener("pointermove", onMove, { passive: false });
                 document.addEventListener("pointerup", onUp);
                 document.addEventListener("touchmove", onMove, { passive: false });
                 document.addEventListener("touchend", onUp);
@@ -2023,20 +2160,38 @@
         function bindMscUI() {
             // MSCボタンでカード表示切り替え
             const mscOpenBtn = document.getElementById('mscOpenBtn');
-            let mscVisible = false;
+            const mscCloseBtn = document.getElementById('mscCloseBtn');
+            const mscCardView = document.getElementById('msc-card-view');
+
+            function showMsc() {
+                mscCardView.classList.add('active');
+                mscOpenBtn.classList.add('active');
+                mscOpenBtn.textContent = '← 戻る';
+            }
+
+            function hideMsc() {
+                mscCardView.classList.remove('active');
+                mscOpenBtn.classList.remove('active');
+                mscOpenBtn.textContent = 'MSC';
+            }
 
             mscOpenBtn.addEventListener('click', () => {
-                mscVisible = !mscVisible;
-                if (mscVisible) {
-                    document.getElementById('msc-card-view').style.display = 'block';
-                    document.getElementById('msc-log-view').style.display = 'none';
-                    mscOpenBtn.classList.add('active');
-                    mscOpenBtn.textContent = '← 戻る';
+                if (mscCardView.classList.contains('active')) {
+                    hideMsc();
                 } else {
-                    document.getElementById('msc-card-view').style.display = 'none';
-                    document.getElementById('msc-log-view').style.display = 'block';
-                    mscOpenBtn.classList.remove('active');
-                    mscOpenBtn.textContent = 'MSC';
+                    showMsc();
+                }
+            });
+
+            // 閉じるボタン
+            if (mscCloseBtn) {
+                mscCloseBtn.addEventListener('click', hideMsc);
+            }
+
+            // 背景クリックで閉じる
+            mscCardView.addEventListener('click', (e) => {
+                if (e.target === mscCardView) {
+                    hideMsc();
                 }
             });
         }
