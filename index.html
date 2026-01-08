@@ -65,8 +65,13 @@
         .bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; }
         .bar-title { font-family: 'Noto Serif JP', serif; font-weight: 700; font-size: 18px; color: var(--dark-navy); display: flex; align-items: center; gap: 8px; }
         .bar-title::before { content: '💪'; font-size: 20px; }
-        .bar-btn { padding: 8px 14px; border-radius: 20px; border: 2px solid var(--energy-orange); font-size: 14px; font-weight: 600; cursor: pointer; background: transparent; color: var(--energy-orange); transition: all 0.3s ease; }
+        .bar-btn { padding: 8px 14px; border-radius: 20px; border: 2px solid var(--energy-orange); font-size: 14px; font-weight: 600; cursor: pointer; background: transparent; color: var(--energy-orange); transition: all 0.3s ease; flex-shrink: 0; }
         .bar-btn:hover { background: var(--energy-orange); color: white; transform: rotate(180deg); }
+        .bar-add { display: flex; gap: 6px; flex: 1; max-width: 280px; margin: 0 8px; }
+        .bar-add input { flex: 1; padding: 8px 12px; border-radius: 20px; border: 2px solid rgba(13, 27, 42, 0.1); font-size: 13px; font-family: inherit; transition: all 0.3s ease; background: var(--bg-main); min-width: 0; }
+        .bar-add input:focus { outline: none; border-color: var(--energy-orange); box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.15); }
+        .bar-add button { padding: 8px 14px; border-radius: 20px; border: none; background: var(--gradient-power); color: white; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3); white-space: nowrap; flex-shrink: 0; }
+        .bar-add button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4); }
 
         /* MSC開くボタン */
         .msc-open-btn {
@@ -96,11 +101,6 @@
         }
 
         /* リストタブ */
-        .add { display: flex; gap: 8px; padding: 16px; background: var(--bg-card); border-bottom: 1px solid rgba(13, 27, 42, 0.05); }
-        .add input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 2px solid rgba(13, 27, 42, 0.1); font-size: 16px; font-family: inherit; transition: all 0.3s ease; background: var(--bg-main); }
-        .add input:focus { outline: none; border-color: var(--energy-orange); box-shadow: 0 0 0 4px rgba(255, 159, 67, 0.15); }
-        .add button { padding: 12px 20px; border-radius: 12px; border: none; background: var(--gradient-power); color: white; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
-        .add button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4); }
         .list { display: flex; flex-direction: column; }
 
         /* カード基本スタイル */
@@ -152,22 +152,216 @@
         .divider-label::before, .divider-label::after { content: ''; width: 30px; height: 2px; background: linear-gradient(90deg, transparent, var(--slate-gray), transparent); }
         .remindAt { font-size: 11px; color: var(--muscle-purple); margin-left: 8px; white-space: nowrap; font-weight: 500; background: rgba(165, 94, 234, 0.1); padding: 3px 8px; border-radius: 10px; }
 
-        /* ミッションタスク */
-        .mission-task-wrapper { position: relative; margin: 16px; }
-        .mission-task-card { background: linear-gradient(135deg, rgba(204, 34, 0, 0.15) 0%, transparent 30%, transparent 70%, rgba(204, 34, 0, 0.1) 100%), linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%); border-radius: 4px; padding: 20px; color: #e0e0e0; position: relative; overflow: hidden; border: 1px solid #333; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.3); }
-        .mission-task-card::after { content: ''; position: absolute; bottom: -50%; left: -20%; width: 60%; height: 100%; background: radial-gradient(ellipse, rgba(204, 34, 0, 0.3) 0%, transparent 70%); pointer-events: none; z-index: 0; animation: emberGlow 4s ease-in-out infinite; }
-        @keyframes emberGlow { 0%, 100% { opacity: 0.6; transform: translateX(0); } 50% { opacity: 1; transform: translateX(10px); } }
-        .mission-task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; position: relative; z-index: 2; }
-        .mission-task-badge { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; background: linear-gradient(135deg, #cc2200 0%, #990000 100%); padding: 6px 14px; border-radius: 2px; text-transform: uppercase; letter-spacing: 2px; border: 1px solid #ff4422; box-shadow: 0 0 15px rgba(204, 34, 0, 0.5); }
-        .mission-task-title { font-family: 'Noto Serif JP', serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #ffffff; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); position: relative; z-index: 2; }
-        .mission-task-desc { font-size: 13px; opacity: 0.8; margin-bottom: 18px; line-height: 1.6; position: relative; z-index: 2; }
-        .mission-task-actions { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
-        .mission-complete-btn { background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%); border: 2px solid #cc2200; color: #ff4422; padding: 12px 28px; border-radius: 2px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05); }
-        .mission-complete-btn:hover { background: linear-gradient(135deg, #cc2200 0%, #990000 100%); color: white; box-shadow: 0 6px 25px rgba(204, 34, 0, 0.4), 0 0 30px rgba(204, 34, 0, 0.2); transform: translateY(-2px); }
-        .mission-complete-btn.completed { background: linear-gradient(135deg, #1a3a1a 0%, #0a2a0a 100%); border-color: #26de81; color: #26de81; box-shadow: 0 0 20px rgba(38, 222, 129, 0.3); }
-        .mission-expire { font-size: 12px; color: #888; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+        /* ミッションタスク - 羊皮紙スタイル */
+        .mission-task-wrapper {
+            position: relative;
+            margin: 16px;
+            perspective: 1000px;
+        }
+        .mission-task-card {
+            background: url('../画像/ミッションタスク_背景.jpg') center/cover;
+            border-radius: 4px;
+            padding: 24px 28px;
+            color: #3d2b1f;
+            position: relative;
+            overflow: visible;
+            border: none;
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.2),
+                0 1px 3px rgba(0, 0, 0, 0.1),
+                inset 0 0 30px rgba(139, 115, 85, 0.2);
+            min-height: 120px;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+        }
+        .mission-task-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg,
+                rgba(255, 255, 255, 0.1) 0%,
+                transparent 40%,
+                transparent 60%,
+                rgba(0, 0, 0, 0.05) 100%);
+            pointer-events: none;
+            border-radius: 4px;
+        }
+        /* めくれエフェクト用の右端の影 */
+        .mission-task-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: var(--peel-shadow, 0px);
+            height: 100%;
+            background: linear-gradient(to left,
+                rgba(0, 0, 0, 0.35) 0%,
+                rgba(0, 0, 0, 0.15) 40%,
+                transparent 100%);
+            pointer-events: none;
+            z-index: 3;
+            transition: width 0.1s ease-out;
+            border-radius: 0 4px 4px 0;
+        }
+        .mission-task-card.peeling::after {
+            width: var(--peel-shadow, 60px);
+        }
+        /* めくれた裏面 */
+        .mission-peel-back {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(to right, #c9b896 0%, #d4c4a8 50%, #e8dcc8 100%);
+            transform-origin: left center;
+            transform: rotateY(0deg);
+            transition: width 0.1s ease-out;
+            z-index: 2;
+            border-radius: 0 4px 4px 0;
+            box-shadow: inset 3px 0 8px rgba(0, 0, 0, 0.15);
+        }
+        .mission-task-card.peeling .mission-peel-back {
+            width: 80px;
+        }
+        .mission-task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
+        }
+        .mission-task-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
+            padding: 5px 12px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #f5deb3;
+            border: 1px solid #a0522d;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .mission-task-title {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #2d1f14;
+            text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+            z-index: 2;
+        }
+        .mission-task-desc {
+            font-size: 13px;
+            color: #5c4033;
+            margin-bottom: 14px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 2;
+        }
+        .mission-task-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .mission-expire {
+            font-size: 12px;
+            color: #8b6914;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(139, 115, 85, 0.15);
+            padding: 6px 12px;
+            border-radius: 12px;
+        }
         .mission-expire::before { content: '⏱'; font-size: 14px; }
-        .mission-achievement-bubble { position: absolute; top: -8px; right: -8px; background: linear-gradient(135deg, #cc2200 0%, #ff4422 100%); color: white; padding: 8px 14px; border-radius: 2px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 15px rgba(204, 34, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2); z-index: 5; border: 1px solid #ff6644; }
+        .mission-achievement-bubble {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
+            color: #f5deb3;
+            padding: 6px 12px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            z-index: 5;
+            border: 1px solid #a0522d;
+        }
+        /* スワイプヒント */
+        .mission-swipe-hint {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 10px;
+            color: #8b7355;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0.7;
+            z-index: 2;
+        }
+        .mission-swipe-hint::after {
+            content: '←';
+            animation: swipeHint 1.5s ease-in-out infinite;
+        }
+        @keyframes swipeHint {
+            0%, 100% { transform: translateX(0); opacity: 0.7; }
+            50% { transform: translateX(-5px); opacity: 1; }
+        }
+        /* 完了スタンプ */
+        .mission-completed-stamp {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg) scale(0);
+            width: 180px;
+            height: auto;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+        .mission-task-card.completed .mission-completed-stamp {
+            animation: stampSlam 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes stampSlam {
+            0% {
+                transform: translate(-50%, -50%) rotate(-15deg) scale(3);
+                opacity: 0;
+            }
+            60% {
+                transform: translate(-50%, -50%) rotate(-15deg) scale(0.9);
+                opacity: 1;
+            }
+            80% {
+                transform: translate(-50%, -50%) rotate(-15deg) scale(1.05);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(-15deg) scale(1);
+                opacity: 1;
+            }
+        }
+        /* 完了時のカード暗転 */
+        .mission-task-card.completed::before {
+            background: rgba(0, 0, 0, 0.15);
+        }
+        .mission-task-card.completed .mission-task-title,
+        .mission-task-card.completed .mission-task-desc {
+            opacity: 0.6;
+        }
+        /* ボタンは非表示（スワイプのみ） */
+        .mission-complete-btn { display: none; }
 
         /* ステータスタブ */
         .status-section { background: var(--bg-card); margin: 12px; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px rgba(13, 27, 42, 0.06); border: 1px solid rgba(13, 27, 42, 0.04); transition: all 0.3s ease; }
@@ -892,15 +1086,15 @@
         <header>
             <div class="bar">
                 <div class="bar-title">リスト</div>
+                <div class="bar-add">
+                    <input id="newTitle" placeholder="💪 タスクを入力…" />
+                    <button id="btnAdd">追加</button>
+                </div>
                 <button class="bar-btn" id="refreshBtn">↻</button>
             </div>
         </header>
         <main>
             <div id="missionTaskContainer"></div>
-            <div class="add">
-                <input id="newTitle" placeholder="💪 今日も鍛えるタスクを入力…" />
-                <button id="btnAdd">追加</button>
-            </div>
             <div class="divider-label">🎯 ToDoタスク</div>
             <div id="critical" class="list"></div>
             <div id="high" class="list"></div>
@@ -1418,23 +1612,158 @@
             container.innerHTML = `
                 <div class="mission-task-wrapper">
                     <div class="mission-achievement-bubble">🔥 ${todayCount}人が達成</div>
-                    <div class="mission-task-card">
+                    <div class="mission-task-card ${completedToday ? 'completed' : ''}" id="missionCard">
+                        <div class="mission-peel-back"></div>
+                        <img class="mission-completed-stamp" src="../画像/ミッションタスク_COMPLETEDハンコ.png" alt="COMPLETED" />
                         <div class="mission-task-header">
                             <div class="mission-task-badge"><span>🎯</span><span>WEEKLY MISSION</span></div>
                         </div>
                         <div class="mission-task-title">${mission.title || '今週のミッション'}</div>
                         <div class="mission-task-desc">${mission.description || ''}</div>
                         <div class="mission-task-actions">
-                            <button class="mission-complete-btn ${completedToday ? 'completed' : ''}" id="missionCompleteBtn">
-                                ${completedToday ? '✓ COMPLETED' : '💪 CHALLENGE'}
-                            </button>
                             <div class="mission-expire">残り${daysLeft > 0 ? daysLeft : 0}日</div>
                         </div>
+                        ${!completedToday ? '<div class="mission-swipe-hint">スワイプで達成</div>' : ''}
                     </div>
                 </div>`;
-            document.getElementById('missionCompleteBtn').addEventListener('click', async () => {
-                if (completedToday) return;
-                await completeMission(mission.id);
+
+            // 完了済みでない場合のみスワイプ処理を設定
+            if (!completedToday) {
+                setupMissionSwipe(mission.id);
+            }
+        }
+
+        function setupMissionSwipe(missionId) {
+            const card = document.getElementById('missionCard');
+            if (!card) return;
+
+            const peelBack = card.querySelector('.mission-peel-back');
+            let startX = 0, currentX = 0, dx = 0;
+            let isSwiping = false;
+            const COMPLETE_THRESHOLD = 150; // この距離を超えたら完了
+
+            const updatePeelEffect = (swipeDistance) => {
+                // スワイプ距離に応じてめくれエフェクトを更新
+                const peelWidth = Math.min(Math.max(swipeDistance * 0.8, 0), 200);
+                const shadowWidth = Math.min(Math.max(swipeDistance * 0.4, 0), 80);
+
+                // 裏面の幅を調整
+                peelBack.style.width = `${peelWidth}px`;
+                peelBack.style.transition = 'none';
+
+                // 影の幅をCSS変数で調整
+                card.style.setProperty('--peel-shadow', `${shadowWidth}px`);
+
+                // カードに軽い傾きを追加
+                const rotateY = Math.min(swipeDistance * 0.03, 8);
+                const rotateZ = Math.min(swipeDistance * 0.01, 2);
+                card.style.transform = `perspective(1000px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
+                card.style.transition = 'none';
+
+                // しきい値を超えたらカードにpeelingクラスを追加
+                if (swipeDistance > 30) {
+                    card.classList.add('peeling');
+                } else {
+                    card.classList.remove('peeling');
+                }
+            };
+
+            const resetPeelEffect = () => {
+                peelBack.style.transition = 'width 0.3s ease-out';
+                peelBack.style.width = '0';
+                card.style.transition = 'transform 0.3s ease-out';
+                card.style.transform = '';
+                card.classList.remove('peeling');
+            };
+
+            const completeMissionWithAnimation = async () => {
+                // めくり完了アニメーション
+                peelBack.style.transition = 'width 0.4s ease-out';
+                peelBack.style.width = '100%';
+                card.style.transition = 'transform 0.4s ease-out';
+                card.style.transform = 'perspective(1000px) rotateY(15deg) rotateZ(3deg)';
+
+                // 少し待ってからスタンプ表示と完了処理
+                setTimeout(async () => {
+                    card.classList.add('completed');
+                    card.classList.remove('peeling');
+
+                    // スワイプヒントを削除
+                    const hint = card.querySelector('.mission-swipe-hint');
+                    if (hint) hint.remove();
+
+                    // カードを元に戻す
+                    setTimeout(() => {
+                        peelBack.style.width = '0';
+                        card.style.transform = '';
+                    }, 300);
+
+                    await completeMission(missionId);
+                }, 400);
+            };
+
+            // タッチイベント
+            card.addEventListener('touchstart', (e) => {
+                if (card.classList.contains('completed')) return;
+                startX = e.touches[0].clientX;
+                currentX = startX;
+                isSwiping = true;
+            }, { passive: true });
+
+            card.addEventListener('touchmove', (e) => {
+                if (!isSwiping || card.classList.contains('completed')) return;
+                currentX = e.touches[0].clientX;
+                dx = startX - currentX; // 左スワイプなので正の値
+
+                if (dx > 10) {
+                    e.preventDefault(); // スクロールを防止
+                    updatePeelEffect(dx);
+                }
+            }, { passive: false });
+
+            card.addEventListener('touchend', async () => {
+                if (!isSwiping || card.classList.contains('completed')) return;
+                isSwiping = false;
+
+                if (dx >= COMPLETE_THRESHOLD) {
+                    await completeMissionWithAnimation();
+                } else {
+                    resetPeelEffect();
+                }
+                dx = 0;
+            });
+
+            // マウスイベント（PC対応）
+            let isMouseDown = false;
+
+            card.addEventListener('mousedown', (e) => {
+                if (card.classList.contains('completed')) return;
+                startX = e.clientX;
+                currentX = startX;
+                isMouseDown = true;
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isMouseDown || card.classList.contains('completed')) return;
+                currentX = e.clientX;
+                dx = startX - currentX;
+
+                if (dx > 10) {
+                    updatePeelEffect(dx);
+                }
+            });
+
+            document.addEventListener('mouseup', async () => {
+                if (!isMouseDown || card.classList.contains('completed')) return;
+                isMouseDown = false;
+
+                if (dx >= COMPLETE_THRESHOLD) {
+                    await completeMissionWithAnimation();
+                } else {
+                    resetPeelEffect();
+                }
+                dx = 0;
             });
         }
 
