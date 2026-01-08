@@ -1,1078 +1,966 @@
-<!doctype html>
-<html lang="ja">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>💪 ムキムキタスくん</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --dark-navy: #0d1b2a;
-            --deep-navy: #1b263b;
-            --navy-blue: #415a77;
-            --slate-gray: #778da9;
-            --energy-orange: #ff9f43;
-            --golden-yellow: #feca57;
-            --power-red: #ff6b6b;
-            --success-green: #26de81;
-            --muscle-purple: #a55eea;
-            --priority-critical-bg: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%);
-            --priority-critical-border: #ff3333;
-            --priority-critical-glow: rgba(255, 51, 51, 0.6);
-            --priority-high-bg: linear-gradient(135deg, #1a1a0a 0%, #2d2d0a 50%, #1a1a0a 100%);
-            --priority-high-border: #ffa500;
-            --priority-high-glow: rgba(255, 165, 0, 0.4);
-            --mission-dark: #0a0a0a;
-            --mission-steel: #1a1a1a;
-            --mission-ember: #cc2200;
-            --mission-flame: #ff4422;
-            --gradient-power: linear-gradient(135deg, #ff9f43 0%, #ff6b6b 100%);
-            --gradient-energy: linear-gradient(135deg, #feca57 0%, #ff9f43 100%);
-            --gradient-muscle: linear-gradient(135deg, #a55eea 0%, #ff6b6b 100%);
-            --gradient-dark: linear-gradient(180deg, #1b263b 0%, #0d1b2a 100%);
-            --text-primary: #0d1b2a;
-            --text-secondary: #415a77;
-            --text-muted: #778da9;
-            --text-light: #e0e1dd;
-            --bg-main: #f8f9fa;
-            --bg-card: #ffffff;
-            --bg-dark: #0d1b2a;
-        }
-        * { box-sizing: border-box; }
-        body { font-family: 'M PLUS Rounded 1c', -apple-system, system-ui, sans-serif; margin: 0; background: var(--bg-main); color: var(--text-primary); }
-        .heading-serif { font-family: 'Noto Serif JP', serif; font-weight: 700; }
+<body>
 
-        /* タブナビゲーション */
-        .tab-nav { position: sticky; top: 0; left: 0; right: 0; background: var(--gradient-dark); display: flex; padding: 12px 12px 0; gap: 4px; z-index: 100; box-shadow: 0 4px 20px rgba(13, 27, 42, 0.3); }
-        .tab-nav-item { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--slate-gray); cursor: pointer; padding: 12px 16px 14px; background: rgba(255, 255, 255, 0.05); border-radius: 12px 12px 0 0; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); flex: 1; border: 1px solid rgba(255, 255, 255, 0.1); border-bottom: none; }
-        .tab-nav-item:hover { background: rgba(255, 255, 255, 0.1); color: var(--text-light); }
-        .tab-nav-item.active { background: var(--bg-main); color: var(--energy-orange); font-weight: 700; border-color: rgba(255, 159, 67, 0.3); box-shadow: 0 -4px 15px rgba(255, 159, 67, 0.2); z-index: 2; }
-        .tab-nav-item.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 3px; background: var(--bg-main); }
-        .tab-nav-item.active::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 30px; height: 3px; background: var(--gradient-power); border-radius: 0 0 3px 3px; }
-        .tab-nav-item span { font-size: 18px; transition: transform 0.3s ease; }
-        .tab-nav-item.active span { animation: tabIconBounce 0.5s ease; }
-        @keyframes tabIconBounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+    <nav class="tab-nav">
+        <div class="tab-nav-item active" data-tab="list"><span>📋</span>リスト</div>
+        <div class="tab-nav-item" data-tab="status"><span>📊</span>ステータス</div>
+        <div class="tab-nav-item" data-tab="journal"><span>📝</span>ジャーナル</div>
+    </nav>
 
-        /* タブコンテンツ */
-        .tab-content { display: none; animation: fadeIn 0.3s ease; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    <!-- リストタブ -->
+    <div id="tab-list" class="tab-content active">
+        <header>
+            <div class="bar">
+                <div class="bar-title">リスト</div>
+                <button class="bar-btn" id="refreshBtn">↻</button>
+            </div>
+        </header>
+        <main>
+            <div id="missionTaskContainer"></div>
+            <div class="add">
+                <input id="newTitle" placeholder="💪 今日も鍛えるタスクを入力…" />
+                <button id="btnAdd">追加</button>
+            </div>
+            <div class="divider-label">🎯 ToDoタスク</div>
+            <div id="critical" class="list"></div>
+            <div id="high" class="list"></div>
+            <div id="active" class="list"></div>
+            <div class="divider-label">✅ 達成タスク</div>
+            <div id="completed" class="list"></div>
+        </main>
+    </div>
 
-        /* ヘッダー */
-        header { position: sticky; top: 0; background: var(--bg-card); border-bottom: 1px solid rgba(13, 27, 42, 0.08); z-index: 10; }
-        .bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; }
-        .bar-title { font-family: 'Noto Serif JP', serif; font-weight: 700; font-size: 18px; color: var(--dark-navy); display: flex; align-items: center; gap: 8px; }
-        .bar-title::before { content: '💪'; font-size: 20px; }
-        .bar-btn { padding: 8px 14px; border-radius: 20px; border: 2px solid var(--energy-orange); font-size: 14px; font-weight: 600; cursor: pointer; background: transparent; color: var(--energy-orange); transition: all 0.3s ease; flex-shrink: 0; }
-        .bar-btn:hover { background: var(--energy-orange); color: white; transform: rotate(180deg); }
-        .bar-add { display: flex; gap: 6px; flex: 1; max-width: 280px; margin: 0 8px; }
-        .bar-add input { flex: 1; padding: 8px 12px; border-radius: 20px; border: 2px solid rgba(13, 27, 42, 0.1); font-size: 13px; font-family: inherit; transition: all 0.3s ease; background: var(--bg-main); min-width: 0; }
-        .bar-add input:focus { outline: none; border-color: var(--energy-orange); box-shadow: 0 0 0 3px rgba(255, 159, 67, 0.15); }
-        .bar-add button { padding: 8px 14px; border-radius: 20px; border: none; background: var(--gradient-power); color: white; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3); white-space: nowrap; flex-shrink: 0; }
-        .bar-add button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4); }
+    <!-- ステータスタブ -->
+    <div id="tab-status" class="tab-content">
+        <header>
+            <div class="bar">
+                <div class="bar-title">ステータス</div>
+                <button class="bar-btn" id="statusRefreshBtn">↻</button>
+            </div>
+        </header>
+        <main>
+            <div class="status-section daily-task-card" id="dailyTaskCard">
+                <div class="daily-task-header">
+                    <div class="status-section-title"><span>🏋️</span> デイリートレーニング</div>
+                    <span class="daily-task-arrow">▼</span>
+                </div>
+                <div class="daily-task-content">
+                    <div class="habit-list" id="habitList"></div>
+                    <div class="daily-task-buttons">
+                        <button class="daily-btn daily-btn-cancel" id="habitCancelBtn">キャンセル</button>
+                        <button class="daily-btn daily-btn-save" id="habitSaveBtn">💪 記録する</button>
+                    </div>
+                </div>
+            </div>
+            <div class="status-section">
+                <div class="week-view-header">
+                    <div class="status-section-title" style="margin-bottom:0;"><span>📅</span> 週間トレーニングログ</div>
+                    <button class="detail-view-btn" id="openMonthlyAnalysis"><span>📊</span> 詳しく見る</button>
+                </div>
+                <table class="week-table" id="weekTable">
+                    <thead><tr><th>習慣</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日</th></tr></thead>
+                    <tbody id="weekTableBody"></tbody>
+                </table>
+            </div>
+            <div class="status-section">
+                <div class="status-section-title"><span>💪</span> 成長分析</div>
+                <div class="progress-bar-container">
+                    <div class="progress-label">
+                        <span class="progress-label-name">週間達成率</span>
+                        <span class="progress-label-value" id="weekProgressValue">0%</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="weekProgressBar" style="width:0%"></div></div>
+                </div>
+            </div>
+        </main>
+    </div>
 
-        /* MSC開くボタン */
-        .msc-open-btn {
-            padding: 6px 12px;
-            border-radius: 8px;
-            border: 2px solid #cc2200;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            background: linear-gradient(135deg, #1a0a0a 0%, #2d0808 100%);
-            color: #ff4422;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 0 10px rgba(204, 34, 0, 0.3), inset 0 1px 0 rgba(255, 68, 34, 0.2);
-            text-shadow: 0 0 8px rgba(255, 68, 34, 0.5);
-        }
-        .msc-open-btn:hover {
-            background: linear-gradient(135deg, #cc2200 0%, #ff4422 100%);
-            color: white;
-            box-shadow: 0 0 20px rgba(255, 68, 34, 0.5), 0 0 40px rgba(204, 34, 0, 0.3);
-        }
-        .msc-open-btn.active {
-            background: linear-gradient(135deg, #cc2200 0%, #990000 100%);
-            color: white;
-            border-color: #ff4422;
-        }
+    <!-- ジャーナルタブ -->
+    <div id="tab-journal" class="tab-content">
+        <header>
+            <div class="bar">
+                <div class="bar-title">ジャーナル</div>
+                <button class="bar-btn" id="journalRefreshBtn">↻</button>
+            </div>
+        </header>
+        <main>
+            <div class="journal-form">
+                <div class="status-section-title" style="margin-bottom:16px;"><span>📝</span> 今日のトレーニング記録</div>
+                <div class="form-group">
+                    <label class="form-label">日付</label>
+                    <input type="date" class="form-input" id="journalDate" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">タイトル</label>
+                    <input type="text" class="form-input" id="journalTitle" placeholder="今日のひとこと…" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">振り返り内容</label>
+                    <textarea class="form-textarea" id="journalContent" placeholder="今日の成長を記録しよう…"></textarea>
+                </div>
+                <button class="journal-submit-btn" id="journalSubmitBtn">💪 記録を保存</button>
+            </div>
+            <div class="divider-label">📚 過去の記録</div>
+            <div class="journal-list" id="journalList"></div>
+        </main>
+    </div>
 
-        /* リストタブ */
-        .list { display: flex; flex-direction: column; }
+    <!-- ジャーナル詳細モーダル -->
+    <div id="journalDetailModal" class="modal-root">
+        <div class="modal-backdrop" id="journalDetailBackdrop"></div>
+        <div class="modal-panel" style="max-height:80vh;overflow-y:auto;">
+            <div id="journalViewContent" class="journal-view-content">
+                <div class="journal-modal-header">
+                    <div>
+                        <div class="journal-modal-date" id="journalModalDate"></div>
+                        <div class="journal-modal-title" id="journalModalTitle"></div>
+                    </div>
+                    <button id="closeJournalDetail" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
+                </div>
+                <div class="journal-tasks-section">
+                    <div class="journal-tasks-header"><span>✓</span> この日に達成したタスク</div>
+                    <div class="journal-tasks-list" id="journalModalTasks"></div>
+                </div>
+                <div class="journal-content-section">
+                    <div class="journal-content-label">振り返り内容</div>
+                    <div class="journal-content-body" id="journalModalContent"></div>
+                </div>
+                <div class="journal-modal-actions">
+                    <button class="journal-close-btn" id="journalCloseBtn">閉じる</button>
+                    <button class="journal-edit-modal-btn" id="journalEditBtn">✏️ 編集する</button>
+                </div>
+            </div>
+            <div id="journalEditContent" class="journal-edit-form">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;margin-top:10px;">
+                    <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;">📝 ジャーナルを編集</div>
+                    <button id="closeJournalEdit" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
+                </div>
+                <div class="form-group"><label class="form-label">タイトル</label><input type="text" class="form-input" id="editJournalTitle" /></div>
+                <div class="form-group"><label class="form-label">内容</label><textarea class="form-textarea" id="editJournalContent" style="min-height:150px;"></textarea></div>
+                <div class="journal-modal-actions">
+                    <button class="journal-close-btn" id="journalCancelEditBtn">キャンセル</button>
+                    <button class="journal-edit-modal-btn" id="journalSaveEditBtn">💪 保存する</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        /* カード基本スタイル */
-        .card { position: relative; background: var(--bg-card); border-bottom: 1px solid rgba(13, 27, 42, 0.06); height: 68px; overflow: hidden; touch-action: pan-y; transition: all 0.3s ease; }
-        .card:hover { background: rgba(255, 159, 67, 0.03); }
+    <!-- 月間分析モーダル -->
+    <div id="monthlyAnalysisModal" class="modal-root">
+        <div class="modal-backdrop" id="monthlyAnalysisBackdrop"></div>
+        <div class="modal-panel" style="max-height:85vh;overflow-y:auto;">
+            <div class="monthly-analysis-header">
+                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;">📊 月間トレーニング分析</div>
+                <button id="closeMonthlyAnalysis" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
+            </div>
+            <div class="month-selector">
+                <button class="month-selector-btn" id="prevMonthBtn">&lt;</button>
+                <div class="current-month" id="currentMonthLabel"></div>
+                <button class="month-selector-btn" id="nextMonthBtn">&gt;</button>
+            </div>
+            <div class="monthly-stats-summary" style="margin-top:16px;">
+                <div class="monthly-stat-card"><div class="monthly-stat-value" id="monthlyTotalDays">0</div><div class="monthly-stat-label">記録日数</div></div>
+                <div class="monthly-stat-card"><div class="monthly-stat-value" id="monthlyAchievement">0%</div><div class="monthly-stat-label">総合達成率</div></div>
+                <div class="monthly-stat-card"><div class="monthly-stat-value" id="monthlyBestStreak">0</div><div class="monthly-stat-label">最長連続</div></div>
+            </div>
+            <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:14px;margin:16px 0 8px;">📅 日別達成状況</div>
+            <div class="monthly-table-container">
+                <table class="monthly-table">
+                    <thead><tr><th>日付</th><th>🌅</th><th>🎯</th><th>📚</th><th>📝</th><th>🚫</th><th>💪</th><th>達成</th></tr></thead>
+                    <tbody id="monthlyTableBody"></tbody>
+                </table>
+            </div>
+            <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:14px;margin:16px 0 8px;">📈 達成率の推移</div>
+            <div class="monthly-chart-container"><canvas id="monthlyChart"></canvas></div>
+        </div>
+    </div>
 
-        /* 優先順位別カードスタイル */
-        .card.priority-critical { background: var(--priority-critical-bg); border-left: 4px solid var(--priority-critical-border); box-shadow: inset 0 0 30px rgba(255, 51, 51, 0.1), 0 0 15px var(--priority-critical-glow); animation: criticalPulse 3s infinite; }
-        .card.priority-critical .sl { background: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%); }
-        .card.priority-critical .title { color: #fff; font-weight: 700; text-shadow: 0 0 10px rgba(255, 51, 51, 0.5); }
-        .card.priority-critical .priority-badge { background: linear-gradient(135deg, #ff3333 0%, #cc0000 100%); color: white; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 2px 8px rgba(255, 51, 51, 0.4); animation: badgeGlow 2s infinite; }
-        @keyframes criticalPulse { 0%, 100% { box-shadow: inset 0 0 30px rgba(255, 51, 51, 0.1), 0 0 15px var(--priority-critical-glow); } 50% { box-shadow: inset 0 0 40px rgba(255, 51, 51, 0.15), 0 0 25px var(--priority-critical-glow); } }
-        @keyframes badgeGlow { 0%, 100% { box-shadow: 0 2px 8px rgba(255, 51, 51, 0.4); } 50% { box-shadow: 0 2px 15px rgba(255, 51, 51, 0.6); } }
+    <!-- 詳細モーダル -->
+    <div id="detailModal" class="modal-root">
+        <div id="detailBackdrop" class="modal-backdrop"></div>
+        <div class="modal-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;" id="modalTitle">タスク詳細</div>
+                <button id="detailCloseBtn" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
+            </div>
+            <div id="detailTaskTitle" style="font-size:14px;color:var(--text-secondary);margin:8px 0 16px;padding:10px;background:var(--bg-main);border-radius:10px;"></div>
+            <div id="scoreGroup">
+                <div class="slider-group"><div class="slider-label-row"><span>🎯 優先度</span><span class="value" id="valPriority"></span></div><input id="inputPriority" type="range" min="0" max="10" step="1" style="width:100%" /></div>
+                <div class="slider-group"><div class="slider-label-row"><span>🔮 ビジョン関連度</span><span class="value" id="valVision"></span></div><input id="inputVision" type="range" min="0" max="10" step="1" style="width:100%" /></div>
+                <div class="slider-group"><div class="slider-label-row"><span>✨ わくわく度</span><span class="value" id="valExcite"></span></div><input id="inputExcite" type="range" min="0" max="10" step="1" style="width:100%" /></div>
+                <div class="slider-group"><div class="slider-label-row"><span>💪 成長度</span><span class="value" id="valGrowth"></span></div><input id="inputGrowth" type="range" min="0" max="10" step="1" style="width:100%" /></div>
+            </div>
+            <div id="remindGroup" class="slider-group">
+                <div class="slider-label-row"><span>🔔 リマインド日時</span><span class="value" id="valRemindAt"></span></div>
+                <input id="inputRemindAt" type="datetime-local" style="width:100%;padding:12px;border:2px solid rgba(13,27,42,0.1);border-radius:12px;font-size:14px;" />
+            </div>
+            <div class="modal-footer">
+                <button id="detailCancelBtn" class="btn-secondary">キャンセル</button>
+                <button id="detailSaveBtn" class="btn-primary-solid">💪 保存</button>
+            </div>
+        </div>
+    </div>
 
-        .card.priority-high { background: var(--priority-high-bg); border-left: 4px solid var(--priority-high-border); box-shadow: inset 0 0 20px rgba(255, 165, 0, 0.08), 0 0 10px var(--priority-high-glow); }
-        .card.priority-high .sl { background: linear-gradient(135deg, #1a1a0a 0%, #2d2d0a 50%, #1a1a0a 100%); }
-        .card.priority-high .title { color: #f0f0f0; font-weight: 600; }
-        .card.priority-high .priority-badge { background: linear-gradient(135deg, #ffa500 0%, #cc8400 100%); color: #1a1a0a; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    <!-- 優先順位選択モーダル -->
+    <div id="priorityModal" class="modal-root">
+        <div id="priorityBackdrop" class="modal-backdrop"></div>
+        <div class="modal-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;margin-bottom:10px;">
+                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;">⚡ 優先順位を設定</div>
+                <button id="priorityCloseBtn" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
+            </div>
+            <div id="priorityTaskTitle" style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;"></div>
+            <div class="priority-selector">
+                <div class="priority-option critical" data-priority="critical">
+                    <div class="priority-option-icon">🔥</div>
+                    <div class="priority-option-text">
+                        <div class="priority-option-title">最重要</div>
+                        <div class="priority-option-desc">今すぐ取り組むべき最優先タスク</div>
+                    </div>
+                </div>
+                <div class="priority-option high" data-priority="high">
+                    <div class="priority-option-icon">⚡</div>
+                    <div class="priority-option-text">
+                        <div class="priority-option-title">重要</div>
+                        <div class="priority-option-desc">優先的に処理すべきタスク</div>
+                    </div>
+                </div>
+                <div class="priority-option normal" data-priority="normal">
+                    <div class="priority-option-icon">📌</div>
+                    <div class="priority-option-text">
+                        <div class="priority-option-title">ノーマル</div>
+                        <div class="priority-option-desc">通常の優先度に戻す</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        .card.priority-normal { background: var(--bg-card); }
-        .priority-badge { display: none; }
-        .card.priority-critical .priority-badge, .card.priority-high .priority-badge { display: inline-block; margin-right: 8px; }
-        .card.completed .title { color: var(--text-muted); text-decoration: line-through; }
-        .card.completed { background: rgba(38, 222, 129, 0.05); }
-        .card.completed.priority-critical, .card.completed.priority-high { opacity: 0.6; }
-        .card.dragging { opacity: 0.95; box-shadow: 0 12px 30px rgba(13, 27, 42, 0.25); z-index: 100; transform: scale(1.02); border-radius: 12px; }
-        .card.drag-placeholder { background: rgba(255, 159, 67, 0.1); border: 2px dashed var(--energy-orange); }
-        .card.drag-placeholder .sl, .card.drag-placeholder .actions-rail { visibility: hidden; }
+    <script>
+        const LIFF_ID = "2008372898-2q9qWmxv";
+        const API_BASE = "https://lumicreate.xvps.jp/webhook";
 
-        .sl { position: relative; height: 100%; width: 100%; display: flex; align-items: center; padding: 0 14px; transition: transform .15s ease; background: var(--bg-card); z-index: 2; }
-        .actions-rail { position: absolute; inset: 0; display: flex; justify-content: space-between; align-items: center; pointer-events: none; z-index: 1; }
-        .card.open-left .actions-rail, .card.open-right .actions-rail { pointer-events: auto; }
-        .actions-left, .actions-right { height: 100%; display: flex; align-items: center; }
-        .actions-left { background: linear-gradient(90deg, var(--success-green) 0%, #20bf6b 100%); justify-content: flex-start; }
-        .actions-right { background: linear-gradient(90deg, #4a5568 0%, #2d3748 100%); justify-content: flex-end; }
-        .actions-rail button { height: 100%; min-width: 60px; border: none; color: white; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
-        .btn-complete { background: var(--success-green); }
-        .btn-plus2h { background: var(--muscle-purple); }
-        .btn-detail { background: var(--navy-blue); }
-        .btn-priority { background: #e67e22; }
-        .btn-delete { background: var(--power-red); }
+        let userId = null;
+        let currentDetailTask = null;
+        let currentPriorityTask = null;
+        let modalMode = "detail";
 
-        .title { font-size: 15px; font-weight: 500; color: var(--text-primary); flex: 1; }
-        .handle { cursor: grab; opacity: 0.3; padding: 0 8px; font-size: 20px; touch-action: none; transition: all 0.2s ease; }
-        .card.priority-critical .handle, .card.priority-high .handle { color: #888; }
-        .handle:hover { opacity: 0.6; color: var(--energy-orange); }
+        const HABITS = [
+            { id: 'early_wake', name: '早起き', icon: '🌅' },
+            { id: 'mission', name: 'ミッション', icon: '🎯' },
+            { id: 'reading', name: '読書/学習', icon: '📚' },
+            { id: 'journal', name: 'ジャーナル', icon: '📝' },
+            { id: 'no_alcohol', name: '禁酒', icon: '🚫' },
+            { id: 'workout', name: '今日トレ', icon: '💪' }
+        ];
 
-        .divider-label { text-align: center; color: var(--text-secondary); font-size: 12px; font-weight: 600; padding: 14px 0 8px; background: var(--bg-main); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .divider-label::before, .divider-label::after { content: ''; width: 30px; height: 2px; background: linear-gradient(90deg, transparent, var(--slate-gray), transparent); }
-        .remindAt { font-size: 11px; color: var(--muscle-purple); margin-left: 8px; white-space: nowrap; font-weight: 500; background: rgba(165, 94, 234, 0.1); padding: 3px 8px; border-radius: 10px; }
+        let todayHabits = {};
+        let weekHabitsData = {};
+        let currentMission = null;
+        let missionCompletedToday = false;
+        let selectedMonth = new Date();
+        let monthlyChart = null;
+        let currentEditJournal = null;
+        let journalsData = [];
 
-        /* ミッションタスク - 羊皮紙スタイル */
-        .mission-task-wrapper {
-            position: relative;
-            margin: 16px;
-            perspective: 1000px;
-        }
-        .mission-task-card {
-            background: url('../画像/ミッションタスク_背景.jpg') center/cover;
-            border-radius: 4px;
-            padding: 24px 28px;
-            color: #3d2b1f;
-            position: relative;
-            overflow: visible;
-            border: none;
-            box-shadow:
-                0 4px 15px rgba(0, 0, 0, 0.2),
-                0 1px 3px rgba(0, 0, 0, 0.1),
-                inset 0 0 30px rgba(139, 115, 85, 0.2);
-            min-height: 120px;
-            transform-style: preserve-3d;
-            transition: transform 0.1s ease-out;
-        }
-        .mission-task-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg,
-                rgba(255, 255, 255, 0.1) 0%,
-                transparent 40%,
-                transparent 60%,
-                rgba(0, 0, 0, 0.05) 100%);
-            pointer-events: none;
-            border-radius: 4px;
-        }
-        /* めくれエフェクト用の右端の影 */
-        .mission-task-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: var(--peel-shadow, 0px);
-            height: 100%;
-            background: linear-gradient(to left,
-                rgba(0, 0, 0, 0.35) 0%,
-                rgba(0, 0, 0, 0.15) 40%,
-                transparent 100%);
-            pointer-events: none;
-            z-index: 3;
-            transition: width 0.1s ease-out;
-            border-radius: 0 4px 4px 0;
-        }
-        .mission-task-card.peeling::after {
-            width: var(--peel-shadow, 60px);
-        }
-        /* めくれた裏面 */
-        .mission-peel-back {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 0;
-            height: 100%;
-            background: linear-gradient(to right, #c9b896 0%, #d4c4a8 50%, #e8dcc8 100%);
-            transform-origin: left center;
-            transform: rotateY(0deg);
-            transition: width 0.1s ease-out;
-            z-index: 2;
-            border-radius: 0 4px 4px 0;
-            box-shadow: inset 3px 0 8px rgba(0, 0, 0, 0.15);
-        }
-        .mission-task-card.peeling .mission-peel-back {
-            width: 80px;
-        }
-        .mission-task-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            position: relative;
-            z-index: 2;
-        }
-        .mission-task-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 10px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
-            padding: 5px 12px;
-            border-radius: 3px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #f5deb3;
-            border: 1px solid #a0522d;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .mission-task-title {
-            font-family: 'Noto Serif JP', serif;
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #2d1f14;
-            text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
-            position: relative;
-            z-index: 2;
-        }
-        .mission-task-desc {
-            font-size: 13px;
-            color: #5c4033;
-            margin-bottom: 14px;
-            line-height: 1.6;
-            position: relative;
-            z-index: 2;
-        }
-        .mission-task-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
-            z-index: 2;
-        }
-        .mission-expire {
-            font-size: 12px;
-            color: #8b6914;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(139, 115, 85, 0.15);
-            padding: 6px 12px;
-            border-radius: 12px;
-        }
-        .mission-expire::before { content: '⏱'; font-size: 14px; }
-        .mission-achievement-bubble {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
-            color: #f5deb3;
-            padding: 6px 12px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: 700;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-            z-index: 5;
-            border: 1px solid #a0522d;
-        }
-        /* スワイプヒント */
-        .mission-swipe-hint {
-            position: absolute;
-            bottom: 8px;
-            right: 12px;
-            font-size: 10px;
-            color: #8b7355;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            opacity: 0.7;
-            z-index: 2;
-        }
-        .mission-swipe-hint::after {
-            content: '←';
-            animation: swipeHint 1.5s ease-in-out infinite;
-        }
-        @keyframes swipeHint {
-            0%, 100% { transform: translateX(0); opacity: 0.7; }
-            50% { transform: translateX(-5px); opacity: 1; }
-        }
-        /* 完了スタンプ */
-        .mission-completed-stamp {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-15deg) scale(0);
-            width: 180px;
-            height: auto;
-            z-index: 10;
-            opacity: 0;
-            pointer-events: none;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-        }
-        .mission-task-card.completed .mission-completed-stamp {
-            animation: stampSlam 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        @keyframes stampSlam {
-            0% {
-                transform: translate(-50%, -50%) rotate(-15deg) scale(3);
-                opacity: 0;
+        const STRONG_RATIO = 0.85;
+        const SNAP_THRESHOLD = 40;
+        let isDraggingCard = false;
+
+        const criticalEl = document.getElementById("critical");
+        const highEl = document.getElementById("high");
+        const activeEl = document.getElementById("active");
+        const completedEl = document.getElementById("completed");
+
+        async function init() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+                const profile = await liff.getProfile();
+                userId = profile.userId;
+            } catch (e) {
+                console.error("LIFF初期化エラー:", e);
+                userId = "demo_user";
             }
-            60% {
-                transform: translate(-50%, -50%) rotate(-15deg) scale(0.9);
-                opacity: 1;
-            }
-            80% {
-                transform: translate(-50%, -50%) rotate(-15deg) scale(1.05);
-            }
-            100% {
-                transform: translate(-50%, -50%) rotate(-15deg) scale(1);
-                opacity: 1;
+            bindUI();
+            await loadAllData();
+        }
+
+        function bindUI() {
+            document.querySelectorAll('.tab-nav-item').forEach(item => {
+                item.addEventListener('click', () => switchTab(item.dataset.tab));
+            });
+            document.getElementById('refreshBtn').onclick = loadList;
+            document.getElementById('btnAdd').onclick = addTask;
+            document.getElementById('newTitle').addEventListener('keypress', e => { if (e.key === 'Enter') addTask(); });
+            document.getElementById('statusRefreshBtn').onclick = loadHabits;
+            document.getElementById('dailyTaskCard').addEventListener('click', e => {
+                if (!e.target.closest('.habit-checkbox') && !e.target.closest('.daily-btn')) {
+                    document.getElementById('dailyTaskCard').classList.toggle('expanded');
+                }
+            });
+            document.getElementById('habitSaveBtn').onclick = saveHabits;
+            document.getElementById('habitCancelBtn').onclick = () => document.getElementById('dailyTaskCard').classList.remove('expanded');
+            renderHabitList();
+            document.getElementById('journalRefreshBtn').onclick = loadJournals;
+            document.getElementById('journalDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('journalSubmitBtn').onclick = saveJournal;
+            bindModalUI();
+            bindMonthlyAnalysisUI();
+            bindJournalDetailModalUI();
+            bindPriorityModalUI();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-nav-item').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.tab-nav-item[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        async function loadAllData() {
+            await Promise.all([loadList(), loadMissionTask(), loadHabits(), loadJournals()]);
+        }
+
+        // ミッションタスク
+        async function loadMissionTask() {
+            const demoData = {
+                mission: { id: 'demo', title: '今週のミッション', description: '毎日10分間の瞑想を行い、心を落ち着けよう', expires_at: getNextSunday() },
+                completed_today: false,
+                today_completions: 42
+            };
+            try {
+                const res = await fetch(`${API_BASE}/mission?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                currentMission = data.mission || null;
+                missionCompletedToday = data.completed_today || false;
+                renderMissionTask(data);
+            } catch (e) {
+                currentMission = demoData.mission;
+                missionCompletedToday = demoData.completed_today;
+                renderMissionTask(demoData);
             }
         }
-        /* 完了時のカード暗転 */
-        .mission-task-card.completed::before {
-            background: rgba(0, 0, 0, 0.15);
-        }
-        .mission-task-card.completed .mission-task-title,
-        .mission-task-card.completed .mission-task-desc {
-            opacity: 0.6;
-        }
-        /* ボタンは非表示（スワイプのみ） */
-        .mission-complete-btn { display: none; }
 
-        /* ステータスタブ */
-        .status-section { background: var(--bg-card); margin: 12px; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px rgba(13, 27, 42, 0.06); border: 1px solid rgba(13, 27, 42, 0.04); transition: all 0.3s ease; }
-        .status-section:hover { box-shadow: 0 4px 20px rgba(13, 27, 42, 0.1); }
-        .status-section-title { font-family: 'Noto Serif JP', serif; font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: var(--dark-navy); }
-        .daily-task-card { cursor: pointer; }
-        .daily-task-header { display: flex; justify-content: space-between; align-items: center; }
-        .daily-task-arrow { font-size: 14px; color: var(--text-muted); transition: transform 0.3s ease; }
-        .daily-task-card.expanded .daily-task-arrow { transform: rotate(180deg); color: var(--energy-orange); }
-        .daily-task-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .daily-task-card.expanded .daily-task-content { max-height: 500px; }
-        .habit-list { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
-        .habit-item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--bg-main); border-radius: 12px; cursor: pointer; transition: all 0.2s ease; user-select: none; border: 2px solid transparent; }
-        .habit-item:hover { background: rgba(255, 159, 67, 0.08); }
-        .habit-item.checked { background: rgba(38, 222, 129, 0.12); border-color: rgba(38, 222, 129, 0.3); }
-        .habit-checkbox { width: 26px; height: 26px; border: 2px solid var(--slate-gray); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--success-green); transition: all 0.2s ease; }
-        .habit-checkbox.checked { background: var(--success-green); border-color: var(--success-green); color: white; animation: checkBounce 0.3s ease; }
-        @keyframes checkBounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-        .habit-name { flex: 1; font-size: 14px; font-weight: 500; }
-        .habit-icon { font-size: 20px; }
-        .daily-task-buttons { display: flex; gap: 12px; margin-top: 18px; }
-        .daily-btn { flex: 1; padding: 12px; font-size: 14px; font-weight: 600; border-radius: 12px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s ease; }
-        .daily-btn-cancel { background: var(--bg-main); color: var(--text-secondary); border-color: rgba(13, 27, 42, 0.1); }
-        .daily-btn-save { background: var(--gradient-power); color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
-        .daily-btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4); }
-
-        /* 週間ビュー */
-        .week-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 10px; }
-        .week-table th, .week-table td { padding: 10px 4px; text-align: center; border-bottom: 1px solid rgba(13, 27, 42, 0.06); }
-        .week-table th { color: var(--text-muted); font-weight: 600; font-size: 10px; }
-        .week-table td:first-child, .week-table th:first-child { text-align: left; font-size: 12px; }
-        .week-table .checked { color: var(--success-green); font-weight: 700; }
-        .week-table .unchecked { color: rgba(13, 27, 42, 0.15); }
-
-        /* 分析 */
-        .progress-bar-container { margin-top: 10px; }
-        .progress-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
-        .progress-label-name { color: var(--text-secondary); font-weight: 500; }
-        .progress-label-value { color: var(--energy-orange); font-weight: 700; }
-        .progress-bar-bg { height: 12px; background: rgba(13, 27, 42, 0.08); border-radius: 6px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background: var(--gradient-power); border-radius: 6px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
-        .progress-bar-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 2s infinite; }
-        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-
-        /* ジャーナルタブ */
-        .journal-form { background: var(--bg-card); margin: 12px; border-radius: 16px; padding: 20px; box-shadow: 0 2px 12px rgba(13, 27, 42, 0.06); border: 1px solid rgba(13, 27, 42, 0.04); }
-        .form-group { margin-bottom: 16px; }
-        .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-input, .form-textarea { width: 100%; padding: 12px 14px; border: 2px solid rgba(13, 27, 42, 0.1); border-radius: 12px; font-size: 15px; font-family: inherit; background: var(--bg-main); transition: all 0.3s ease; }
-        .form-textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
-        .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--energy-orange); box-shadow: 0 0 0 4px rgba(255, 159, 67, 0.15); background: var(--bg-card); }
-        .journal-submit-btn { width: 100%; padding: 14px; background: var(--gradient-power); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
-        .journal-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4); }
-        .journal-list { margin: 0 12px; }
-
-        /* 月別アコーディオン */
-        .journal-month-group { margin-bottom: 12px; }
-        .journal-month-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: var(--bg-card); border-radius: 12px; cursor: pointer; transition: all 0.3s ease; border: 1px solid rgba(13, 27, 42, 0.06); }
-        .journal-month-header:hover { background: rgba(255, 159, 67, 0.05); }
-        .journal-month-header.active { background: var(--gradient-dark); color: white; border-color: transparent; }
-        .journal-month-title { font-family: 'Noto Serif JP', serif; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
-        .journal-month-count { font-size: 12px; color: var(--text-muted); background: var(--bg-main); padding: 4px 10px; border-radius: 10px; }
-        .journal-month-header.active .journal-month-count { background: rgba(255, 255, 255, 0.2); color: white; }
-        .journal-month-arrow { font-size: 14px; color: var(--text-muted); transition: transform 0.3s ease; }
-        .journal-month-header.active .journal-month-arrow { transform: rotate(180deg); color: white; }
-        .journal-month-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .journal-month-content.active { max-height: 2000px; }
-        .journal-month-content-inner { padding-top: 12px; }
-
-        .journal-card { background: var(--bg-card); border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; box-shadow: 0 2px 12px rgba(13, 27, 42, 0.06); cursor: pointer; transition: all 0.3s ease; border: 1px solid rgba(13, 27, 42, 0.04); border-left: 4px solid var(--energy-orange); }
-        .journal-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(13, 27, 42, 0.1); }
-        .journal-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .journal-date { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-        .journal-tasks-count { font-size: 12px; color: var(--success-green); font-weight: 600; background: rgba(38, 222, 129, 0.1); padding: 3px 10px; border-radius: 10px; }
-        .journal-title-text { font-family: 'Noto Serif JP', serif; font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--dark-navy); }
-        .journal-preview { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* モーダル */
-        .modal-root { position: fixed; inset: 0; display: none; z-index: 50; align-items: flex-end; justify-content: center; }
-        .modal-root.visible { display: flex; }
-        .modal-backdrop { position: absolute; inset: 0; background: rgba(13, 27, 42, 0.6); backdrop-filter: blur(4px); z-index: 0; }
-        .modal-panel { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 24px 24px 0 0; padding: 20px; animation: slideUp .25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 1; box-shadow: 0 -10px 40px rgba(13, 27, 42, 0.2); }
-        .modal-panel::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; background: rgba(13, 27, 42, 0.15); border-radius: 2px; }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .slider-group { margin: 16px 0; }
-        .slider-label-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
-        .slider-label-row span { font-weight: 500; color: var(--text-secondary); }
-        .slider-label-row span.value { font-size: 15px; font-weight: 700; color: var(--energy-orange); }
-        input[type="range"] { -webkit-appearance: none; width: 100%; height: 8px; border-radius: 4px; background: rgba(13, 27, 42, 0.1); outline: none; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--gradient-power); cursor: pointer; box-shadow: 0 2px 10px rgba(255, 107, 107, 0.4); }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-secondary { padding: 12px 20px; border: 2px solid rgba(13, 27, 42, 0.15); border-radius: 25px; background: var(--bg-main); font-weight: 600; cursor: pointer; color: var(--text-secondary); }
-        .btn-primary-solid { padding: 12px 24px; border-radius: 25px; background: var(--gradient-power); color: white; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
-        .btn-primary-solid:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4); }
-
-        /* 優先順位選択モーダル */
-        .priority-selector { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
-        .priority-option { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 12px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent; }
-        .priority-option:hover { transform: translateX(4px); }
-        .priority-option.critical { background: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 100%); border-color: #ff3333; }
-        .priority-option.critical:hover { box-shadow: 0 0 20px rgba(255, 51, 51, 0.3); }
-        .priority-option.high { background: linear-gradient(135deg, #1a1a0a 0%, #2d2d0a 100%); border-color: #ffa500; }
-        .priority-option.high:hover { box-shadow: 0 0 20px rgba(255, 165, 0, 0.3); }
-        .priority-option.normal { background: var(--bg-main); border-color: rgba(13, 27, 42, 0.15); }
-        .priority-option-icon { font-size: 24px; }
-        .priority-option-text { flex: 1; }
-        .priority-option-title { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
-        .priority-option.critical .priority-option-title { color: #ff4444; }
-        .priority-option.high .priority-option-title { color: #ffaa00; }
-        .priority-option.normal .priority-option-title { color: var(--text-primary); }
-        .priority-option-desc { font-size: 12px; color: var(--text-muted); }
-        .priority-option.critical .priority-option-desc, .priority-option.high .priority-option-desc { color: #999; }
-
-        /* 月間分析 */
-        .monthly-analysis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 10px; }
-        .month-selector { display: flex; align-items: center; gap: 14px; }
-        .month-selector-btn { width: 36px; height: 36px; border-radius: 50%; border: 2px solid rgba(13, 27, 42, 0.15); background: var(--bg-card); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; color: var(--text-secondary); }
-        .month-selector-btn:hover { border-color: var(--energy-orange); color: var(--energy-orange); }
-        .current-month { font-family: 'Noto Serif JP', serif; font-size: 18px; font-weight: 700; min-width: 110px; text-align: center; color: var(--dark-navy); }
-        .monthly-stats-summary { display: flex; gap: 12px; margin-bottom: 20px; }
-        .monthly-stat-card { flex: 1; background: var(--bg-main); border-radius: 14px; padding: 14px; text-align: center; }
-        .monthly-stat-value { font-size: 28px; font-weight: 700; background: var(--gradient-power); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .monthly-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-        .monthly-table-container { max-height: 200px; overflow-y: auto; margin-bottom: 16px; border-radius: 12px; border: 1px solid rgba(13, 27, 42, 0.08); }
-        .monthly-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        .monthly-table th, .monthly-table td { padding: 10px 4px; text-align: center; border-bottom: 1px solid rgba(13, 27, 42, 0.06); }
-        .monthly-table th { background: var(--bg-main); position: sticky; top: 0; font-weight: 600; color: var(--text-secondary); }
-        .monthly-table td:first-child { text-align: left; font-weight: 500; }
-        .monthly-table .cell-check { color: var(--success-green); font-weight: 700; }
-        .monthly-table .cell-uncheck { color: rgba(13, 27, 42, 0.15); }
-        .monthly-chart-container { height: 180px; margin-top: 16px; }
-        .detail-view-btn { background: var(--gradient-muscle); color: white; border: none; padding: 10px 18px; border-radius: 25px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(165, 94, 234, 0.3); }
-        .week-view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-
-        /* ジャーナルモーダル */
-        .journal-modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; margin-top: 10px; }
-        .journal-modal-date { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
-        .journal-modal-title { font-family: 'Noto Serif JP', serif; font-size: 20px; font-weight: 700; color: var(--dark-navy); }
-        .journal-tasks-section { background: var(--bg-main); border-radius: 14px; padding: 14px; margin-bottom: 18px; }
-        .journal-tasks-header { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-        .journal-tasks-list { display: flex; flex-wrap: wrap; gap: 8px; }
-        .journal-task-chip { background: var(--gradient-power); color: white; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 20px; }
-        .journal-content-section { margin-bottom: 18px; }
-        .journal-content-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
-        .journal-content-body { font-size: 15px; line-height: 1.8; color: var(--text-primary); white-space: pre-wrap; }
-        .journal-modal-actions { display: flex; gap: 12px; }
-        .journal-modal-actions button { flex: 1; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
-        .journal-close-btn { background: var(--bg-main); border: 2px solid rgba(13, 27, 42, 0.1); color: var(--text-secondary); }
-        .journal-edit-modal-btn { background: var(--gradient-power); border: none; color: white; }
-        .journal-edit-form { display: none; }
-        .journal-edit-form.active { display: block; }
-        .journal-view-content { display: block; }
-        .journal-view-content.hidden { display: none; }
-
-        /* ローディング・空状態 */
-        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
-        .loading::after { content: '💪'; display: block; font-size: 32px; margin-top: 10px; animation: loadingBounce 1s infinite; }
-        @keyframes loadingBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); font-size: 14px; }
-        .empty-state::before { content: '📝'; display: block; font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(13, 27, 42, 0.05); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb { background: var(--energy-orange); border-radius: 3px; }
-
-        /* ムキムキステータスカード（MSC）- 漆黒×深紅 炎と鉄板デザイン */
-        .msc-container { padding: 16px; }
-        .msc-card {
-            background:
-                /* 鉄板テクスチャ風グラデーション */
-                repeating-linear-gradient(
-                    90deg,
-                    rgba(40, 40, 40, 0.1) 0px,
-                    rgba(40, 40, 40, 0.1) 1px,
-                    transparent 1px,
-                    transparent 20px
-                ),
-                repeating-linear-gradient(
-                    0deg,
-                    rgba(40, 40, 40, 0.1) 0px,
-                    rgba(40, 40, 40, 0.1) 1px,
-                    transparent 1px,
-                    transparent 20px
-                ),
-                /* メインの漆黒グラデーション */
-                linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 30%, #0d0505 70%, #050505 100%);
-            border-radius: 4px;
-            padding: 20px;
-            color: #e8e8e8;
-            position: relative;
-            overflow: hidden;
-            border: 2px solid #2a1a1a;
-            box-shadow:
-                0 15px 50px rgba(0, 0, 0, 0.8),
-                inset 0 1px 0 rgba(255, 68, 34, 0.1),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-                0 0 30px rgba(204, 34, 0, 0.2);
-        }
-        /* 炎のエフェクト - 下部 */
-        .msc-card::before {
-            content: '';
-            position: absolute;
-            bottom: -30%;
-            left: -10%;
-            width: 120%;
-            height: 60%;
-            background:
-                radial-gradient(ellipse at 20% 100%, rgba(255, 68, 34, 0.4) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 100%, rgba(204, 34, 0, 0.5) 0%, transparent 40%),
-                radial-gradient(ellipse at 80% 100%, rgba(255, 100, 50, 0.3) 0%, transparent 45%);
-            pointer-events: none;
-            animation: flameFlicker 3s ease-in-out infinite;
-            z-index: 0;
-        }
-        /* 炎のエフェクト - 上部アクセント */
-        .msc-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg,
-                transparent 0%,
-                #cc2200 20%,
-                #ff4422 50%,
-                #cc2200 80%,
-                transparent 100%);
-            box-shadow: 0 0 15px rgba(255, 68, 34, 0.8), 0 0 30px rgba(204, 34, 0, 0.5);
-            animation: topGlow 2s ease-in-out infinite;
-        }
-        @keyframes flameFlicker {
-            0%, 100% { opacity: 0.7; transform: translateY(0) scale(1); }
-            25% { opacity: 0.9; transform: translateY(-5px) scale(1.02); }
-            50% { opacity: 0.8; transform: translateY(-2px) scale(1.01); }
-            75% { opacity: 1; transform: translateY(-8px) scale(1.03); }
-        }
-        @keyframes topGlow {
-            0%, 100% { box-shadow: 0 0 15px rgba(255, 68, 34, 0.8), 0 0 30px rgba(204, 34, 0, 0.5); }
-            50% { box-shadow: 0 0 25px rgba(255, 68, 34, 1), 0 0 50px rgba(204, 34, 0, 0.8); }
-        }
-        .msc-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-            position: relative;
-            z-index: 2;
-        }
-        .msc-header-left { display: flex; align-items: center; gap: 10px; }
-        .msc-icon {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, rgba(204, 34, 0, 0.4) 0%, rgba(100, 20, 10, 0.6) 100%);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            border: 2px solid rgba(204, 34, 0, 0.5);
-            box-shadow: 0 0 15px rgba(255, 68, 34, 0.3), inset 0 1px 0 rgba(255, 100, 50, 0.2);
-        }
-        .msc-title-area {}
-        .msc-title {
-            font-family: 'Noto Serif JP', serif;
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: #fff;
-            text-shadow: 0 0 15px rgba(255, 68, 34, 0.4), 0 2px 4px rgba(0, 0, 0, 0.5);
-            letter-spacing: 1px;
-        }
-        .msc-mbti-tag {
-            display: inline-block;
-            background: linear-gradient(135deg, rgba(204, 34, 0, 0.4) 0%, rgba(100, 20, 10, 0.6) 100%);
-            padding: 4px 12px;
-            border-radius: 2px;
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(204, 34, 0, 0.5);
-            color: #ff8866;
-            text-shadow: 0 0 6px rgba(255, 68, 34, 0.4);
-            letter-spacing: 1px;
-        }
-        .msc-mbti-tag:hover {
-            background: linear-gradient(135deg, #cc2200 0%, #990000 100%);
-            color: #fff;
-            box-shadow: 0 0 15px rgba(204, 34, 0, 0.5);
-        }
-        .msc-header-right { text-align: right; }
-        .msc-level-badge {
-            font-size: 11px;
-            color: #ff8866;
-            margin-bottom: 4px;
-            text-shadow: 0 0 8px rgba(255, 68, 34, 0.4);
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        .msc-level-score {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-            justify-content: flex-end;
-        }
-        .msc-stars {
-            font-size: 14px;
-            letter-spacing: -2px;
-            color: #ff6644;
-            text-shadow: 0 0 10px rgba(255, 68, 34, 0.6);
-        }
-        .msc-score {
-            font-size: 30px;
-            font-weight: 700;
-            color: #fff;
-            text-shadow: 0 0 20px rgba(255, 68, 34, 0.5), 0 2px 4px rgba(0, 0, 0, 0.5);
-        }
-        .msc-exp-bar {
-            width: 80px;
-            height: 8px;
-            background: rgba(50, 30, 30, 0.8);
-            border-radius: 2px;
-            margin-top: 6px;
-            overflow: hidden;
-            border: 1px solid rgba(204, 34, 0, 0.4);
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
-        }
-        .msc-exp-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #cc2200, #ff4422, #ff6644);
-            border-radius: 2px;
-            transition: width 0.8s ease;
-            box-shadow: 0 0 10px rgba(255, 68, 34, 0.6);
-            position: relative;
-        }
-        .msc-exp-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 50%;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
-        }
-        .msc-exp-text {
-            font-size: 10px;
-            color: #ff8866;
-            margin-top: 4px;
-            text-shadow: 0 0 6px rgba(255, 68, 34, 0.3);
+        function getNextSunday() {
+            const today = new Date();
+            const daysUntilSunday = (7 - today.getDay()) % 7 || 7;
+            const nextSunday = new Date(today);
+            nextSunday.setDate(today.getDate() + daysUntilSunday);
+            nextSunday.setHours(23, 59, 59);
+            return nextSunday.toISOString();
         }
 
-        /* レーダーチャート - 鉄板×炎デザイン */
-        .msc-radar-section {
-            position: relative;
-            z-index: 2;
-            margin: 20px 0;
-            padding: 20px;
-            background:
-                /* 鉄板テクスチャ */
-                repeating-linear-gradient(
-                    45deg,
-                    rgba(60, 40, 40, 0.1) 0px,
-                    rgba(60, 40, 40, 0.1) 1px,
-                    transparent 1px,
-                    transparent 10px
-                ),
-                linear-gradient(180deg, rgba(40, 25, 25, 0.95) 0%, rgba(20, 12, 12, 0.98) 100%);
-            border-radius: 4px;
-            border: 1px solid rgba(204, 34, 0, 0.4);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 100, 50, 0.08),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-                0 4px 12px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-        }
-        .msc-radar-section::before {
-            content: '⚔ POWER ANALYSIS ⚔';
-            position: absolute;
-            top: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            font-weight: 700;
-            color: #cc2200;
-            letter-spacing: 3px;
-            text-shadow: 0 0 8px rgba(204, 34, 0, 0.5);
-        }
-        .msc-radar-section::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #cc2200, #ff4422, #cc2200, transparent);
-            box-shadow: 0 0 15px rgba(255, 68, 34, 0.6);
-        }
-        .msc-radar-container {
-            width: 100%;
-            max-width: 280px;
-            margin: 0 auto;
-            aspect-ratio: 1;
-        }
-        .msc-radar-date {
-            text-align: center;
-            font-size: 11px;
-            opacity: 0.7;
-            margin-top: 8px;
+        function renderMissionTask(data) {
+            const container = document.getElementById('missionTaskContainer');
+            if (!data.mission) { container.innerHTML = ''; return; }
+            const mission = data.mission;
+            const completedToday = data.completed_today;
+            const todayCount = data.today_completions || 0;
+            const daysLeft = Math.ceil((new Date(mission.expires_at) - new Date()) / (1000 * 60 * 60 * 24));
+
+            container.innerHTML = `
+                <div class="mission-task-wrapper">
+                    <div class="mission-achievement-bubble">🔥 ${todayCount}人が達成</div>
+                    <div class="mission-task-card">
+                        <div class="mission-task-header">
+                            <div class="mission-task-badge"><span>🎯</span><span>WEEKLY MISSION</span></div>
+                        </div>
+                        <div class="mission-task-title">${mission.title || '今週のミッション'}</div>
+                        <div class="mission-task-desc">${mission.description || ''}</div>
+                        <div class="mission-task-actions">
+                            <button class="mission-complete-btn ${completedToday ? 'completed' : ''}" id="missionCompleteBtn">
+                                ${completedToday ? '✓ COMPLETED' : '💪 CHALLENGE'}
+                            </button>
+                            <div class="mission-expire">残り${daysLeft}日</div>
+                        </div>
+                    </div>
+                </div>`;
+            document.getElementById('missionCompleteBtn').addEventListener('click', async () => {
+                if (completedToday) return;
+                await completeMission(mission.id);
+            });
         }
 
-        /* 強み・弱み */
-        .msc-traits-section {
-            position: relative;
-            z-index: 2;
-            margin-bottom: 16px;
-        }
-        .msc-traits-title {
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .msc-strength-title {
-            color: #ff6644;
-            text-shadow: 0 0 10px rgba(255, 68, 34, 0.5);
-            letter-spacing: 1px;
-        }
-        .msc-strength-title::before {
-            content: '🔥';
-            margin-right: 4px;
-        }
-        .msc-weakness-title {
-            color: #888;
-            letter-spacing: 1px;
-        }
-        .msc-weakness-title::before {
-            content: '⚠';
-            margin-right: 4px;
-        }
-        .msc-trait-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 12px 14px;
-            background:
-                linear-gradient(135deg, rgba(204, 34, 0, 0.15) 0%, transparent 50%, rgba(204, 34, 0, 0.1) 100%),
-                linear-gradient(180deg, rgba(40, 20, 20, 0.9) 0%, rgba(20, 10, 10, 0.95) 100%);
-            border-radius: 4px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(204, 34, 0, 0.4);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 100, 50, 0.1),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-                0 2px 8px rgba(0, 0, 0, 0.4);
-            position: relative;
-            overflow: hidden;
-        }
-        .msc-trait-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 68, 34, 0.5), transparent);
-        }
-        .msc-trait-item::after {
-            content: '';
-            position: absolute;
-            bottom: -20%;
-            left: 10%;
-            width: 80%;
-            height: 40%;
-            background: radial-gradient(ellipse, rgba(204, 34, 0, 0.2) 0%, transparent 70%);
-            pointer-events: none;
-            animation: traitEmber 3s ease-in-out infinite;
-        }
-        @keyframes traitEmber {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        .msc-trait-icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, rgba(204, 34, 0, 0.3) 0%, rgba(100, 20, 10, 0.5) 100%);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-            border: 1px solid rgba(204, 34, 0, 0.4);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 100, 50, 0.15);
-        }
-        .msc-trait-content { flex: 1; }
-        .msc-trait-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 3px;
-        }
-        .msc-trait-name {
-            font-size: 14px;
-            font-weight: 700;
-            color: #ff9966;
-            text-shadow: 0 0 6px rgba(255, 100, 50, 0.3);
-            letter-spacing: 0.5px;
-        }
-        .msc-trait-level {
-            font-size: 10px;
-            background: linear-gradient(135deg, #cc2200 0%, #990000 100%);
-            padding: 3px 10px;
-            border-radius: 2px;
-            color: #fff;
-            font-weight: 700;
-            letter-spacing: 1px;
-            box-shadow: 0 2px 6px rgba(204, 34, 0, 0.4);
-        }
-        .msc-trait-desc {
-            font-size: 12px;
-            color: #c0b0a0;
-            line-height: 1.6;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+        async function completeMission(missionId) {
+            const updateUI = () => {
+                missionCompletedToday = true;
+                const btn = document.getElementById('missionCompleteBtn');
+                if (btn) { btn.classList.add('completed'); btn.textContent = '✓ COMPLETED'; }
+            };
+            try {
+                const res = await fetch(`${API_BASE}/mission/complete`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, mission_id: missionId })
+                });
+                if (res.ok) { missionCompletedToday = true; await loadMissionTask(); }
+                else updateUI();
+            } catch (e) { updateUI(); }
         }
 
-        /* 生態メモ - 鉄板×炎デザイン */
-        .msc-bio-section {
-            position: relative;
-            z-index: 2;
-            background:
-                /* 鉄板リベット模様 */
-                radial-gradient(circle at 8px 8px, rgba(80, 80, 80, 0.3) 2px, transparent 2px),
-                radial-gradient(circle at calc(100% - 8px) 8px, rgba(80, 80, 80, 0.3) 2px, transparent 2px),
-                radial-gradient(circle at 8px calc(100% - 8px), rgba(80, 80, 80, 0.3) 2px, transparent 2px),
-                radial-gradient(circle at calc(100% - 8px) calc(100% - 8px), rgba(80, 80, 80, 0.3) 2px, transparent 2px),
-                /* 金属グラデーション */
-                linear-gradient(180deg, rgba(50, 30, 30, 0.95) 0%, rgba(25, 15, 15, 0.98) 50%, rgba(40, 25, 25, 0.95) 100%);
-            border-radius: 4px;
-            padding: 18px 20px;
-            border: 2px solid rgba(204, 34, 0, 0.5);
-            box-shadow:
-                inset 0 2px 4px rgba(255, 100, 50, 0.1),
-                inset 0 -2px 4px rgba(0, 0, 0, 0.4),
-                0 4px 15px rgba(0, 0, 0, 0.5),
-                0 0 20px rgba(204, 34, 0, 0.15);
-            overflow: hidden;
-        }
-        .msc-bio-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #cc2200, #ff4422, #cc2200);
-            box-shadow: 0 0 10px rgba(255, 68, 34, 0.8);
-        }
-        .msc-bio-section::after {
-            content: '';
-            position: absolute;
-            bottom: -30%;
-            left: 0;
-            right: 0;
-            height: 50%;
-            background: radial-gradient(ellipse at 50% 100%, rgba(255, 68, 34, 0.25) 0%, transparent 60%);
-            pointer-events: none;
-            animation: bioFlame 4s ease-in-out infinite;
-        }
-        @keyframes bioFlame {
-            0%, 100% { opacity: 0.6; transform: scaleY(1); }
-            50% { opacity: 1; transform: scaleY(1.1); }
-        }
-        .msc-bio-title {
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            text-align: center;
-            color: #ff6644;
-            text-shadow: 0 0 10px rgba(255, 68, 34, 0.5);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .msc-bio-text {
-            font-size: 14px;
-            line-height: 1.8;
-            text-align: center;
-            font-style: italic;
-            color: #f0e0d0;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-            position: relative;
-            z-index: 1;
-        }
-        .msc-footer {
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-            margin-top: 20px;
-            position: relative;
-            z-index: 2;
-            padding-top: 12px;
-            border-top: 1px solid rgba(204, 34, 0, 0.2);
-            letter-spacing: 1px;
+        // リスト
+        async function loadList() {
+            try {
+                const res = await fetch(`${API_BASE}/list?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('API Error');
+                renderList(await res.json());
+            } catch (e) {
+                renderList({ critical: [], high: [], active: [], completed: [] });
+            }
         }
 
-        /* MSC タブ切り替え */
-        .msc-tab-switch {
-            display: flex;
-            gap: 8px;
-            margin: 12px;
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 6px;
-        }
-        .msc-tab-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: transparent;
-            color: var(--text-muted);
-        }
-        .msc-tab-btn.active {
-            background: var(--gradient-power);
-            color: white;
-            box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+        function renderList(payload) {
+            criticalEl.innerHTML = "";
+            highEl.innerHTML = "";
+            activeEl.innerHTML = "";
+            completedEl.innerHTML = "";
+
+            const critical = Array.isArray(payload.critical) ? payload.critical : [];
+            const high = Array.isArray(payload.high) ? payload.high : [];
+            const active = Array.isArray(payload.active) ? payload.active : [];
+            const completed = Array.isArray(payload.completed) ? payload.completed : [];
+
+            // 旧ピン付きタスクを優先順位に変換
+            const pinned = Array.isArray(payload.pinned) ? payload.pinned : [];
+            pinned.forEach(t => { t.priority_level = t.priority_level || 'high'; });
+
+            [...critical, ...pinned.filter(t => t.priority_level === 'critical')].forEach(t => { t.priority_level = 'critical'; criticalEl.appendChild(taskCard(t, false)); });
+            [...high, ...pinned.filter(t => t.priority_level === 'high')].forEach(t => { t.priority_level = 'high'; highEl.appendChild(taskCard(t, false)); });
+            active.filter(t => !t.priority_level || t.priority_level === 'normal').forEach(t => { t.priority_level = 'normal'; activeEl.appendChild(taskCard(t, false)); });
+            completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
         }
 
-        /* MBTI選択モーダル */
-        .mbti-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin: 16px 0;
+        async function addTask() {
+            const input = document.getElementById('newTitle');
+            const title = input.value.trim();
+            if (!title) return;
+            await action("create", null, { task_name: title });
+            input.value = "";
         }
-        .mbti-option {
-            padding: 12px 8px;
-            border: 2px solid rgba(13, 27, 42, 0.1);
-            border-radius: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: var(--bg-main);
-        }
-        .mbti-option:hover { border-color: var(--energy-orange); background: rgba(255, 159, 67, 0.1); }
-        .mbti-option.selected { border-color: var(--energy-orange); background: rgba(255, 159, 67, 0.2); }
-        .mbti-option-type { font-size: 14px; font-weight: 700; color: var(--dark-navy); }
-        .mbti-option-name { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
-        /* MSCカード全画面表示（LIFF全体表示対応） */
-        #msc-card-view {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.95);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            overflow: auto;
-            padding: 20px;
+        function taskCard(t, isCompleted = false) {
+            const wrap = document.createElement("div");
+            wrap.className = "card";
+            const priorityLevel = t.priority_level || 'normal';
+            wrap.classList.add(`priority-${priorityLevel}`);
+            if (isCompleted) wrap.classList.add("completed");
+
+            const rail = document.createElement("div");
+            rail.className = "actions-rail";
+
+            const left = document.createElement("div");
+            left.className = "actions-left";
+            if (!isCompleted) {
+                left.append(mkBtn("完了", () => action("complete", t.id), "btn-complete"), mkBtn("通知", () => openRemind(t), "btn-plus2h"));
+            } else {
+                left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
+            }
+
+            const right = document.createElement("div");
+            right.className = "actions-right";
+            right.append(
+                mkBtn("詳細", () => openDetail(t), "btn-detail"),
+                mkBtn("優先", () => openPriorityModal(t), "btn-priority"),
+                mkBtn("削除", () => action("delete", t.id), "btn-delete")
+            );
+
+            rail.append(left, right);
+
+            const sl = document.createElement("div");
+            sl.className = "sl";
+
+            const leftBox = document.createElement("div");
+            leftBox.style.cssText = "display:flex;align-items:center;gap:8px;flex:1;";
+
+            // 優先順位バッジ
+            if (priorityLevel === 'critical') {
+                const badge = document.createElement("span");
+                badge.className = "priority-badge";
+                badge.textContent = "最重要";
+                leftBox.appendChild(badge);
+            } else if (priorityLevel === 'high') {
+                const badge = document.createElement("span");
+                badge.className = "priority-badge";
+                badge.textContent = "重要";
+                leftBox.appendChild(badge);
+            }
+
+            const titleEl = document.createElement("div");
+            titleEl.className = "title";
+            titleEl.textContent = t.task_name || t.title || "(無題)";
+            leftBox.appendChild(titleEl);
+
+            const rightBox = document.createElement("div");
+            rightBox.style.cssText = "display:flex;align-items:center;";
+
+            if (t.remind_at) {
+                const remindEl = document.createElement("div");
+                remindEl.className = "remindAt";
+                remindEl.textContent = formatRemindLabel(t.remind_at);
+                rightBox.appendChild(remindEl);
+            }
+
+            const handle = document.createElement("div");
+            handle.className = "handle";
+            handle.textContent = "☰";
+            rightBox.appendChild(handle);
+
+            sl.append(leftBox, rightBox);
+            wrap.append(rail, sl);
+
+            requestAnimationFrame(() => {
+                wrap.dataset.leftWidth = left.getBoundingClientRect().width || 140;
+                wrap.dataset.rightWidth = right.getBoundingClientRect().width || 140;
+            });
+
+            // PC版クリック
+            if (!/Mobi|Android/i.test(navigator.userAgent)) {
+                sl.addEventListener("click", e => {
+                    const rect = sl.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const leftW = Number(wrap.dataset.leftWidth) || 140;
+                    const rightW = Number(wrap.dataset.rightWidth) || 140;
+                    if (wrap.classList.contains("open-left") || wrap.classList.contains("open-right")) {
+                        wrap.classList.remove("open-left", "open-right");
+                        sl.style.transform = "translateX(0)";
+                        return;
+                    }
+                    if (x < rect.width / 2) { wrap.classList.add("open-left"); sl.style.transform = `translateX(${leftW}px)`; }
+                    else { wrap.classList.add("open-right"); sl.style.transform = `translateX(${-rightW}px)`; }
+                });
+            }
+
+            // スマホスワイプ
+            let startX = 0, dx = 0, isScrolling = null, isHandleDrag = false;
+            wrap.addEventListener("touchstart", e => {
+                if (isDraggingCard || e.target.closest("button")) return;
+                if (e.target.closest(".handle")) { isHandleDrag = true; return; }
+                isHandleDrag = false;
+                startX = e.touches[0].clientX;
+                dx = 0; isScrolling = null;
+                sl.style.transition = "none";
+            }, { passive: true });
+
+            wrap.addEventListener("touchmove", e => {
+                if (isDraggingCard || isHandleDrag || !e.touches.length) return;
+                const dy = e.touches[0].clientY - (e.touches[0].clientY || 0);
+                dx = e.touches[0].clientX - startX;
+                if (isScrolling === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) isScrolling = Math.abs(dy) > Math.abs(dx);
+                if (isScrolling) return;
+                if (Math.abs(dx) > 8) e.preventDefault();
+                sl.style.transform = `translateX(${dx}px)`;
+            }, { passive: false });
+
+            wrap.addEventListener("touchend", () => {
+                if (isDraggingCard) return;
+                if (isHandleDrag || isScrolling) { isHandleDrag = false; sl.style.transition = ""; sl.style.transform = "translateX(0)"; return; }
+                sl.style.transition = "transform .15s";
+                const leftW = Number(wrap.dataset.leftWidth) || 140;
+                const rightW = Number(wrap.dataset.rightWidth) || 140;
+                if (dx > leftW * STRONG_RATIO) { isCompleted ? action("uncomplete", t.id) : action("complete", t.id); wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; return; }
+                if (dx < -rightW * STRONG_RATIO) { action("delete", t.id); wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; return; }
+                if (dx > SNAP_THRESHOLD) { wrap.classList.add("open-left"); wrap.classList.remove("open-right"); sl.style.transform = `translateX(${leftW}px)`; }
+                else if (dx < -SNAP_THRESHOLD) { wrap.classList.add("open-right"); wrap.classList.remove("open-left"); sl.style.transform = `translateX(${-rightW}px)`; }
+                else { wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; }
+            });
+
+            // ドラッグ（並び替え）
+            const startDrag = (startEvent) => {
+                startEvent.preventDefault();
+                startEvent.stopPropagation();
+                const card = wrap, list = card.parentElement;
+                if (!list) return;
+                isDraggingCard = true;
+                card.classList.remove("open-left", "open-right");
+                sl.style.transition = ""; sl.style.transform = "translateX(0)";
+                const cardRect = card.getBoundingClientRect();
+                const startY = startEvent.clientY || (startEvent.touches && startEvent.touches[0].clientY);
+                const cardStartTop = cardRect.top, cardHeight = cardRect.height;
+                const placeholder = document.createElement("div");
+                placeholder.className = "card drag-placeholder";
+                placeholder.style.height = cardHeight + "px";
+                list.insertBefore(placeholder, card);
+                card.classList.add("dragging");
+                card.style.cssText = `position:fixed;left:${cardRect.left}px;top:${cardRect.top}px;width:${cardRect.width}px;height:${cardHeight}px;pointer-events:none;`;
+                document.body.style.userSelect = "none";
+                document.body.appendChild(card);
+
+                const getY = ev => ev.touches?.length ? ev.touches[0].clientY : ev.clientY;
+                const onMove = ev => {
+                    const currentY = getY(ev), deltaY = currentY - startY;
+                    card.style.top = (cardStartTop + deltaY) + "px";
+                    const cardCenterY = cardStartTop + deltaY + cardHeight / 2;
+                    const siblings = Array.from(list.querySelectorAll(".card:not(.dragging)"));
+                    for (const sibling of siblings) {
+                        if (sibling === placeholder) continue;
+                        const siblingRect = sibling.getBoundingClientRect();
+                        if (cardCenterY < siblingRect.top + siblingRect.height / 2) { if (placeholder.nextSibling !== sibling) list.insertBefore(placeholder, sibling); return; }
+                    }
+                    if (placeholder.nextSibling !== null) list.appendChild(placeholder);
+                };
+                const onUp = () => {
+                    document.removeEventListener("pointermove", onMove);
+                    document.removeEventListener("pointerup", onUp);
+                    document.removeEventListener("touchmove", onMove);
+                    document.removeEventListener("touchend", onUp);
+                    card.classList.remove("dragging");
+                    card.style.cssText = "";
+                    card.classList.remove("open-left", "open-right");
+                    const slEl = card.querySelector(".sl");
+                    if (slEl) { slEl.style.transition = ""; slEl.style.transform = "translateX(0)"; }
+                    if (placeholder?.parentNode === list) { list.insertBefore(card, placeholder); placeholder.remove(); }
+                    else if (list) { list.appendChild(card); placeholder?.parentNode?.removeChild(placeholder); }
+                    document.body.style.userSelect = "";
+                    setTimeout(() => isDraggingCard = false, 100);
+                    saveSortOrder();
+                };
+                document.addEventListener("pointermove", onMove);
+                document.addEventListener("pointerup", onUp);
+                document.addEventListener("touchmove", onMove, { passive: false });
+                document.addEventListener("touchend", onUp);
+            };
+            handle.addEventListener("pointerdown", e => { e.preventDefault(); startDrag(e); });
+            handle.addEventListener("touchstart", e => { e.preventDefault(); e.stopPropagation(); startDrag(e); }, { passive: false });
+
+            wrap.__taskData = t;
+            wrap.dataset.taskId = t.id;
+            return wrap;
         }
-        #msc-card-view.active {
-            display: flex;
+
+        async function saveSortOrder() {
+            if (!userId) return;
+            const orders = [];
+            [criticalEl, highEl, activeEl, completedEl].forEach((listEl, idx) => {
+                const section = ['critical', 'high', 'active', 'completed'][idx];
+                listEl.querySelectorAll('.card').forEach((card, index) => {
+                    const t = card.__taskData;
+                    if (t) orders.push({ id: t.id, sort_order: index, section });
+                });
+            });
+            if (orders.length) await action("sort_update", null, { orders });
         }
-        #msc-card-view .msc-container {
-            transform: scale(0.67);
-            transform-origin: center center;
-            max-width: 100%;
-            max-height: 100%;
+
+        // 優先順位モーダル
+        function bindPriorityModalUI() {
+            const modal = document.getElementById('priorityModal');
+            const close = () => { modal.classList.remove('visible'); currentPriorityTask = null; };
+            document.getElementById('priorityBackdrop').onclick = close;
+            document.getElementById('priorityCloseBtn').onclick = close;
+            document.querySelectorAll('.priority-option').forEach(opt => {
+                opt.addEventListener('click', async () => {
+                    if (!currentPriorityTask) return;
+                    const priority = opt.dataset.priority;
+                    await action("set_priority", currentPriorityTask.id, { priority_level: priority });
+                    close();
+                });
+            });
         }
-        #msc-card-view .msc-card {
-            max-width: 400px;
-            width: 100vw;
+
+        function openPriorityModal(t) {
+            currentPriorityTask = t;
+            document.getElementById('priorityTaskTitle').textContent = t.task_name || t.title || "(無題)";
+            document.getElementById('priorityModal').classList.add('visible');
         }
-        /* MSCカード閉じるボタン */
-        .msc-close-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1001;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 68, 34, 0.5);
-            background: rgba(20, 10, 10, 0.9);
-            color: #ff6644;
-            font-size: 24px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
+
+        // ステータス
+        function renderHabitList() {
+            const container = document.getElementById('habitList');
+            container.innerHTML = HABITS.map(h => `<div class="habit-item" data-habit="${h.id}"><div class="habit-checkbox" data-habit="${h.id}"></div><span class="habit-name">${h.name}</span><span class="habit-icon">${h.icon}</span></div>`).join('');
+            container.querySelectorAll('.habit-item').forEach(item => {
+                item.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const id = item.dataset.habit, cb = item.querySelector('.habit-checkbox');
+                    todayHabits[id] = !todayHabits[id];
+                    cb.classList.toggle('checked', todayHabits[id]);
+                    cb.textContent = todayHabits[id] ? '✓' : '';
+                    item.classList.toggle('checked', todayHabits[id]);
+                });
+            });
         }
-        .msc-close-btn:hover {
-            background: rgba(204, 34, 0, 0.3);
-            border-color: #ff4422;
-            transform: scale(1.1);
+
+        async function loadHabits() {
+            try {
+                const res = await fetch(`${API_BASE}/habits?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                weekHabitsData = data.week || {};
+                todayHabits = data.today || {};
+                renderWeekView();
+                renderHabitAnalysis(data);
+                updateHabitCheckboxes();
+            } catch (e) { renderWeekView(); renderHabitAnalysis({ week_progress: 0 }); }
         }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-</head>
+
+        function updateHabitCheckboxes() {
+            document.querySelectorAll('.habit-item').forEach(item => {
+                const id = item.dataset.habit, cb = item.querySelector('.habit-checkbox'), isChecked = !!todayHabits[id];
+                cb.classList.toggle('checked', isChecked);
+                cb.textContent = isChecked ? '✓' : '';
+                item.classList.toggle('checked', isChecked);
+            });
+        }
+
+        function renderWeekView() {
+            const tbody = document.getElementById('weekTableBody');
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            tbody.innerHTML = HABITS.map(h => `<tr><td>${h.icon} ${h.name}</td>${days.map(d => `<td class="${weekHabitsData[d]?.[h.id] ? 'checked' : 'unchecked'}">${weekHabitsData[d]?.[h.id] ? '●' : '○'}</td>`).join('')}</tr>`).join('');
+        }
+
+        function renderHabitAnalysis(data) {
+            const progress = data.week_progress || 0;
+            document.getElementById('weekProgressValue').textContent = `${progress}%`;
+            document.getElementById('weekProgressBar').style.width = `${progress}%`;
+        }
+
+        async function saveHabits() {
+            try {
+                await fetch(`${API_BASE}/habits/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, date: new Date().toISOString().split('T')[0], habits: todayHabits }) });
+                document.getElementById('dailyTaskCard').classList.remove('expanded');
+                await loadHabits();
+                alert('💪 記録を保存しました！');
+            } catch (e) { alert('保存に失敗しました'); }
+        }
+
+        // 月間分析
+        function bindMonthlyAnalysisUI() {
+            const modal = document.getElementById('monthlyAnalysisModal');
+            const close = () => modal.classList.remove('visible');
+            document.getElementById('openMonthlyAnalysis').onclick = () => { selectedMonth = new Date(); modal.classList.add('visible'); loadMonthlyData(); };
+            document.getElementById('monthlyAnalysisBackdrop').onclick = close;
+            document.getElementById('closeMonthlyAnalysis').onclick = close;
+            document.getElementById('prevMonthBtn').onclick = () => { selectedMonth.setMonth(selectedMonth.getMonth() - 1); loadMonthlyData(); };
+            document.getElementById('nextMonthBtn').onclick = () => {
+                const now = new Date();
+                if (selectedMonth.getFullYear() < now.getFullYear() || (selectedMonth.getFullYear() === now.getFullYear() && selectedMonth.getMonth() < now.getMonth())) {
+                    selectedMonth.setMonth(selectedMonth.getMonth() + 1);
+                    loadMonthlyData();
+                }
+            };
+        }
+
+        async function loadMonthlyData() {
+            const year = selectedMonth.getFullYear(), month = selectedMonth.getMonth() + 1;
+            document.getElementById('currentMonthLabel').textContent = `${year}年${month}月`;
+            try {
+                const res = await fetch(`${API_BASE}/habits/monthly?user_id=${encodeURIComponent(userId)}&year=${year}&month=${month}`);
+                if (!res.ok) throw new Error();
+                renderMonthlyAnalysis(await res.json());
+            } catch (e) { renderMonthlyAnalysis(generateDemoMonthlyData(year, month)); }
+        }
+
+        function generateDemoMonthlyData(year, month) {
+            const daysInMonth = new Date(year, month, 0).getDate(), days = {};
+            for (let d = 1; d <= daysInMonth; d++) {
+                if (Math.random() > 0.3) {
+                    days[`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`] = {
+                        early_wake: Math.random() > 0.4, mission: Math.random() > 0.5, reading: Math.random() > 0.3,
+                        journal: Math.random() > 0.4, no_alcohol: Math.random() > 0.2, workout: Math.random() > 0.5
+                    };
+                }
+            }
+            return { days };
+        }
+
+        function renderMonthlyAnalysis(data) {
+            const days = data.days || {}, year = selectedMonth.getFullYear(), month = selectedMonth.getMonth() + 1;
+            const daysInMonth = new Date(year, month, 0).getDate();
+            let totalChecks = 0, totalPossible = 0, currentStreak = 0, bestStreak = 0;
+            const dailyRates = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`, dayData = days[dateStr];
+                if (dayData) {
+                    const checked = Object.values(dayData).filter(v => v).length;
+                    totalChecks += checked; totalPossible += 6; currentStreak++;
+                    bestStreak = Math.max(bestStreak, currentStreak);
+                    dailyRates.push({ day: d, rate: Math.round((checked / 6) * 100) });
+                } else { currentStreak = 0; dailyRates.push({ day: d, rate: 0 }); }
+            }
+            document.getElementById('monthlyTotalDays').textContent = Object.keys(days).length;
+            document.getElementById('monthlyAchievement').textContent = `${totalPossible ? Math.round((totalChecks / totalPossible) * 100) : 0}%`;
+            document.getElementById('monthlyBestStreak').textContent = bestStreak;
+
+            const tbody = document.getElementById('monthlyTableBody');
+            tbody.innerHTML = Array.from({ length: daysInMonth }, (_, i) => {
+                const d = i + 1, dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const dayData = days[dateStr], dow = ['日','月','火','水','木','金','土'][new Date(dateStr).getDay()];
+                const cells = HABITS.map(h => `<td class="${dayData?.[h.id] ? 'cell-check' : 'cell-uncheck'}">${dayData?.[h.id] ? '●' : '○'}</td>`).join('');
+                const dayChecked = dayData ? Object.values(dayData).filter(v => v).length : 0;
+                return `<tr><td>${month}/${d}(${dow})</td>${cells}<td>${dayChecked}/6</td></tr>`;
+            }).join('');
+
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            if (monthlyChart) monthlyChart.destroy();
+            monthlyChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: dailyRates.map(d => `${d.day}日`), datasets: [{ label: '達成率', data: dailyRates.map(d => d.rate), borderColor: '#ff9f43', backgroundColor: 'rgba(255,159,67,0.15)', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#ff9f43' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 25, callback: v => `${v}%` } }, x: { ticks: { maxTicksLimit: 10 } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // ジャーナル
+        async function loadJournals() {
+            try {
+                const res = await fetch(`${API_BASE}/journals?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error();
+                journalsData = (await res.json()).journals || [];
+            } catch (e) { journalsData = generateDemoJournals(); }
+            renderJournals(journalsData);
+        }
+
+        function generateDemoJournals() {
+            return Array.from({ length: 5 }, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                return { id: `demo-${i}`, date: d.toISOString().split('T')[0], title: ['今日も頑張った','充実した一日','新しい発見','まあまあの日','反省点あり'][i], content: `今日は頑張った。`, tasks_completed_count: Math.floor(Math.random() * 6) + 1 };
+            });
+        }
+
+        function renderJournals(journals) {
+            const container = document.getElementById('journalList');
+            if (!journals.length) { container.innerHTML = '<div class="empty-state">まだ記録がありません</div>'; return; }
+            container.innerHTML = journals.map(j => `<div class="journal-card" data-id="${j.id}"><div class="journal-card-header"><div class="journal-date">📅 ${formatDate(j.date)}</div><div class="journal-tasks-count">✓ ${j.tasks_completed_count || 0}タスク達成</div></div><div class="journal-title-text">${j.title || '無題'}</div><div class="journal-preview">${(j.content || '').substring(0, 50)}...</div></div>`).join('');
+            container.querySelectorAll('.journal-card').forEach(card => card.onclick = () => {
+                const j = journalsData.find(x => x.id == card.dataset.id);
+                if (j) openJournalDetailModal(j);
+            });
+        }
+
+        function openJournalDetailModal(journal) {
+            currentEditJournal = journal;
+            document.getElementById('journalViewContent').classList.remove('hidden');
+            document.getElementById('journalEditContent').classList.remove('active');
+            const d = new Date(journal.date);
+            document.getElementById('journalModalDate').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+            document.getElementById('journalModalTitle').textContent = journal.title || '無題';
+            document.getElementById('journalModalContent').textContent = journal.content || '内容なし';
+            document.getElementById('journalModalTasks').innerHTML = (journal.completed_tasks || HABITS.slice(0, journal.tasks_completed_count || 0).map(h => h.name)).map(t => `<span class="journal-task-chip">${t}</span>`).join('') || '<span style="color:var(--text-muted);font-size:12px;">達成タスクなし</span>';
+            document.getElementById('journalDetailModal').classList.add('visible');
+        }
+
+        function bindJournalDetailModalUI() {
+            const modal = document.getElementById('journalDetailModal');
+            const close = () => { modal.classList.remove('visible'); currentEditJournal = null; };
+            document.getElementById('journalDetailBackdrop').onclick = close;
+            document.getElementById('closeJournalDetail').onclick = close;
+            document.getElementById('journalCloseBtn').onclick = close;
+            document.getElementById('closeJournalEdit').onclick = close;
+            document.getElementById('journalEditBtn').onclick = () => {
+                if (!currentEditJournal) return;
+                document.getElementById('journalViewContent').classList.add('hidden');
+                document.getElementById('journalEditContent').classList.add('active');
+                document.getElementById('editJournalTitle').value = currentEditJournal.title || '';
+                document.getElementById('editJournalContent').value = currentEditJournal.content || '';
+            };
+            document.getElementById('journalCancelEditBtn').onclick = () => {
+                document.getElementById('journalViewContent').classList.remove('hidden');
+                document.getElementById('journalEditContent').classList.remove('active');
+            };
+            document.getElementById('journalSaveEditBtn').onclick = async () => {
+                if (!currentEditJournal) return;
+                const newTitle = document.getElementById('editJournalTitle').value.trim();
+                const newContent = document.getElementById('editJournalContent').value.trim();
+                currentEditJournal.title = newTitle; currentEditJournal.content = newContent;
+                document.getElementById('journalModalTitle').textContent = newTitle || '無題';
+                document.getElementById('journalModalContent').textContent = newContent || '内容なし';
+                document.getElementById('journalViewContent').classList.remove('hidden');
+                document.getElementById('journalEditContent').classList.remove('active');
+                renderJournals(journalsData);
+                alert('💪 更新しました！');
+            };
+        }
+
+        async function saveJournal() {
+            const date = document.getElementById('journalDate').value;
+            const title = document.getElementById('journalTitle').value.trim();
+            const content = document.getElementById('journalContent').value.trim();
+            if (!title && !content) { alert('タイトルまたは内容を入力してください'); return; }
+            journalsData.unshift({ id: `demo-${Date.now()}`, date, title, content, tasks_completed_count: 0 });
+            document.getElementById('journalTitle').value = '';
+            document.getElementById('journalContent').value = '';
+            renderJournals(journalsData);
+            alert('💪 保存しました！');
+        }
+
+        // モーダル
+        function bindModalUI() {
+            const modal = document.getElementById('detailModal');
+            const close = () => modal.classList.remove("visible");
+            document.getElementById('detailBackdrop').onclick = close;
+            document.getElementById('detailCloseBtn').onclick = close;
+            document.getElementById('detailCancelBtn').onclick = close;
+            ['Priority', 'Vision', 'Excite', 'Growth'].forEach(name => {
+                const input = document.getElementById(`input${name}`), val = document.getElementById(`val${name}`);
+                input.addEventListener('input', () => val.textContent = input.value);
+            });
+            document.getElementById('inputRemindAt').addEventListener('change', e => {
+                document.getElementById('valRemindAt').textContent = e.target.value ? formatRemindLabel(new Date(e.target.value).toISOString()) : '';
+            });
+            document.getElementById('detailSaveBtn').onclick = async () => {
+                if (!currentDetailTask) return;
+                if (modalMode === "detail") {
+                    await action("update_detail", currentDetailTask.id, {
+                        priority: Number(document.getElementById('inputPriority').value),
+                        vision_score: Number(document.getElementById('inputVision').value),
+                        excite_score: Number(document.getElementById('inputExcite').value),
+                        growth_score: Number(document.getElementById('inputGrowth').value),
+                    });
+                } else {
+                    const inputVal = document.getElementById('inputRemindAt').value;
+                    await action("remind_custom", currentDetailTask.id, { remind_at: inputVal ? new Date(inputVal).toISOString() : null, kind: inputVal ? "custom_datetime" : "clear" });
+                }
+                close();
+            };
+        }
+
+        function openDetail(t) {
+            modalMode = "detail"; currentDetailTask = t;
+            document.getElementById('modalTitle').textContent = "💪 タスク詳細";
+            document.getElementById('detailTaskTitle').textContent = t.task_name || t.title || "(無題)";
+            document.getElementById('scoreGroup').style.display = "block";
+            document.getElementById('remindGroup').style.display = "none";
+            ['Priority', 'Vision', 'Excite', 'Growth'].forEach(name => {
+                const val = t[name.toLowerCase() + (name === 'Priority' ? '' : '_score')] ?? 0;
+                document.getElementById(`input${name}`).value = val;
+                document.getElementById(`val${name}`).textContent = val;
+            });
+            document.getElementById('detailModal').classList.add("visible");
+        }
+
+        function openRemind(t) {
+            modalMode = "remind"; currentDetailTask = t;
+            document.getElementById('modalTitle').textContent = "🔔 通知設定";
+            document.getElementById('detailTaskTitle').textContent = t.task_name || t.title || "(無題)";
+            document.getElementById('scoreGroup').style.display = "none";
+            document.getElementById('remindGroup').style.display = "block";
+            const input = document.getElementById('inputRemindAt'), val = document.getElementById('valRemindAt');
+            if (t.remind_at) { input.value = toLocalDatetimeValue(t.remind_at); val.textContent = formatRemindLabel(t.remind_at); }
+            else { input.value = ''; val.textContent = ''; }
+            document.getElementById('detailModal').classList.add("visible");
+        }
+
+        // ユーティリティ
+        function mkBtn(label, onClick, cls) {
+            const b = document.createElement("button");
+            b.textContent = label; if (cls) b.className = cls;
+            b.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); onClick(); });
+            return b;
+        }
+
+        async function action(kind, id, extra = {}) {
+            try {
+                const res = await fetch(`${API_BASE}/action`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, action: kind, task_id: id, ...extra }) });
+                if (!res.ok) alert("操作に失敗しました");
+            } catch (e) { console.error("[ACTION] error:", e); }
+            finally { if (kind !== "remind_custom") loadList(); }
+        }
+
+        function formatRemindLabel(iso) { if (!iso) return ""; const d = new Date(iso); return `🔔${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; }
+        function toLocalDatetimeValue(iso) { if (!iso) return ""; const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+        function formatDate(dateStr) { const d = new Date(dateStr); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; }
+
+        init();
+    </script>
+</body>
+</html>
 <body>
 
     <nav class="tab-nav">
