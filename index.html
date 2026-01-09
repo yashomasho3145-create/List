@@ -159,17 +159,17 @@
             perspective: 1000px;
         }
         .mission-task-card {
-            background: url('./images/mission_bg.jpg') center/cover;
-            border-radius: 4px;
-            padding: 12px 18px;
-            color: #3d2b1f;
+            background: url('images/mission_bg.jpg') center/cover;
+            border-radius: 6px;
+            padding: 14px 18px;
+            color: #ffffff;
             position: relative;
             overflow: visible;
-            border: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow:
-                0 4px 15px rgba(0, 0, 0, 0.2),
-                0 1px 3px rgba(0, 0, 0, 0.1),
-                inset 0 0 30px rgba(139, 115, 85, 0.2);
+                0 4px 20px rgba(0, 0, 0, 0.4),
+                0 1px 3px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
             transform-style: preserve-3d;
             transition: transform 0.1s ease-out;
         }
@@ -178,12 +178,10 @@
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: linear-gradient(135deg,
-                rgba(255, 255, 255, 0.1) 0%,
-                transparent 40%,
-                transparent 60%,
-                rgba(0, 0, 0, 0.05) 100%);
+                rgba(0, 0, 0, 0.2) 0%,
+                rgba(0, 0, 0, 0.4) 100%);
             pointer-events: none;
-            border-radius: 4px;
+            border-radius: 6px;
         }
         /* めくれエフェクト用の右端の影 */
         .mission-task-card::after {
@@ -212,13 +210,13 @@
             right: 0;
             width: 0;
             height: 100%;
-            background: linear-gradient(to right, #c9b896 0%, #d4c4a8 50%, #e8dcc8 100%);
+            background: linear-gradient(to right, #3a3a3a 0%, #5a5a5a 50%, #7a7a7a 100%);
             transform-origin: left center;
             transform: rotateY(0deg);
             transition: width 0.1s ease-out;
             z-index: 2;
-            border-radius: 0 4px 4px 0;
-            box-shadow: inset 3px 0 8px rgba(0, 0, 0, 0.15);
+            border-radius: 0 6px 6px 0;
+            box-shadow: inset 3px 0 10px rgba(0, 0, 0, 0.4);
         }
         .mission-task-card.peeling .mission-peel-back {
             width: 80px;
@@ -237,29 +235,29 @@
             gap: 4px;
             font-size: 9px;
             font-weight: 700;
-            background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
+            background: linear-gradient(135deg, rgba(255, 100, 50, 0.9) 0%, rgba(200, 50, 0, 0.9) 100%);
             padding: 3px 10px;
             border-radius: 3px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #f5deb3;
-            border: 1px solid #a0522d;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            color: #ffffff;
+            border: 1px solid rgba(255, 150, 100, 0.5);
+            box-shadow: 0 2px 8px rgba(255, 80, 0, 0.4);
         }
         .mission-task-title {
             font-family: 'Noto Serif JP', serif;
             font-size: 15px;
             font-weight: 700;
             margin-bottom: 2px;
-            color: #2d1f14;
-            text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
             position: relative;
             z-index: 2;
             line-height: 1.2;
         }
         .mission-task-desc {
             font-size: 12px;
-            color: #5c4033;
+            color: rgba(255, 255, 255, 0.85);
             margin-bottom: 4px;
             line-height: 1.4;
             position: relative;
@@ -268,6 +266,7 @@
             -webkit-line-clamp: 1;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
         }
         .mission-task-actions {
             display: flex;
@@ -278,29 +277,31 @@
         }
         .mission-expire {
             font-size: 11px;
-            color: #8b6914;
+            color: #ffffff;
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 4px;
-            background: rgba(139, 115, 85, 0.15);
-            padding: 3px 8px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 3px 10px;
             border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
         .mission-expire::before { content: '⏱'; font-size: 12px; }
         .mission-achievement-bubble {
             position: absolute;
             top: -6px;
             right: -6px;
-            background: linear-gradient(135deg, #8b4513 0%, #654321 100%);
-            color: #f5deb3;
-            padding: 3px 8px;
+            background: linear-gradient(135deg, #ff6b35 0%, #cc2200 100%);
+            color: #ffffff;
+            padding: 3px 10px;
             border-radius: 3px;
             font-size: 9px;
             font-weight: 700;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 3px 12px rgba(255, 80, 0, 0.5);
             z-index: 5;
-            border: 1px solid #a0522d;
+            border: 1px solid rgba(255, 150, 100, 0.5);
         }
         /* スワイプヒント */
         .mission-swipe-hint {
@@ -309,12 +310,13 @@
             right: 12px;
             transform: translateY(-50%);
             font-size: 10px;
-            color: #8b7355;
+            color: rgba(255, 255, 255, 0.8);
             display: flex;
             align-items: center;
             gap: 4px;
-            opacity: 0.6;
+            opacity: 0.9;
             z-index: 2;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
         }
         .mission-swipe-hint::after {
             content: '←';
@@ -1619,7 +1621,7 @@
                     <div class="mission-achievement-bubble">🔥 ${todayCount}人が達成</div>
                     <div class="mission-task-card ${completedToday ? 'completed' : ''}" id="missionCard">
                         <div class="mission-peel-back"></div>
-                        <img class="mission-completed-stamp" src="./images/completed_stamp.png" alt="COMPLETED" />
+                        <img class="mission-completed-stamp" src="images/completed_stamp.png" alt="COMPLETED" />
                         <div class="mission-task-header">
                             <div class="mission-task-badge"><span>🎯</span><span>WEEKLY MISSION</span></div>
                         </div>
