@@ -2116,25 +2116,16 @@
         }
 
         async function loadHabits() {
-            const todayStr = new Date().toISOString().split('T')[0];
             try {
-                const res = await fetch(`${API_BASE}/habits?user_id=${encodeURIComponent(userId)}&date=${todayStr}`);
+                const res = await fetch(`${API_BASE}/habits?user_id=${encodeURIComponent(userId)}`);
                 if (!res.ok) throw new Error();
                 const data = await res.json();
                 weekHabitsData = data.week || {};
-                // 今日の日付と一致するデータのみを使用（毎日リセット）
-                const dataDate = data.date || todayStr;
-                if (dataDate === todayStr) {
-                    todayHabits = data.today || {};
-                } else {
-                    // 日付が異なる場合はリセット（新しい日）
-                    todayHabits = {};
-                }
+                todayHabits = data.today || {};
                 renderWeekView();
                 renderHabitAnalysis(data);
                 updateHabitCheckboxes();
             } catch (e) {
-                // APIエラー時もリセット状態で開始
                 todayHabits = {};
                 renderWeekView();
                 renderHabitAnalysis({ week_progress: 0 });
@@ -2165,7 +2156,10 @@
 
         async function saveHabits() {
             try {
-                await fetch(`${API_BASE}/habits/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, date: new Date().toISOString().split('T')[0], habits: todayHabits }) });
+                // ローカル日付を取得（タイムゾーン対応）
+                const today = new Date();
+                const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                await fetch(`${API_BASE}/habits/save`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, date: localDate, habits: todayHabits }) });
                 document.getElementById('dailyTaskCard').classList.remove('expanded');
                 await loadHabits();
                 alert('💪 記録を保存しました！');
