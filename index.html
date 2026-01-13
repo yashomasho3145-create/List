@@ -1077,6 +1077,235 @@
             border-color: #ff4422;
             transform: scale(1.1);
         }
+
+        /* ミッション詳細モーダル */
+        #missionDetailModal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #missionDetailModal.visible {
+            display: flex;
+        }
+        .mission-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+        }
+        .mission-modal-panel {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            background: url('images/mission_bg.jpg') center/cover;
+            border-radius: 8px;
+            padding: 24px;
+            color: #ffffff;
+            overflow: hidden;
+            border: 2px solid rgba(255, 100, 50, 0.5);
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(255, 68, 34, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            animation: missionModalIn 0.3s ease;
+        }
+        @keyframes missionModalIn {
+            from { transform: scale(0.9) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .mission-modal-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg,
+                rgba(0, 0, 0, 0.3) 0%,
+                rgba(0, 0, 0, 0.5) 100%);
+            pointer-events: none;
+            border-radius: 8px;
+        }
+        .mission-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 2;
+        }
+        .mission-modal-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            background: linear-gradient(135deg, rgba(255, 100, 50, 0.9) 0%, rgba(200, 50, 0, 0.9) 100%);
+            padding: 5px 14px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffffff;
+            border: 1px solid rgba(255, 150, 100, 0.5);
+            box-shadow: 0 2px 10px rgba(255, 80, 0, 0.5);
+        }
+        .mission-modal-close {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .mission-modal-close:hover {
+            background: rgba(255, 68, 34, 0.5);
+            transform: scale(1.1);
+        }
+        .mission-modal-title {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #ffffff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            position: relative;
+            z-index: 2;
+            line-height: 1.4;
+        }
+        .mission-modal-desc {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.7;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 14px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .mission-modal-stats {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+        .mission-stat-item {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .mission-stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ff6644;
+            text-shadow: 0 0 10px rgba(255, 68, 34, 0.5);
+        }
+        .mission-stat-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 4px;
+        }
+        .mission-modal-actions {
+            display: flex;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        .mission-action-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .mission-btn-complete {
+            background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 15px rgba(38, 222, 129, 0.4);
+        }
+        .mission-btn-complete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(38, 222, 129, 0.5);
+        }
+        .mission-btn-complete.completed {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+        .mission-btn-timer {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255, 159, 67, 0.5);
+            color: #ff9f43;
+            flex: 0 0 auto;
+            width: 52px;
+            padding: 14px 0;
+        }
+        .mission-btn-timer:hover {
+            background: rgba(255, 159, 67, 0.2);
+            border-color: #ff9f43;
+        }
+        .mission-completed-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-12deg);
+            width: 200px;
+            z-index: 3;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .mission-modal-panel.completed .mission-completed-overlay {
+            opacity: 1;
+        }
+
+        /* 優先順位バッジ縦表示 */
+        .priority-badge {
+            display: none;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            padding: 6px 4px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .card.priority-critical .priority-badge,
+        .card.priority-high .priority-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card.priority-critical .priority-badge {
+            background: linear-gradient(180deg, #ff3333 0%, #cc0000 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 51, 51, 0.4);
+            animation: badgeGlow 2s infinite;
+        }
+        .card.priority-high .priority-badge {
+            background: linear-gradient(180deg, #ffa500 0%, #cc8400 100%);
+            color: #1a1a0a;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -1448,6 +1677,38 @@
         </div>
     </div>
 
+    <!-- ミッション詳細モーダル -->
+    <div id="missionDetailModal">
+        <div class="mission-modal-backdrop" id="missionModalBackdrop"></div>
+        <div class="mission-modal-panel" id="missionModalPanel">
+            <img class="mission-completed-overlay" src="a5d2dbb8-99d9-4bca-be1a-89cee8ffc4f8.png" alt="COMPLETED" />
+            <div class="mission-modal-header">
+                <div class="mission-modal-badge"><span>🎯</span><span>MISSION</span></div>
+                <button class="mission-modal-close" id="missionModalClose">&times;</button>
+            </div>
+            <div class="mission-modal-title" id="missionModalTitle">ミッションタイトル</div>
+            <div class="mission-modal-desc" id="missionModalDesc">ミッションの説明がここに表示されます。</div>
+            <div class="mission-modal-stats">
+                <div class="mission-stat-item" id="missionStatExpire">
+                    <div class="mission-stat-value" id="missionModalDays">-</div>
+                    <div class="mission-stat-label">残り日数</div>
+                </div>
+                <div class="mission-stat-item">
+                    <div class="mission-stat-value" id="missionModalCount">0</div>
+                    <div class="mission-stat-label">🔥 達成者</div>
+                </div>
+            </div>
+            <div class="mission-modal-actions">
+                <button class="mission-action-btn mission-btn-complete" id="missionModalCompleteBtn">
+                    <span>✓</span><span>達成する</span>
+                </button>
+                <button class="mission-action-btn mission-btn-timer" id="missionModalTimerBtn" title="タイマーを開く">
+                    ⏱
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const LIFF_ID = "2008372898-2q9qWmxv";
         const API_BASE = "https://lumicreate.xvps.jp/webhook";
@@ -1558,6 +1819,7 @@
             bindPriorityModalUI();
             bindMscUI();
             bindMbtiModalUI();
+            bindMissionModalUI();
         }
 
         function switchTab(tabId) {
@@ -1610,19 +1872,24 @@
             }
         }
 
+        // ミッションデータを保持
+        let currentMissionData = null;
+
         function renderMissionTask(data) {
             const container = document.getElementById('missionTaskContainer');
-            if (!data.mission) { container.innerHTML = ''; return; }
+            if (!data.mission) { container.innerHTML = ''; currentMissionData = null; return; }
             const mission = data.mission;
             const completedToday = data.completed_today;
             const todayCount = data.today_completions || 0;
             const daysLeft = mission.expires_at ? Math.ceil((new Date(mission.expires_at) - new Date()) / (1000 * 60 * 60 * 24)) : null;
 
+            // ミッションデータを保持
+            currentMissionData = { mission, completedToday, todayCount, daysLeft };
+
             container.innerHTML = `
                 <div class="mission-task-wrapper">
                     <div class="mission-achievement-bubble">🔥 ${todayCount}人が達成</div>
                     <div class="mission-task-card ${completedToday ? 'completed' : ''}" id="missionCard">
-                        <div class="mission-peel-back"></div>
                         <img class="mission-completed-stamp" src="a5d2dbb8-99d9-4bca-be1a-89cee8ffc4f8.png" alt="COMPLETED" />
                         <div class="mission-task-header">
                             <div class="mission-task-badge"><span>🎯</span><span>MISSION</span></div>
@@ -1632,158 +1899,114 @@
                         <div class="mission-task-actions">
                             ${mission.expires_at ? `<div class="mission-expire">残り${daysLeft > 0 ? daysLeft : 0}日</div>` : ''}
                         </div>
-                        ${!completedToday ? '<div class="mission-swipe-hint">スワイプで達成</div>' : ''}
+                        <div class="mission-swipe-hint">タップで詳細</div>
                     </div>
                 </div>`;
 
-            // 完了済みでない場合のみスワイプ処理を設定
-            if (!completedToday) {
-                setupMissionSwipe(mission.id);
+            // カードタップで詳細モーダルを開く
+            const card = document.getElementById('missionCard');
+            if (card) {
+                card.addEventListener('click', () => openMissionDetailModal());
+                card.style.cursor = 'pointer';
             }
         }
 
-        function setupMissionSwipe(missionId) {
-            const card = document.getElementById('missionCard');
-            if (!card) return;
+        // ミッション詳細モーダルを開く
+        function openMissionDetailModal() {
+            if (!currentMissionData) return;
+            const { mission, completedToday, todayCount, daysLeft } = currentMissionData;
+            const modal = document.getElementById('missionDetailModal');
+            const panel = document.getElementById('missionModalPanel');
 
-            const peelBack = card.querySelector('.mission-peel-back');
-            let startX = 0, currentX = 0, dx = 0;
-            let isSwiping = false;
-            const COMPLETE_THRESHOLD = 150; // この距離を超えたら完了
+            // モーダル内容を設定
+            document.getElementById('missionModalTitle').textContent = mission.title || 'ミッション';
+            document.getElementById('missionModalDesc').textContent = mission.description || '説明なし';
+            document.getElementById('missionModalCount').textContent = todayCount;
 
-            const updatePeelEffect = (swipeDistance) => {
-                // スワイプ距離に応じてめくれエフェクトを更新
-                const peelWidth = Math.min(Math.max(swipeDistance * 0.8, 0), 200);
-                const shadowWidth = Math.min(Math.max(swipeDistance * 0.4, 0), 80);
+            // 残り日数
+            const expireItem = document.getElementById('missionStatExpire');
+            if (mission.expires_at && daysLeft !== null) {
+                expireItem.style.display = 'block';
+                document.getElementById('missionModalDays').textContent = daysLeft > 0 ? daysLeft : 0;
+            } else {
+                expireItem.style.display = 'none';
+            }
 
-                // 裏面の幅を調整
-                peelBack.style.width = `${peelWidth}px`;
-                peelBack.style.transition = 'none';
+            // 完了状態に応じてボタンとスタイル更新
+            const completeBtn = document.getElementById('missionModalCompleteBtn');
+            if (completedToday) {
+                panel.classList.add('completed');
+                completeBtn.classList.add('completed');
+                completeBtn.innerHTML = '<span>↩</span><span>未達成に戻す</span>';
+            } else {
+                panel.classList.remove('completed');
+                completeBtn.classList.remove('completed');
+                completeBtn.innerHTML = '<span>✓</span><span>達成する</span>';
+            }
 
-                // 影の幅をCSS変数で調整
-                card.style.setProperty('--peel-shadow', `${shadowWidth}px`);
+            modal.classList.add('visible');
+        }
 
-                // カードに軽い傾きを追加
-                const rotateY = Math.min(swipeDistance * 0.03, 8);
-                const rotateZ = Math.min(swipeDistance * 0.01, 2);
-                card.style.transform = `perspective(1000px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
-                card.style.transition = 'none';
+        // ミッション詳細モーダルを閉じる
+        function closeMissionDetailModal() {
+            document.getElementById('missionDetailModal').classList.remove('visible');
+        }
 
-                // しきい値を超えたらカードにpeelingクラスを追加
-                if (swipeDistance > 30) {
-                    card.classList.add('peeling');
+        // ミッションモーダルのUIバインド
+        function bindMissionModalUI() {
+            const modal = document.getElementById('missionDetailModal');
+            document.getElementById('missionModalBackdrop').onclick = closeMissionDetailModal;
+            document.getElementById('missionModalClose').onclick = closeMissionDetailModal;
+
+            // 完了/未達成ボタン
+            document.getElementById('missionModalCompleteBtn').onclick = async () => {
+                if (!currentMissionData) return;
+                const { mission, completedToday } = currentMissionData;
+                if (completedToday) {
+                    // 未達成に戻す（APIがあれば）
+                    await uncompleteMission(mission.id);
                 } else {
-                    card.classList.remove('peeling');
+                    // 達成処理
+                    await completeMission(mission.id);
                 }
+                closeMissionDetailModal();
             };
 
-            const resetPeelEffect = () => {
-                peelBack.style.transition = 'width 0.3s ease-out';
-                peelBack.style.width = '0';
-                card.style.transition = 'transform 0.3s ease-out';
-                card.style.transform = '';
-                card.classList.remove('peeling');
+            // タイマーボタン
+            document.getElementById('missionModalTimerBtn').onclick = () => {
+                // タイマーページを開く
+                window.open('タイマー/timer.html', '_blank');
             };
+        }
 
-            const completeMissionWithAnimation = async () => {
-                // めくり完了アニメーション
-                peelBack.style.transition = 'width 0.4s ease-out';
-                peelBack.style.width = '100%';
-                card.style.transition = 'transform 0.4s ease-out';
-                card.style.transform = 'perspective(1000px) rotateY(15deg) rotateZ(3deg)';
-
-                // 少し待ってからスタンプ表示と完了処理
-                setTimeout(async () => {
-                    card.classList.add('completed');
-                    card.classList.remove('peeling');
-
-                    // スワイプヒントを削除
-                    const hint = card.querySelector('.mission-swipe-hint');
-                    if (hint) hint.remove();
-
-                    // カードを元に戻す
-                    setTimeout(() => {
-                        peelBack.style.width = '0';
-                        card.style.transform = '';
-                    }, 300);
-
-                    await completeMission(missionId);
-                }, 400);
-            };
-
-            // タッチイベント
-            card.addEventListener('touchstart', (e) => {
-                if (card.classList.contains('completed')) return;
-                startX = e.touches[0].clientX;
-                currentX = startX;
-                isSwiping = true;
-            }, { passive: true });
-
-            card.addEventListener('touchmove', (e) => {
-                if (!isSwiping || card.classList.contains('completed')) return;
-                currentX = e.touches[0].clientX;
-                dx = startX - currentX; // 左スワイプなので正の値
-
-                if (dx > 10) {
-                    e.preventDefault(); // スクロールを防止
-                    updatePeelEffect(dx);
+        // ミッション未達成に戻す
+        async function uncompleteMission(missionId) {
+            try {
+                const res = await fetch(`${API_BASE}/mission/uncomplete`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, mission_id: missionId })
+                });
+                if (res.ok) {
+                    missionCompletedToday = false;
+                    await loadMissionTask();
                 }
-            }, { passive: false });
-
-            card.addEventListener('touchend', async () => {
-                if (!isSwiping || card.classList.contains('completed')) return;
-                isSwiping = false;
-
-                if (dx >= COMPLETE_THRESHOLD) {
-                    await completeMissionWithAnimation();
-                } else {
-                    resetPeelEffect();
-                }
-                dx = 0;
-            });
-
-            // マウスイベント（PC対応）
-            let isMouseDown = false;
-
-            card.addEventListener('mousedown', (e) => {
-                if (card.classList.contains('completed')) return;
-                startX = e.clientX;
-                currentX = startX;
-                isMouseDown = true;
-                e.preventDefault();
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isMouseDown || card.classList.contains('completed')) return;
-                currentX = e.clientX;
-                dx = startX - currentX;
-
-                if (dx > 10) {
-                    updatePeelEffect(dx);
-                }
-            });
-
-            document.addEventListener('mouseup', async () => {
-                if (!isMouseDown || card.classList.contains('completed')) return;
-                isMouseDown = false;
-
-                if (dx >= COMPLETE_THRESHOLD) {
-                    await completeMissionWithAnimation();
-                } else {
-                    resetPeelEffect();
-                }
-                dx = 0;
-            });
+            } catch (e) {
+                console.log('Mission uncomplete - demo mode');
+                missionCompletedToday = false;
+                if (currentMissionData) currentMissionData.completedToday = false;
+                // カードの状態を更新
+                const card = document.getElementById('missionCard');
+                if (card) card.classList.remove('completed');
+            }
         }
 
         async function completeMission(missionId) {
             const updateUI = () => {
                 missionCompletedToday = true;
-                const btn = document.getElementById('missionCompleteBtn');
-                if (btn) {
-                    btn.classList.add('completed');
-                    btn.textContent = '✓ COMPLETED';
-                }
+                if (currentMissionData) currentMissionData.completedToday = true;
+                // カードの状態を更新
+                const card = document.getElementById('missionCard');
+                if (card) card.classList.add('completed');
             };
 
             try {
