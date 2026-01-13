@@ -535,81 +535,32 @@
         ::-webkit-scrollbar-track { background: rgba(13, 27, 42, 0.05); border-radius: 3px; }
         ::-webkit-scrollbar-thumb { background: var(--energy-orange); border-radius: 3px; }
 
-        /* ムキムキステータスカード（MSC）- 漆黒×深紅 炎と鉄板デザイン */
-        .msc-container { padding: 16px; }
+        /* ムキムキステータスカード（MSC）- 背景画像対応 */
+        .msc-container { padding: 0; }
         .msc-card {
-            background:
-                /* 鉄板テクスチャ風グラデーション */
-                repeating-linear-gradient(
-                    90deg,
-                    rgba(40, 40, 40, 0.1) 0px,
-                    rgba(40, 40, 40, 0.1) 1px,
-                    transparent 1px,
-                    transparent 20px
-                ),
-                repeating-linear-gradient(
-                    0deg,
-                    rgba(40, 40, 40, 0.1) 0px,
-                    rgba(40, 40, 40, 0.1) 1px,
-                    transparent 1px,
-                    transparent 20px
-                ),
-                /* メインの漆黒グラデーション */
+            /* 背景画像（pngを設定可能） */
+            background: url('images/msc_bg.png') center/cover no-repeat,
                 linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 30%, #0d0505 70%, #050505 100%);
-            border-radius: 4px;
-            padding: 20px;
+            border-radius: 8px;
+            padding: 24px;
             color: #e8e8e8;
             position: relative;
             overflow: hidden;
-            border: 2px solid #2a1a1a;
+            border: 2px solid rgba(255, 100, 50, 0.5);
             box-shadow:
-                0 15px 50px rgba(0, 0, 0, 0.8),
-                inset 0 1px 0 rgba(255, 68, 34, 0.1),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-                0 0 30px rgba(204, 34, 0, 0.2);
+                0 20px 60px rgba(0, 0, 0, 0.6),
+                0 0 40px rgba(255, 68, 34, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
-        /* 炎のエフェクト - 下部 */
         .msc-card::before {
             content: '';
             position: absolute;
-            bottom: -30%;
-            left: -10%;
-            width: 120%;
-            height: 60%;
-            background:
-                radial-gradient(ellipse at 20% 100%, rgba(255, 68, 34, 0.4) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 100%, rgba(204, 34, 0, 0.5) 0%, transparent 40%),
-                radial-gradient(ellipse at 80% 100%, rgba(255, 100, 50, 0.3) 0%, transparent 45%);
+            inset: 0;
+            background: linear-gradient(135deg,
+                rgba(0, 0, 0, 0.3) 0%,
+                rgba(0, 0, 0, 0.5) 100%);
             pointer-events: none;
-            animation: flameFlicker 3s ease-in-out infinite;
-            z-index: 0;
-        }
-        /* 炎のエフェクト - 上部アクセント */
-        .msc-card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg,
-                transparent 0%,
-                #cc2200 20%,
-                #ff4422 50%,
-                #cc2200 80%,
-                transparent 100%);
-            box-shadow: 0 0 15px rgba(255, 68, 34, 0.8), 0 0 30px rgba(204, 34, 0, 0.5);
-            animation: topGlow 2s ease-in-out infinite;
-        }
-        @keyframes flameFlicker {
-            0%, 100% { opacity: 0.7; transform: translateY(0) scale(1); }
-            25% { opacity: 0.9; transform: translateY(-5px) scale(1.02); }
-            50% { opacity: 0.8; transform: translateY(-2px) scale(1.01); }
-            75% { opacity: 1; transform: translateY(-8px) scale(1.03); }
-        }
-        @keyframes topGlow {
-            0%, 100% { box-shadow: 0 0 15px rgba(255, 68, 34, 0.8), 0 0 30px rgba(204, 34, 0, 0.5); }
-            50% { box-shadow: 0 0 25px rgba(255, 68, 34, 1), 0 0 50px rgba(204, 34, 0, 0.8); }
+            border-radius: 8px;
         }
         .msc-header {
             display: flex;
@@ -1025,56 +976,62 @@
         .mbti-option-type { font-size: 14px; font-weight: 700; color: var(--dark-navy); }
         .mbti-option-name { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
-        /* MSCカード全画面表示（LIFF全体表示対応） */
+        /* MSCカード全画面モーダル表示（ミッション詳細モーダル風） */
         #msc-card-view {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.95);
+            inset: 0;
+            z-index: 200;
             display: none;
             justify-content: center;
             align-items: center;
-            overflow: auto;
             padding: 20px;
         }
         #msc-card-view.active {
             display: flex;
         }
+        .msc-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+        }
         #msc-card-view .msc-container {
-            transform: scale(0.67);
-            transform-origin: center center;
+            position: relative;
+            z-index: 2;
             max-width: 100%;
-            max-height: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: mscModalIn 0.3s ease;
+        }
+        @keyframes mscModalIn {
+            from { transform: scale(0.9) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
         }
         #msc-card-view .msc-card {
-            max-width: 400px;
+            max-width: 380px;
             width: 100vw;
         }
         /* MSCカード閉じるボタン */
         .msc-close-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1001;
-            width: 40px;
-            height: 40px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            border: 2px solid rgba(255, 68, 34, 0.5);
-            background: rgba(20, 10, 10, 0.9);
-            color: #ff6644;
-            font-size: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+            font-size: 20px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
         .msc-close-btn:hover {
-            background: rgba(204, 34, 0, 0.3);
-            border-color: #ff4422;
+            background: rgba(255, 68, 34, 0.5);
             transform: scale(1.1);
         }
 
@@ -1350,11 +1307,12 @@
             </div>
         </header>
         <main>
-            <!-- MSC 成長カード（デフォルト非表示・全画面表示） -->
+            <!-- MSC 成長カード（デフォルト非表示・モーダル表示） -->
             <div id="msc-card-view" class="msc-view">
-                <button class="msc-close-btn" id="mscCloseBtn">&times;</button>
+                <div class="msc-modal-backdrop" id="mscModalBackdrop"></div>
                 <div class="msc-container">
                     <div class="msc-card">
+                        <button class="msc-close-btn" id="mscCloseBtn">&times;</button>
                         <!-- ヘッダー -->
                         <div class="msc-header">
                             <div class="msc-header-left">
@@ -1383,7 +1341,7 @@
                             <div class="msc-radar-date" id="mscRadarDate">※累計データ基準</div>
                         </div>
 
-                        <!-- 強み -->
+                        <!-- 強み（1つ） -->
                         <div class="msc-traits-section">
                             <div class="msc-traits-title msc-strength-title">強み</div>
                             <div id="mscStrengths">
@@ -1397,20 +1355,10 @@
                                         <div class="msc-trait-desc">早起きと禁酒を継続し、規律正しい生活を送っている。</div>
                                     </div>
                                 </div>
-                                <div class="msc-trait-item">
-                                    <div class="msc-trait-icon">📚</div>
-                                    <div class="msc-trait-content">
-                                        <div class="msc-trait-header">
-                                            <span class="msc-trait-name">探究ブースト</span>
-                                            <span class="msc-trait-level">Lv.3.8</span>
-                                        </div>
-                                        <div class="msc-trait-desc">読書・学習習慣が根付いており、知的好奇心が旺盛。</div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
-                        <!-- 弱み -->
+                        <!-- 弱み（1つ） -->
                         <div class="msc-traits-section">
                             <div class="msc-traits-title msc-weakness-title">弱み</div>
                             <div id="mscWeaknesses">
@@ -2774,12 +2722,11 @@
                 mscCloseBtn.addEventListener('click', hideMsc);
             }
 
-            // 背景クリックで閉じる
-            mscCardView.addEventListener('click', (e) => {
-                if (e.target === mscCardView) {
-                    hideMsc();
-                }
-            });
+            // backdrop クリックで閉じる
+            const mscBackdrop = document.getElementById('mscModalBackdrop');
+            if (mscBackdrop) {
+                mscBackdrop.addEventListener('click', hideMsc);
+            }
         }
 
         async function loadMscData() {
@@ -2798,11 +2745,31 @@
         }
 
         async function calculateMscFromHabits() {
-            // 習慣データがロードされていない場合はデフォルト値を使用
-            const habitData = weekHabitsData || {};
-            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            // 過去3ヶ月分の累積データを取得して計算
+            const now = new Date();
+            let allDaysData = {};
+            let totalDays = 0;
 
-            // 各習慣の達成率を計算
+            // 過去3ヶ月分のデータを取得
+            for (let i = 0; i < 3; i++) {
+                const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const year = targetDate.getFullYear();
+                const month = targetDate.getMonth() + 1;
+
+                try {
+                    const res = await fetch(`${API_BASE}/habits/monthly?user_id=${encodeURIComponent(userId)}&year=${year}&month=${month}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.days) {
+                            Object.assign(allDaysData, data.days);
+                        }
+                    }
+                } catch (e) {
+                    console.log(`Failed to load habits for ${year}-${month}`);
+                }
+            }
+
+            // 累積スコアを計算
             let disciplineScore = 0; // 早起き + 禁酒
             let purposeScore = 0;    // ミッション
             let curiosityScore = 0;  // 読書/学習
@@ -2810,9 +2777,10 @@
             let actionScore = 0;     // 今日トレ
             let activeDays = 0;
 
-            days.forEach(day => {
-                const dayData = habitData[day];
+            Object.keys(allDaysData).forEach(dateKey => {
+                const dayData = allDaysData[dateKey];
                 if (dayData) {
+                    totalDays++;
                     if (dayData.early_wake) disciplineScore++;
                     if (dayData.no_alcohol) disciplineScore++;
                     if (dayData.mission) purposeScore++;
@@ -2823,28 +2791,31 @@
                 }
             });
 
-            // スコアを5段階に正規化（最大7日分）
-            const maxDiscipline = 14; // 2項目 × 7日
-            const maxOther = 7; // 1項目 × 7日
+            // 記録がない場合はデフォルト値
+            if (totalDays === 0) totalDays = 1;
+
+            // スコアを5段階に正規化（累積日数ベース）
+            const maxDiscipline = totalDays * 2; // 2項目 × 日数
+            const maxOther = totalDays; // 1項目 × 日数
 
             mscData.radarData = {
-                discipline: Math.round((disciplineScore / maxDiscipline) * 5 * 10) / 10,
-                purpose: Math.round((purposeScore / maxOther) * 5 * 10) / 10,
-                curiosity: Math.round((curiosityScore / maxOther) * 5 * 10) / 10,
-                reflection: Math.round((reflectionScore / maxOther) * 5 * 10) / 10,
-                action: Math.round((actionScore / maxOther) * 5 * 10) / 10,
-                consistency: Math.round((activeDays / 7) * 5 * 10) / 10
+                discipline: Math.min(Math.round((disciplineScore / maxDiscipline) * 5 * 10) / 10, 5),
+                purpose: Math.min(Math.round((purposeScore / maxOther) * 5 * 10) / 10, 5),
+                curiosity: Math.min(Math.round((curiosityScore / maxOther) * 5 * 10) / 10, 5),
+                reflection: Math.min(Math.round((reflectionScore / maxOther) * 5 * 10) / 10, 5),
+                action: Math.min(Math.round((actionScore / maxOther) * 5 * 10) / 10, 5),
+                consistency: Math.min(Math.round((activeDays / totalDays) * 5 * 10) / 10, 5)
             };
 
             // 総合スコア計算
             const values = Object.values(mscData.radarData);
             mscData.score = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 100) / 100;
 
-            // レベル・EXP計算（簡易版：総合スコア × 週数を想定）
-            const totalWeeks = 4; // 仮の週数
-            mscData.exp = Math.round(mscData.score * 200 * totalWeeks);
-            mscData.level = Math.floor(mscData.exp / 1000) + 1;
-            mscData.totalExp = mscData.level * 1000;
+            // レベル・EXP計算（累積日数ベース）
+            const totalExp = disciplineScore * 10 + purposeScore * 15 + curiosityScore * 10 + reflectionScore * 10 + actionScore * 15;
+            mscData.exp = totalExp;
+            mscData.level = Math.floor(totalExp / 500) + 1;
+            mscData.totalExp = mscData.level * 500;
 
             // 強み・弱みを分析
             analyzeMscTraits();
@@ -2863,10 +2834,10 @@
             const scores = traits.map(t => ({ ...t, score: mscData.radarData[t.key] }));
             scores.sort((a, b) => b.score - a.score);
 
-            // 強み：上位2つ（スコア2.5以上）
-            mscData.strengths = scores.filter(s => s.score >= 2.5).slice(0, 2);
-            // 弱み：下位2つ（スコア3.0未満）
-            mscData.weaknesses = scores.filter(s => s.score < 3.0).slice(-2).reverse();
+            // 強み：上位1つ（スコア2.5以上）
+            mscData.strengths = scores.filter(s => s.score >= 2.5).slice(0, 1);
+            // 弱み：下位1つ（スコア3.0未満）
+            mscData.weaknesses = scores.filter(s => s.score < 3.0).slice(-1);
 
             // 生態メモを生成
             generateBioMemo();
