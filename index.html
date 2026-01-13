@@ -1208,6 +1208,12 @@
             background: linear-gradient(180deg, #ffa500 0%, #cc8400 100%);
             color: #1a1a0a;
         }
+
+        .mission-task-title,
+        .mission-task-desc {
+            white-space: pre-line;
+        }
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -1786,15 +1792,26 @@
                         <div class="mission-task-header">
                             <div class="mission-task-badge"><span>🎯</span><span>MISSION</span></div>
                         </div>
-                        <div class="mission-task-title">${mission.title || 'ミッション'}</div>
-                        <div class="mission-task-desc">${mission.description || ''}</div>
+                        <div class="mission-task-title"></div>
+                        <div class="mission-task-desc"></div>
                         <div class="mission-task-actions">
                             ${mission.expires_at ? `<div class="mission-expire">残り${daysLeft > 0 ? daysLeft : 0}日</div>` : ''}
                         </div>
                         <div class="mission-swipe-hint">タップで詳細</div>
                     </div>
                 </div>`;
+            // --- 改行統一（\r\n や \r を \n に揃える）
+            const normalizeNewlines = (s) =>
+              (s ?? '')
+                  .replace(/\r\n/g, '\n')
+                  .replace(/\r/g, '\n');
+            const titleEl = container.querySelector('.mission-task-title');
+            const descEl  = container.querySelector('.mission-task-desc');
+            if (titleEl) titleEl.textContent = normalizeNewlines(mission.title || 'ミッション');
+            if (descEl)  descEl.textContent  = normalizeNewlines(mission.description || '');
 
+
+                
             // カードタップで詳細モーダルを開く
             const card = document.getElementById('missionCard');
             if (card) {
