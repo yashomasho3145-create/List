@@ -1616,7 +1616,7 @@
             const mission = data.mission;
             const completedToday = data.completed_today;
             const todayCount = data.today_completions || 0;
-            const daysLeft = Math.ceil((new Date(mission.expires_at) - new Date()) / (1000 * 60 * 60 * 24));
+            const daysLeft = mission.expires_at ? Math.ceil((new Date(mission.expires_at) - new Date()) / (1000 * 60 * 60 * 24)) : null;
 
             container.innerHTML = `
                 <div class="mission-task-wrapper">
@@ -1625,12 +1625,12 @@
                         <div class="mission-peel-back"></div>
                         <img class="mission-completed-stamp" src="a5d2dbb8-99d9-4bca-be1a-89cee8ffc4f8.png" alt="COMPLETED" />
                         <div class="mission-task-header">
-                            <div class="mission-task-badge"><span>🎯</span><span>WEEKLY MISSION</span></div>
+                            <div class="mission-task-badge"><span>🎯</span><span>MISSION</span></div>
                         </div>
-                        <div class="mission-task-title">${mission.title || '今週のミッション'}</div>
+                        <div class="mission-task-title">${mission.title || 'ミッション'}</div>
                         <div class="mission-task-desc">${mission.description || ''}</div>
                         <div class="mission-task-actions">
-                            <div class="mission-expire">残り${daysLeft > 0 ? daysLeft : 0}日</div>
+                            ${mission.expires_at ? `<div class="mission-expire">残り${daysLeft > 0 ? daysLeft : 0}日</div>` : ''}
                         </div>
                         ${!completedToday ? '<div class="mission-swipe-hint">スワイプで達成</div>' : ''}
                     </div>
@@ -2854,4 +2854,3 @@
     </script>
 </body>
 </html>
-
