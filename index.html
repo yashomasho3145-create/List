@@ -450,6 +450,7 @@
         /* モーダル */
         .modal-root { position: fixed; inset: 0; display: none; z-index: 50; align-items: flex-end; justify-content: center; }
         .modal-root.visible { display: flex; }
+        #mbtiModal { z-index: 300; } /* MSCの上に表示 */
         .modal-backdrop { position: absolute; inset: 0; background: rgba(13, 27, 42, 0.6); backdrop-filter: blur(4px); z-index: 0; }
         .modal-panel { width: 100%; max-width: 480px; background: var(--bg-card); border-radius: 24px 24px 0 0; padding: 20px; animation: slideUp .25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 1; box-shadow: 0 -10px 40px rgba(13, 27, 42, 0.2); }
         .modal-panel::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; background: rgba(13, 27, 42, 0.15); border-radius: 2px; }
@@ -542,7 +543,7 @@
             background: url('images/msc_bg.png') center/cover no-repeat,
                 linear-gradient(180deg, #0a0a0a 0%, #1a0a0a 30%, #0d0505 70%, #050505 100%);
             border-radius: 8px;
-            padding: 24px;
+            padding: 16px;
             color: #e8e8e8;
             position: relative;
             overflow: hidden;
@@ -566,29 +567,29 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
             position: relative;
             z-index: 2;
         }
-        .msc-header-left { display: flex; align-items: center; gap: 10px; }
+        .msc-header-left { display: flex; align-items: center; gap: 8px; }
         .msc-icon {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background: linear-gradient(135deg, rgba(204, 34, 0, 0.4) 0%, rgba(100, 20, 10, 0.6) 100%);
             border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 22px;
             border: 2px solid rgba(204, 34, 0, 0.5);
             box-shadow: 0 0 15px rgba(255, 68, 34, 0.3), inset 0 1px 0 rgba(255, 100, 50, 0.2);
         }
         .msc-title-area {}
         .msc-title {
             font-family: 'Noto Serif JP', serif;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             color: #fff;
             text-shadow: 0 0 15px rgba(255, 68, 34, 0.4), 0 2px 4px rgba(0, 0, 0, 0.5);
             letter-spacing: 1px;
@@ -596,9 +597,9 @@
         .msc-mbti-tag {
             display: inline-block;
             background: linear-gradient(135deg, rgba(204, 34, 0, 0.4) 0%, rgba(100, 20, 10, 0.6) 100%);
-            padding: 4px 12px;
+            padding: 3px 10px;
             border-radius: 2px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -612,12 +613,17 @@
             color: #fff;
             box-shadow: 0 0 15px rgba(204, 34, 0, 0.5);
         }
-        .msc-header-right { text-align: right; }
+        .msc-header-right {
+            text-align: right;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 100, 50, 0.3);
+        }
         .msc-level-badge {
-            font-size: 11px;
-            color: #ff8866;
-            margin-bottom: 4px;
-            text-shadow: 0 0 8px rgba(255, 68, 34, 0.4);
+            font-size: 10px;
+            color: #fff;
+            margin-bottom: 2px;
             font-weight: 600;
             letter-spacing: 0.5px;
         }
@@ -628,23 +634,23 @@
             justify-content: flex-end;
         }
         .msc-stars {
-            font-size: 14px;
+            font-size: 12px;
             letter-spacing: -2px;
             color: #ff6644;
             text-shadow: 0 0 10px rgba(255, 68, 34, 0.6);
         }
         .msc-score {
-            font-size: 30px;
+            font-size: 24px;
             font-weight: 700;
             color: #fff;
             text-shadow: 0 0 20px rgba(255, 68, 34, 0.5), 0 2px 4px rgba(0, 0, 0, 0.5);
         }
         .msc-exp-bar {
-            width: 80px;
-            height: 8px;
+            width: 70px;
+            height: 6px;
             background: rgba(50, 30, 30, 0.8);
             border-radius: 2px;
-            margin-top: 6px;
+            margin-top: 4px;
             overflow: hidden;
             border: 1px solid rgba(204, 34, 0, 0.4);
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
@@ -667,119 +673,78 @@
             background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
         }
         .msc-exp-text {
-            font-size: 10px;
-            color: #ff8866;
-            margin-top: 4px;
-            text-shadow: 0 0 6px rgba(255, 68, 34, 0.3);
+            font-size: 9px;
+            color: #fff;
+            margin-top: 2px;
         }
 
-        /* レーダーチャート - 鉄板×炎デザイン */
+        /* レーダーチャート - コンパクト版 */
         .msc-radar-section {
             position: relative;
             z-index: 2;
-            margin: 20px 0;
-            padding: 20px;
-            background:
-                /* 鉄板テクスチャ */
-                repeating-linear-gradient(
-                    45deg,
-                    rgba(60, 40, 40, 0.1) 0px,
-                    rgba(60, 40, 40, 0.1) 1px,
-                    transparent 1px,
-                    transparent 10px
-                ),
-                linear-gradient(180deg, rgba(40, 25, 25, 0.95) 0%, rgba(20, 12, 12, 0.98) 100%);
+            margin: 8px 0;
+            padding: 10px;
+            background: rgba(20, 12, 12, 0.9);
             border-radius: 4px;
             border: 1px solid rgba(204, 34, 0, 0.4);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 100, 50, 0.08),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-                0 4px 12px rgba(0, 0, 0, 0.4);
+            box-shadow: inset 0 1px 0 rgba(255, 100, 50, 0.08);
             overflow: hidden;
         }
-        .msc-radar-section::before {
-            content: '⚔ POWER ANALYSIS ⚔';
-            position: absolute;
-            top: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            font-weight: 700;
-            color: #cc2200;
-            letter-spacing: 3px;
-            text-shadow: 0 0 8px rgba(204, 34, 0, 0.5);
-        }
-        .msc-radar-section::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #cc2200, #ff4422, #cc2200, transparent);
-            box-shadow: 0 0 15px rgba(255, 68, 34, 0.6);
-        }
+        .msc-radar-section::before { display: none; }
+        .msc-radar-section::after { display: none; }
         .msc-radar-container {
             width: 100%;
-            max-width: 280px;
+            max-width: 200px;
             margin: 0 auto;
             aspect-ratio: 1;
         }
         .msc-radar-date {
             text-align: center;
-            font-size: 11px;
+            font-size: 10px;
             opacity: 0.7;
-            margin-top: 8px;
+            margin-top: 4px;
         }
 
-        /* 強み・弱み */
+        /* 強み・弱み - 横並びレイアウト */
+        .msc-traits-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
         .msc-traits-section {
             position: relative;
             z-index: 2;
-            margin-bottom: 16px;
+            flex: 1;
         }
-        .msc-traits-title {
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .msc-strength-title {
-            color: #ff6644;
-            text-shadow: 0 0 10px rgba(255, 68, 34, 0.5);
-            letter-spacing: 1px;
-        }
-        .msc-strength-title::before {
-            content: '🔥';
-            margin-right: 4px;
-        }
-        .msc-weakness-title {
-            color: #888;
-            letter-spacing: 1px;
-        }
-        .msc-weakness-title::before {
-            content: '⚠';
-            margin-right: 4px;
-        }
+        .msc-traits-title { display: none; }
         .msc-trait-item {
             display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 12px 14px;
-            background:
-                linear-gradient(135deg, rgba(204, 34, 0, 0.15) 0%, transparent 50%, rgba(204, 34, 0, 0.1) 100%),
-                linear-gradient(180deg, rgba(40, 20, 20, 0.9) 0%, rgba(20, 10, 10, 0.95) 100%);
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 10px 12px;
+            background: linear-gradient(180deg, rgba(40, 20, 20, 0.9) 0%, rgba(20, 10, 10, 0.95) 100%);
             border-radius: 4px;
-            margin-bottom: 10px;
             border: 1px solid rgba(204, 34, 0, 0.4);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 100, 50, 0.1),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-                0 2px 8px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             position: relative;
             overflow: hidden;
+            text-align: center;
+            height: 100%;
+        }
+        .msc-trait-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #ff9966;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 2px;
+        }
+        .msc-strength-section .msc-trait-label {
+            color: #66ff66;
+        }
+        .msc-weakness-section .msc-trait-label {
+            color: #ff6666;
         }
         .msc-trait-item::before {
             content: '';
@@ -818,24 +783,28 @@
             border: 1px solid rgba(204, 34, 0, 0.4);
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 100, 50, 0.15);
         }
-        .msc-trait-content { flex: 1; }
+        .msc-trait-content {
+            width: 100%;
+            text-align: center;
+        }
         .msc-trait-header {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 3px;
+            gap: 4px;
+            margin-bottom: 4px;
         }
         .msc-trait-name {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 700;
             color: #ff9966;
             text-shadow: 0 0 6px rgba(255, 100, 50, 0.3);
             letter-spacing: 0.5px;
         }
         .msc-trait-level {
-            font-size: 10px;
+            font-size: 9px;
             background: linear-gradient(135deg, #cc2200 0%, #990000 100%);
-            padding: 3px 10px;
+            padding: 2px 8px;
             border-radius: 2px;
             color: #fff;
             font-weight: 700;
@@ -843,9 +812,9 @@
             box-shadow: 0 2px 6px rgba(204, 34, 0, 0.4);
         }
         .msc-trait-desc {
-            font-size: 12px;
+            font-size: 10px;
             color: #c0b0a0;
-            line-height: 1.6;
+            line-height: 1.4;
             text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
         }
 
@@ -984,7 +953,7 @@
             display: none;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 16px;
         }
         #msc-card-view.active {
             display: flex;
@@ -999,7 +968,7 @@
             position: relative;
             z-index: 2;
             max-width: 100%;
-            max-height: 90vh;
+            max-height: 85vh;
             overflow-y: auto;
             animation: mscModalIn 0.3s ease;
         }
@@ -1008,31 +977,8 @@
             to { transform: scale(1) translateY(0); opacity: 1; }
         }
         #msc-card-view .msc-card {
-            max-width: 380px;
+            max-width: 360px;
             width: 100vw;
-        }
-        /* MSCカード閉じるボタン */
-        .msc-close-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.4);
-            color: #fff;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-        .msc-close-btn:hover {
-            background: rgba(255, 68, 34, 0.5);
-            transform: scale(1.1);
         }
 
         /* ミッション詳細モーダル */
@@ -1312,7 +1258,6 @@
                 <div class="msc-modal-backdrop" id="mscModalBackdrop"></div>
                 <div class="msc-container">
                     <div class="msc-card">
-                        <button class="msc-close-btn" id="mscCloseBtn">&times;</button>
                         <!-- ヘッダー -->
                         <div class="msc-header">
                             <div class="msc-header-left">
@@ -1341,35 +1286,35 @@
                             <div class="msc-radar-date" id="mscRadarDate">※累計データ基準</div>
                         </div>
 
-                        <!-- 強み（1つ） -->
-                        <div class="msc-traits-section">
-                            <div class="msc-traits-title msc-strength-title">強み</div>
-                            <div id="mscStrengths">
-                                <div class="msc-trait-item">
-                                    <div class="msc-trait-icon">🌅</div>
-                                    <div class="msc-trait-content">
-                                        <div class="msc-trait-header">
-                                            <span class="msc-trait-name">規律シールド</span>
-                                            <span class="msc-trait-level">Lv.4.2</span>
+                        <!-- 強み・弱み -->
+                        <div class="msc-traits-row">
+                            <div class="msc-traits-section msc-strength-section">
+                                <div id="mscStrengths">
+                                    <div class="msc-trait-item">
+                                        <div class="msc-trait-label">強み</div>
+                                        <div class="msc-trait-icon">🌅</div>
+                                        <div class="msc-trait-content">
+                                            <div class="msc-trait-header">
+                                                <span class="msc-trait-name">規律シールド</span>
+                                                <span class="msc-trait-level">Lv.4.2</span>
+                                            </div>
+                                            <div class="msc-trait-desc">早起きと禁酒を継続し、規律正しい生活を送っている。</div>
                                         </div>
-                                        <div class="msc-trait-desc">早起きと禁酒を継続し、規律正しい生活を送っている。</div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- 弱み（1つ） -->
-                        <div class="msc-traits-section">
-                            <div class="msc-traits-title msc-weakness-title">弱み</div>
-                            <div id="mscWeaknesses">
-                                <div class="msc-trait-item">
-                                    <div class="msc-trait-icon">📝</div>
-                                    <div class="msc-trait-content">
-                                        <div class="msc-trait-header">
-                                            <span class="msc-trait-name">内省タイム</span>
-                                            <span class="msc-trait-level">Lv.2.1</span>
+                            <div class="msc-traits-section msc-weakness-section">
+                                <div id="mscWeaknesses">
+                                    <div class="msc-trait-item">
+                                        <div class="msc-trait-label">弱み</div>
+                                        <div class="msc-trait-icon">📝</div>
+                                        <div class="msc-trait-content">
+                                            <div class="msc-trait-header">
+                                                <span class="msc-trait-name">内省タイム</span>
+                                                <span class="msc-trait-level">Lv.2.1</span>
+                                            </div>
+                                            <div class="msc-trait-desc">ジャーナル記録が不安定。振り返りの習慣化が課題。</div>
                                         </div>
-                                        <div class="msc-trait-desc">ジャーナル記録が不安定。振り返りの習慣化が課題。</div>
                                     </div>
                                 </div>
                             </div>
@@ -2694,7 +2639,6 @@
         function bindMscUI() {
             // MSCボタンでカード表示切り替え
             const mscOpenBtn = document.getElementById('mscOpenBtn');
-            const mscCloseBtn = document.getElementById('mscCloseBtn');
             const mscCardView = document.getElementById('msc-card-view');
 
             function showMsc() {
@@ -2716,11 +2660,6 @@
                     showMsc();
                 }
             });
-
-            // 閉じるボタン
-            if (mscCloseBtn) {
-                mscCloseBtn.addEventListener('click', hideMsc);
-            }
 
             // backdrop クリックで閉じる
             const mscBackdrop = document.getElementById('mscModalBackdrop');
@@ -2897,6 +2836,7 @@
             const strengthsHtml = mscData.strengths.length > 0
                 ? mscData.strengths.map(s => `
                     <div class="msc-trait-item">
+                        <div class="msc-trait-label">強み</div>
                         <div class="msc-trait-icon">${s.icon}</div>
                         <div class="msc-trait-content">
                             <div class="msc-trait-header">
@@ -2907,13 +2847,14 @@
                         </div>
                     </div>
                 `).join('')
-                : '<div class="msc-trait-item"><div class="msc-trait-desc">データを蓄積中...</div></div>';
+                : '<div class="msc-trait-item"><div class="msc-trait-label">強み</div><div class="msc-trait-desc">データを蓄積中...</div></div>';
             document.getElementById('mscStrengths').innerHTML = strengthsHtml;
 
             // 弱み
             const weaknessesHtml = mscData.weaknesses.length > 0
                 ? mscData.weaknesses.map(w => `
                     <div class="msc-trait-item">
+                        <div class="msc-trait-label">弱み</div>
                         <div class="msc-trait-icon">${w.icon}</div>
                         <div class="msc-trait-content">
                             <div class="msc-trait-header">
@@ -2924,7 +2865,7 @@
                         </div>
                     </div>
                 `).join('')
-                : '<div class="msc-trait-item"><div class="msc-trait-desc">データを蓄積中...</div></div>';
+                : '<div class="msc-trait-item"><div class="msc-trait-label">弱み</div><div class="msc-trait-desc">データを蓄積中...</div></div>';
             document.getElementById('mscWeaknesses').innerHTML = weaknessesHtml;
 
             // 生態メモ
@@ -2943,9 +2884,9 @@
             mscRadarChart = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: ['規律力', '目的力', '探究力', '内省力', '行動力', '継続力'],
+                    labels: ['早起き/禁酒', 'ミッション', '読書', 'ジャーナル', '今日トレ', '継続'],
                     datasets: [{
-                        label: 'ムキムキ指数',
+                        label: 'デイリータスク達成度',
                         data: [data.discipline, data.purpose, data.curiosity, data.reflection, data.action, data.consistency],
                         backgroundColor: 'rgba(255, 255, 255, 0.2)',
                         borderColor: 'rgba(254, 202, 87, 1)',
