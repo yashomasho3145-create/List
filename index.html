@@ -1282,19 +1282,18 @@
             display: none;
             writing-mode: vertical-rl;
             text-orientation: upright;
-            padding: 6px 4px;
-            border-radius: 4px;
-            font-size: 10px;
+            padding: 4px 2px;
+            border-radius: 3px;
+            font-size: 9px;
             font-weight: 700;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             line-height: 1;
             flex-shrink: 0;
+            text-align: center;
         }
         .card.priority-critical .priority-badge,
         .card.priority-high .priority-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: block;
         }
         .card.priority-critical .priority-badge {
             background: linear-gradient(180deg, #ff3333 0%, #cc0000 100%);
@@ -1702,7 +1701,7 @@
                 <button class="mission-action-btn mission-btn-complete" id="missionModalCompleteBtn">
                     <span>✓</span><span>達成する</span>
                 </button>
-                <button class="mission-action-btn mission-btn-timer" url="https://liff.line.me/2008372898-OgpQWq4L" title="タイマーを開く">
+                <button class="mission-action-btn mission-btn-timer" id="missionModalTimerBtn" title="タイマーを開く">
                     ⏱
                 </button>
             </div>
@@ -1972,10 +1971,9 @@
                 closeMissionDetailModal();
             };
 
-            // タイマーボタン
+            // タイマーボタン（LIFF経由で開く）
             document.getElementById('missionModalTimerBtn').onclick = () => {
-                // タイマーページを開く
-                window.open('タイマー/timer.html', '_blank');
+                window.open('https://liff.line.me/2008372898-OgpQWq4L', '_blank');
             };
         }
 
@@ -3077,5 +3075,3 @@
     </script>
 </body>
 </html>
-
-
