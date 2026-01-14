@@ -936,14 +936,27 @@
         .mbti-option-name { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
         /* MSCカード全画面モーダル表示（ミッション詳細モーダル風） */
+        /* === MSC: 下地を“確実に”画面いっぱいにする === */
+        /* MSCカード全画面モーダル表示（ミッション詳細モーダル風） */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
         #msc-card-view {
             position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;   /* inset:0 より明示 */
             inset: 0;
             z-index: 200;
             display: none;
             justify-content: center;
             align-items: center;
-            padding: 12px;
+            padding: 0 !important;                  /* ★余白を殺す（最重要） */
+            margin: 0 !important;
+            width: 100vw;
+            height: 100dvh;
+            min-height: 100vh;
+
         }
         #msc-card-view.active {
             display: flex;
@@ -951,6 +964,9 @@
         .msc-modal-backdrop {
             position: absolute;
             inset: 0;
+            width: 100vw;
+            height: 100dvh;
+            min-height: 100vh;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(8px);
         }
@@ -971,6 +987,9 @@
             width: 100vw;
             padding-bottom: 12px;
         }
+
+
+        
 
         /* ミッション詳細モーダル */
         #missionDetailModal {
