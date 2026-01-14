@@ -1236,6 +1236,71 @@
             overflow: auto;
         }
 
+        /* ===== Floating Timer ===== */
+        .floating-timer {
+            position: fixed;
+            right: 12px;
+            bottom: 12px;
+            width: min(340px, calc(100vw - 24px));
+            height: 320px;
+            z-index: 9999; /* ミッションモーダルより前 */
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+            border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(8px);
+            background: rgba(10,10,10,0.65);
+        }
+
+        .floating-timer.hidden { display: none; }
+
+        .floating-timer-bar{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.45);
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .floating-timer-title{
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .floating-timer-actions{ display:flex; gap:8px; }
+
+        .floating-timer-btn{
+            width: 30px;
+            height: 26px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.35);
+            color: rgba(255,255,255,0.9);
+            cursor: pointer;
+        }
+
+        .floating-timer-body{
+            width:100%;
+            height: calc(100% - 48px);
+        }
+
+        .floating-timer-body iframe{
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: transparent;
+        }
+
+        /* 最小化 */
+        .floating-timer.minimized{
+            height: 48px;
+        }
+        .floating-timer.minimized .floating-timer-body{
+            display:none;
+        }
 
 
 
@@ -1630,6 +1695,20 @@
                 </button>
             </div>
         </div>
+        <!-- Floating Timer -->
+        <div id="floatingTimer" class="floating-timer hidden" aria-hidden="true">
+            <div class="floating-timer-bar">
+            <div class="floating-timer-title">⏱ TIMER</div>
+            <div class="floating-timer-actions">
+                <button id="floatingTimerMinBtn" class="floating-timer-btn" type="button">＿</button>
+                <button id="floatingTimerCloseBtn" class="floating-timer-btn" type="button">✕</button>
+            </div>
+            </div>
+        
+            <div id="floatingTimerBody" class="floating-timer-body">
+            <!-- 初回クリックでiframeを差し込む（遅延ロード） -->
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1907,10 +1986,52 @@
             };
 
             // タイマーボタン（LIFF経由で開く）
-            document.getElementById('missionModalTimerBtn').onclick = () => {
-                window.open('https://liff.line.me/2008372898-OgpQWq4L', '_blank');
+            document.getElementById('missionModalTimerBtn').onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFloatingTimer();
             };
+
         }
+
+        function toggleFloatingTimer() {
+            const box = document.getElementById('floatingTimer');
+            const body = document.getElementById('floatingTimerBody');
+
+            // 初回だけ iframe を生成（遅延ロード）
+            if (!body.querySelector('iframe')) {
+                const iframe = document.createElement('iframe');
+
+                // ここ重要：timer.html の置き場所に合わせる
+                // 同じフォルダに timer.html があるならこれでOK
+                iframe.src = 'timer.html?embed=1';
+
+                iframe.allow = 'autoplay; clipboard-write'; // 音などの許可（環境次第）
+                body.appendChild(iframe);
+            }
+
+            box.classList.toggle('hidden');
+            box.setAttribute('aria-hidden', box.classList.contains('hidden') ? 'true' : 'false');
+        }
+
+        // close / minimize ボタン
+        (function bindFloatingTimerUI(){
+            const box = document.getElementById('floatingTimer');
+            const closeBtn = document.getElementById('floatingTimerCloseBtn');
+            const minBtn = document.getElementById('floatingTimerMinBtn');
+
+            if (closeBtn) closeBtn.onclick = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                box.classList.add('hidden');
+                box.classList.remove('minimized');
+            };
+
+            if (minBtn) minBtn.onclick = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                box.classList.toggle('minimized');
+            };
+        })();
+
 
         // ミッション未達成に戻す
         async function uncompleteMission(missionId) {
