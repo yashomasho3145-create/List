@@ -943,7 +943,7 @@
             display: none;
             justify-content: center;
             align-items: center;
-            padding: 4 px;
+            padding: 12px;
         }
         #msc-card-view.active {
             display: flex;
@@ -958,7 +958,7 @@
             position: relative;
             z-index: 2;
             max-width: 100%;
-            max-height: 92vh;
+            max-height: 80vh;
             overflow-y: auto;
             animation: mscModalIn 0.3s ease;
         }
@@ -2691,19 +2691,60 @@
             }
         }
 
+        // ユーザーのカスタムMSCデータを保持
+        let userMscCustomData = null;
+
         async function loadMscData() {
+            // まずuser_msc_dataからカスタムデータを読み込み
             try {
-                const res = await fetch(`${API_BASE}/msc?user_id=${encodeURIComponent(userId)}`);
-                if (!res.ok) throw new Error('MSC API not available');
-                const data = await res.json();
-                mscData = data;
-                userMbti = data.mbti || null;
+                const mscRes = await fetch(`${API_BASE}/msc?user_id=${encodeURIComponent(userId)}`);
+                if (mscRes.ok) {
+                    userMscCustomData = await mscRes.json();
+                    userMbti = userMscCustomData.mbti_type || null;
+                }
             } catch (e) {
-                console.log('MSC API unavailable, calculating from habits data');
-                // APIがない場合は習慣データから計算
-                await calculateMscFromHabits();
+                console.log('MSC custom data not available');
+                userMscCustomData = null;
             }
+
+            // 習慣データから基本スコアを計算
+            await calculateMscFromHabits();
+
+            // カスタムデータで上書き（設定されている場合）
+            applyCustomMscData();
+
             renderMsc();
+        }
+
+        function applyCustomMscData() {
+            if (!userMscCustomData) return;
+
+            // カスタム強み
+            if (userMscCustomData.custom_strength) {
+                mscData.strengths = [{
+                    key: 'custom',
+                    name: userMscCustomData.custom_strength.name,
+                    icon: userMscCustomData.custom_strength.icon || '💪',
+                    desc: userMscCustomData.custom_strength.desc || '',
+                    score: mscData.strengths[0]?.score || 3.5
+                }];
+            }
+
+            // カスタム弱み
+            if (userMscCustomData.custom_weakness) {
+                mscData.weaknesses = [{
+                    key: 'custom',
+                    name: userMscCustomData.custom_weakness.name,
+                    icon: userMscCustomData.custom_weakness.icon || '📝',
+                    desc: userMscCustomData.custom_weakness.desc || '',
+                    score: mscData.weaknesses[0]?.score || 2.0
+                }];
+            }
+
+            // カスタム生態メモ
+            if (userMscCustomData.custom_bio) {
+                mscData.bio = userMscCustomData.custom_bio;
+            }
         }
 
         async function calculateMscFromHabits() {
@@ -2997,16 +3038,42 @@
 
         async function saveMbti() {
             try {
-                await fetch(`${API_BASE}/msc/mbti`, {
+                await fetch(`${API_BASE}/msc`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: userId, mbti: userMbti })
+                    body: JSON.stringify({ user_id: userId, mbti_type: userMbti })
                 });
+                // userMscCustomDataを更新
+                if (userMscCustomData) {
+                    userMscCustomData.mbti_type = userMbti;
+                } else {
+                    userMscCustomData = { mbti_type: userMbti };
+                }
             } catch (e) {
                 console.log('MBTI save to API failed, storing locally');
                 // ローカルストレージにも保存
                 localStorage.setItem(`msc_mbti_${userId}`, userMbti || '');
             }
+        }
+
+        // MSCカスタムデータを保存（強み・弱み・生態メモ）
+        async function saveMscCustomData(data) {
+            try {
+                const response = await fetch(`${API_BASE}/msc`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, ...data })
+                });
+                if (response.ok) {
+                    // 成功時はローカルデータも更新
+                    if (!userMscCustomData) userMscCustomData = {};
+                    Object.assign(userMscCustomData, data);
+                    return true;
+                }
+            } catch (e) {
+                console.log('MSC custom data save failed:', e);
+            }
+            return false;
         }
 
         init();
