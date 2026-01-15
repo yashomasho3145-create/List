@@ -1670,6 +1670,7 @@
         let currentPriorityTask = null;
         let modalMode = "detail";
         let currentEntitlements = null; // サブスク権限情報
+        let planData = null; // プラン一覧（Supabaseから取得）
 
         const HABITS = [
             { id: 'early_wake', name: '早起き', icon: '🌅' },
@@ -1754,8 +1755,8 @@
                 userId = "demo_user";
             }
 
-            // entitlements取得
-            await loadEntitlements();
+            // entitlementsとプラン一覧を取得
+            await Promise.all([loadEntitlements(), loadPlans()]);
 
             bindUI();
             updateTabLockUI(); // タブのロック表示を更新
@@ -1777,6 +1778,24 @@
                     can_journal: false,
                     role: 'user'
                 };
+            }
+        }
+
+        // プラン一覧取得（Supabaseから）
+        async function loadPlans() {
+            try {
+                const res = await fetch(`${API_BASE}/plans`);
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                planData = data.plans || [];
+            } catch (e) {
+                console.error("プラン一覧取得エラー:", e);
+                // フォールバック
+                planData = [
+                    { plan_code: 'plus3', display_name: 'PLUS3', price_jpy: 300, task_limit: 6, can_status: false, can_journal: false },
+                    { plan_code: 'plus6', display_name: 'PLUS6', price_jpy: 500, task_limit: 9, can_status: false, can_journal: false },
+                    { plan_code: 'max', display_name: 'MAX', price_jpy: 800, task_limit: 9, can_status: true, can_journal: true }
+                ];
             }
         }
 
@@ -1835,24 +1854,48 @@
         function bindUpgradeModalUI() {
             document.getElementById('upgradeCloseBtn').onclick = hideUpgradeModal;
             document.getElementById('upgradeBackdrop').onclick = hideUpgradeModal;
-            document.querySelectorAll('.plan-btn').forEach(btn => {
-                btn.onclick = () => purchasePlan(btn.dataset.plan);
-            });
+            // プラン一覧を動的に生成
+            renderPlanOptions();
             // 現在のプラン情報を表示
             updateCurrentPlanInfo();
+        }
+
+        // プラン一覧を動的に描画
+        function renderPlanOptions() {
+            const container = document.querySelector('.plan-options');
+            if (!container || !planData) return;
+
+            // free以外のプランを描画
+            const purchasablePlans = planData.filter(p => p.plan_code !== 'free');
+
+            container.innerHTML = purchasablePlans.map(p => {
+                const isMax = p.plan_code === 'max';
+                const features = [];
+                features.push(`TODO枠${p.task_limit}個`);
+                if (p.can_status) features.push('ステータス');
+                if (p.can_journal) features.push('ジャーナル');
+
+                return `
+                    <button class="plan-btn" data-plan="${p.plan_code}" style="padding:16px;border:2px solid ${isMax ? 'var(--accent)' : 'var(--primary)'};border-radius:12px;background:${isMax ? 'linear-gradient(135deg, #fff9e6, #fff)' : 'white'};cursor:pointer;text-align:left;">
+                        <div style="font-weight:700;color:${isMax ? 'var(--accent)' : 'var(--primary)'};">${p.display_name} - ¥${p.price_jpy}/月${isMax ? ' ⭐おすすめ' : ''}</div>
+                        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">${features.join(' + ')}</div>
+                    </button>
+                `;
+            }).join('');
+
+            // クリックイベントを再バインド
+            container.querySelectorAll('.plan-btn').forEach(btn => {
+                btn.onclick = () => purchasePlan(btn.dataset.plan);
+            });
         }
 
         function updateCurrentPlanInfo() {
             const infoEl = document.getElementById('currentPlanInfo');
             if (!currentEntitlements || !infoEl) return;
 
-            const planNames = {
-                'free': '無料プラン',
-                'plus3': 'PLUS3',
-                'plus6': 'PLUS6',
-                'max': 'MAX'
-            };
-            const planName = planNames[currentEntitlements.plan_code] || '無料プラン';
+            // planDataから現在のプラン情報を取得
+            const currentPlan = planData?.find(p => p.plan_code === currentEntitlements.plan_code);
+            const planName = currentPlan?.display_name || '無料プラン';
             infoEl.innerHTML = `現在のプラン: <strong>${planName}</strong> (TODO枠: ${currentEntitlements.task_limit}個)`;
         }
 
@@ -1904,11 +1947,12 @@
         }
 
         async function loadAllData() {
-            const promises = [loadList()];
+            // リストとミッションは全員が使える
+            const promises = [loadList(), loadMissionTask()];
 
-            // can_statusがtrueの場合のみステータス関連データを取得
+            // can_statusがtrueの場合のみ習慣・MSCデータを取得
             if (currentEntitlements?.can_status) {
-                promises.push(loadMissionTask(), loadHabits(), loadMscData());
+                promises.push(loadHabits(), loadMscData());
             }
 
             // can_journalがtrueの場合のみジャーナルデータを取得
