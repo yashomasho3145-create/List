@@ -54,6 +54,8 @@
         .tab-nav-item span { font-size: 18px; transition: transform 0.3s ease; }
         .tab-nav-item.active span { animation: tabIconBounce 0.5s ease; }
         @keyframes tabIconBounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        .tab-nav-item.locked { opacity: 0.7; }
+        .tab-nav-item .lock-icon { font-size: 10px; margin-left: 4px; }
 
         /* タブコンテンツ */
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
@@ -1632,6 +1634,33 @@
         </div>
     </div>
 
+    <!-- アップグレードモーダル -->
+    <div id="upgradeModal" class="modal-root" style="display:none;">
+        <div class="modal-backdrop" id="upgradeBackdrop"></div>
+        <div class="modal-panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+                <div style="font-family:'Noto Serif JP',serif;font-weight:700;font-size:18px;">💪 プランをアップグレード</div>
+                <button id="upgradeCloseBtn" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted)">&times;</button>
+            </div>
+            <p id="upgradeMessage" style="margin:16px 0;color:var(--text-secondary);font-size:14px;"></p>
+            <div id="currentPlanInfo" style="margin-bottom:16px;padding:12px;background:var(--bg-main);border-radius:10px;font-size:13px;"></div>
+            <div class="plan-options" style="display:flex;flex-direction:column;gap:10px;">
+                <button class="plan-btn" data-plan="plus3" style="padding:16px;border:2px solid var(--primary);border-radius:12px;background:white;cursor:pointer;text-align:left;">
+                    <div style="font-weight:700;color:var(--primary);">PLUS3 - ¥300/月</div>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">TODO枠6個まで</div>
+                </button>
+                <button class="plan-btn" data-plan="plus6" style="padding:16px;border:2px solid var(--primary);border-radius:12px;background:white;cursor:pointer;text-align:left;">
+                    <div style="font-weight:700;color:var(--primary);">PLUS6 - ¥500/月</div>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">TODO枠9個まで</div>
+                </button>
+                <button class="plan-btn" data-plan="max" style="padding:16px;border:2px solid var(--accent);border-radius:12px;background:linear-gradient(135deg, #fff9e6, #fff);cursor:pointer;text-align:left;">
+                    <div style="font-weight:700;color:var(--accent);">MAX - ¥800/月 ⭐おすすめ</div>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">TODO枠9個 + ステータス + ジャーナル 全機能解放</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const LIFF_ID = "2008372898-2q9qWmxv";
         const API_BASE = "https://lumicreate.xvps.jp/webhook";
@@ -1640,6 +1669,7 @@
         let currentDetailTask = null;
         let currentPriorityTask = null;
         let modalMode = "detail";
+        let currentEntitlements = null; // サブスク権限情報
 
         const HABITS = [
             { id: 'early_wake', name: '早起き', icon: '🌅' },
@@ -1704,6 +1734,16 @@
         const completedEl = document.getElementById("completed");
 
         async function init() {
+            // checkout成功時の処理
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('checkout') === 'success') {
+                window.history.replaceState({}, '', window.location.pathname);
+                setTimeout(() => {
+                    alert('プランがアップグレードされました！');
+                    location.reload();
+                }, 2000);
+            }
+
             try {
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
@@ -1713,8 +1753,53 @@
                 console.error("LIFF初期化エラー:", e);
                 userId = "demo_user";
             }
+
+            // entitlements取得
+            await loadEntitlements();
+
             bindUI();
+            updateTabLockUI(); // タブのロック表示を更新
             await loadAllData();
+        }
+
+        // entitlements取得関数
+        async function loadEntitlements() {
+            try {
+                const res = await fetch(`${API_BASE}/me?user_id=${encodeURIComponent(userId)}`);
+                if (!res.ok) throw new Error('API Error');
+                currentEntitlements = await res.json();
+            } catch (e) {
+                console.error("Entitlements取得エラー:", e);
+                currentEntitlements = {
+                    plan_code: 'free',
+                    task_limit: 3,
+                    can_status: false,
+                    can_journal: false,
+                    role: 'user'
+                };
+            }
+        }
+
+        // タブのロック表示を更新
+        function updateTabLockUI() {
+            const statusTab = document.querySelector('.tab-nav-item[data-tab="status"]');
+            const journalTab = document.querySelector('.tab-nav-item[data-tab="journal"]');
+
+            if (currentEntitlements && !currentEntitlements.can_status) {
+                statusTab.innerHTML = 'ステータス<span class="lock-icon">🔒</span>';
+                statusTab.classList.add('locked');
+            } else {
+                statusTab.innerHTML = 'ステータス';
+                statusTab.classList.remove('locked');
+            }
+
+            if (currentEntitlements && !currentEntitlements.can_journal) {
+                journalTab.innerHTML = 'ジャーナル<span class="lock-icon">🔒</span>';
+                journalTab.classList.add('locked');
+            } else {
+                journalTab.innerHTML = 'ジャーナル';
+                journalTab.classList.remove('locked');
+            }
         }
 
         function bindUI() {
@@ -1743,17 +1828,95 @@
             bindMscUI();
             bindMbtiModalUI();
             bindMissionModalUI();
+            bindUpgradeModalUI();
+        }
+
+        // アップグレードモーダルのUIバインド
+        function bindUpgradeModalUI() {
+            document.getElementById('upgradeCloseBtn').onclick = hideUpgradeModal;
+            document.getElementById('upgradeBackdrop').onclick = hideUpgradeModal;
+            document.querySelectorAll('.plan-btn').forEach(btn => {
+                btn.onclick = () => purchasePlan(btn.dataset.plan);
+            });
+            // 現在のプラン情報を表示
+            updateCurrentPlanInfo();
+        }
+
+        function updateCurrentPlanInfo() {
+            const infoEl = document.getElementById('currentPlanInfo');
+            if (!currentEntitlements || !infoEl) return;
+
+            const planNames = {
+                'free': '無料プラン',
+                'plus3': 'PLUS3',
+                'plus6': 'PLUS6',
+                'max': 'MAX'
+            };
+            const planName = planNames[currentEntitlements.plan_code] || '無料プラン';
+            infoEl.innerHTML = `現在のプラン: <strong>${planName}</strong> (TODO枠: ${currentEntitlements.task_limit}個)`;
         }
 
         function switchTab(tabId) {
+            // 権限チェック
+            if (tabId === 'status' && currentEntitlements && !currentEntitlements.can_status) {
+                showUpgradeModal('ステータス機能');
+                return;
+            }
+            if (tabId === 'journal' && currentEntitlements && !currentEntitlements.can_journal) {
+                showUpgradeModal('ジャーナル機能');
+                return;
+            }
+
             document.querySelectorAll('.tab-nav-item').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelector(`.tab-nav-item[data-tab="${tabId}"]`).classList.add('active');
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
+        // アップグレードモーダル表示
+        function showUpgradeModal(featureName) {
+            document.getElementById('upgradeMessage').textContent =
+                `${featureName}はMAXプランで利用できます。プランをアップグレードしてください。`;
+            document.getElementById('upgradeModal').style.display = 'flex';
+        }
+
+        function hideUpgradeModal() {
+            document.getElementById('upgradeModal').style.display = 'none';
+        }
+
+        async function purchasePlan(planCode) {
+            try {
+                const res = await fetch(`${API_BASE}/billing/checkout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, plan_code: planCode })
+                });
+                const data = await res.json();
+                if (data.checkout_url) {
+                    window.location.href = data.checkout_url;
+                } else {
+                    alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+                }
+            } catch (e) {
+                console.error('Checkout error:', e);
+                alert('エラーが発生しました。しばらくしてから再度お試しください。');
+            }
+        }
+
         async function loadAllData() {
-            await Promise.all([loadList(), loadMissionTask(), loadHabits(), loadJournals(), loadMscData()]);
+            const promises = [loadList()];
+
+            // can_statusがtrueの場合のみステータス関連データを取得
+            if (currentEntitlements?.can_status) {
+                promises.push(loadMissionTask(), loadHabits(), loadMscData());
+            }
+
+            // can_journalがtrueの場合のみジャーナルデータを取得
+            if (currentEntitlements?.can_journal) {
+                promises.push(loadJournals());
+            }
+
+            await Promise.all(promises);
         }
 
         // ミッションタスク
