@@ -1735,14 +1735,13 @@
         const completedEl = document.getElementById("completed");
 
         async function init() {
-            // checkout成功時の処理
+            // checkout成功フラグ
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('checkout') === 'success') {
+            const isCheckoutSuccess = urlParams.get('checkout') === 'success';
+
+            if (isCheckoutSuccess) {
+                // URLパラメータをクリア
                 window.history.replaceState({}, '', window.location.pathname);
-                setTimeout(() => {
-                    alert('プランがアップグレードされました！');
-                    location.reload();
-                }, 2000);
             }
 
             try {
@@ -1758,9 +1757,50 @@
             // entitlementsとプラン一覧を取得
             await Promise.all([loadEntitlements(), loadPlans()]);
 
+            // === checkout成功時のリトライ処理（A案）===
+            if (isCheckoutSuccess) {
+                await handleCheckoutSuccess();
+            }
+
             bindUI();
             updateTabLockUI(); // タブのロック表示を更新
             await loadAllData();
+        }
+
+        // checkout成功時のリトライ処理（A案）
+        async function handleCheckoutSuccess() {
+            const MAX_RETRIES = 5;
+            const RETRY_INTERVAL = 1000; // 1秒
+            const initialPlanCode = currentEntitlements?.plan_code || 'free';
+
+            console.log('Checkout success detected. Initial plan:', initialPlanCode);
+
+            for (let i = 0; i < MAX_RETRIES; i++) {
+                await new Promise(resolve => setTimeout(resolve, RETRY_INTERVAL));
+
+                // entitlementsを再取得
+                await loadEntitlements();
+
+                const newPlanCode = currentEntitlements?.plan_code || 'free';
+                console.log(`Retry ${i + 1}/${MAX_RETRIES}: plan = ${newPlanCode}`);
+
+                // プランが変わったら成功
+                if (newPlanCode !== initialPlanCode && newPlanCode !== 'free') {
+                    alert(`プランが「${getPlanDisplayName(newPlanCode)}」にアップグレードされました！`);
+                    updateTabLockUI();
+                    updateCurrentPlanInfo();
+                    return;
+                }
+            }
+
+            // 最大リトライでも変わらなかった場合
+            alert('プランの反映に少し時間がかかっています。\nしばらく待ってからアプリを開き直してください。');
+        }
+
+        // プラン表示名を取得
+        function getPlanDisplayName(planCode) {
+            const plan = planData?.find(p => p.plan_code === planCode);
+            return plan?.display_name || planCode;
         }
 
         // entitlements取得関数
@@ -1928,21 +1968,87 @@
         }
 
         async function purchasePlan(planCode) {
+            // === 前提条件チェック ===
+            if (userId === 'demo_user') {
+                alert('デモモードでは購入できません。LINEからアプリを開いてください。');
+                return;
+            }
+            if (!['plus3', 'plus6', 'max'].includes(planCode)) {
+                alert('無効なプランが選択されました。');
+                return;
+            }
+
+            // === 多重送信防止：ボタンをdisabled ===
+            const buttons = document.querySelectorAll('.plan-btn');
+            const clickedBtn = document.querySelector(`.plan-btn[data-plan="${planCode}"]`);
+            const originalText = clickedBtn ? clickedBtn.innerHTML : '';
+
+            buttons.forEach(btn => btn.disabled = true);
+            if (clickedBtn) {
+                clickedBtn.innerHTML = '<div style="font-weight:700;">処理中...</div>';
+                clickedBtn.style.opacity = '0.7';
+            }
+
             try {
                 const res = await fetch(`${API_BASE}/billing/checkout`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: userId, plan_code: planCode })
                 });
-                const data = await res.json();
-                if (data.checkout_url) {
-                    window.location.href = data.checkout_url;
-                } else {
-                    alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+
+                // === エラーハンドリング改善 ===
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error('Checkout API Error:', res.status, errorText);
+                    alert(`購入処理に失敗しました（ステータス: ${res.status}）。\n通信エラー、PriceID設定、Stripe APIキーを確認してください。`);
+                    return;
                 }
+
+                const data = await res.json();
+
+                if (!data.checkout_url) {
+                    console.error('No checkout_url returned:', data);
+                    alert('checkout_urlが返ってきません。\nn8n側の /billing/checkout ワークフローを確認してください。');
+                    return;
+                }
+
+                // === 外部ブラウザで開く（優先順位: liff.openWindow > window.open > location.href）===
+                const url = data.checkout_url;
+
+                if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
+                    // LIFF内の場合は外部ブラウザで開く
+                    try {
+                        liff.openWindow({ url: url, external: true });
+                        hideUpgradeModal();
+                    } catch (liffErr) {
+                        console.warn('liff.openWindow failed, trying window.open:', liffErr);
+                        const newWindow = window.open(url, '_blank');
+                        if (!newWindow) {
+                            window.location.href = url;
+                        } else {
+                            hideUpgradeModal();
+                        }
+                    }
+                } else {
+                    // LIFF外（通常ブラウザ）の場合
+                    const newWindow = window.open(url, '_blank');
+                    if (!newWindow) {
+                        window.location.href = url;
+                    } else {
+                        hideUpgradeModal();
+                    }
+                }
+
             } catch (e) {
                 console.error('Checkout error:', e);
-                alert('エラーが発生しました。しばらくしてから再度お試しください。');
+                alert('購入処理中にエラーが発生しました。\nネットワーク接続を確認して、再度お試しください。');
+            } finally {
+                // === ボタン状態を復帰 ===
+                buttons.forEach(btn => btn.disabled = false);
+                if (clickedBtn) {
+                    clickedBtn.innerHTML = originalText;
+                    clickedBtn.style.opacity = '1';
+                }
             }
         }
 
@@ -2194,10 +2300,42 @@
             completed.forEach(t => completedEl.appendChild(taskCard(t, true)));
         }
 
+        // 現在の未完了タスク数を取得
+        function getTodoCount() {
+            const criticalCount = criticalEl.querySelectorAll('.card:not(.completed)').length;
+            const highCount = highEl.querySelectorAll('.card:not(.completed)').length;
+            const activeCount = activeEl.querySelectorAll('.card:not(.completed)').length;
+            return criticalCount + highCount + activeCount;
+        }
+
+        // TODO枠制限チェック（create/uncomplete前に呼ぶ）
+        function checkTaskLimit() {
+            const taskLimit = currentEntitlements?.task_limit ?? 3;
+            const role = currentEntitlements?.role || 'user';
+
+            // developer/adminは制限なし
+            if (role === 'developer' || role === 'admin') {
+                return true;
+            }
+
+            const currentCount = getTodoCount();
+            if (currentCount >= taskLimit) {
+                showUpgradeModal('TODO枠');
+                return false;
+            }
+            return true;
+        }
+
         async function addTask() {
             const input = document.getElementById('newTitle');
             const title = input.value.trim();
             if (!title) return;
+
+            // TODO枠制限チェック
+            if (!checkTaskLimit()) {
+                return;
+            }
+
             await action("create", null, { task_name: title });
             input.value = "";
         }
@@ -2217,7 +2355,12 @@
             if (!isCompleted) {
                 left.append(mkBtn("完了", () => action("complete", t.id), "btn-complete"), mkBtn("通知", () => openRemind(t), "btn-plus2h"));
             } else {
-                left.append(mkBtn("未完", () => action("uncomplete", t.id), "btn-complete"));
+                // 未完ボタン: TODO枠制限チェック付き
+                left.append(mkBtn("未完", () => {
+                    if (checkTaskLimit()) {
+                        action("uncomplete", t.id);
+                    }
+                }, "btn-complete"));
             }
 
             const right = document.createElement("div");
@@ -2331,7 +2474,19 @@
                 sl.style.transition = "transform .15s";
                 const leftW = Number(wrap.dataset.leftWidth) || 140;
                 const rightW = Number(wrap.dataset.rightWidth) || 140;
-                if (dx > leftW * STRONG_RATIO) { isCompleted ? action("uncomplete", t.id) : action("complete", t.id); wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; return; }
+                if (dx > leftW * STRONG_RATIO) {
+                    if (isCompleted) {
+                        // uncomplete: TODO枠制限チェック
+                        if (checkTaskLimit()) {
+                            action("uncomplete", t.id);
+                        }
+                    } else {
+                        action("complete", t.id);
+                    }
+                    wrap.classList.remove("open-left", "open-right");
+                    sl.style.transform = "translateX(0)";
+                    return;
+                }
                 if (dx < -rightW * STRONG_RATIO) { action("delete", t.id); wrap.classList.remove("open-left", "open-right"); sl.style.transform = "translateX(0)"; return; }
                 if (dx > SNAP_THRESHOLD) { wrap.classList.add("open-left"); wrap.classList.remove("open-right"); sl.style.transform = `translateX(${leftW}px)`; }
                 else if (dx < -SNAP_THRESHOLD) { wrap.classList.add("open-right"); wrap.classList.remove("open-left"); sl.style.transform = `translateX(${-rightW}px)`; }
