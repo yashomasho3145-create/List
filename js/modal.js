@@ -74,7 +74,7 @@ function renderMissionTask(data) {
         <div class="mission-task-wrapper">
             <div class="mission-achievement-bubble">🔥 ${todayCount}人が達成</div>
             <div class="mission-task-card ${completedToday ? 'completed' : ''}" id="missionCard">
-                <img class="mission-completed-stamp" src="images/a5d2dbb8-99d9-4bca-be1a-89cee8ffc4f8.png" alt="COMPLETED" />
+                <img class="mission-completed-stamp" src="images/complete_stamp.png" alt="COMPLETED" />
                 <div class="mission-task-header">
                     <div class="mission-task-badge"><span>🎯</span><span>MISSION</span></div>
                 </div>

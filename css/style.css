@@ -276,7 +276,7 @@ header { position: sticky; top: 0; background: var(--bg-card); border-bottom: 1p
     perspective: 1000px;
 }
 .mission-task-card {
-    background: url('../images/mission_bg.jpg') center/cover;
+    background: url('../images/mission_bg.png') center/cover;
     border-radius: 6px;
     padding: 14px 18px;
     color: #ffffff;
@@ -879,7 +879,7 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24p
 .mission-modal-panel {
     position: relative;
     width: 100%; max-width: 400px;
-    background: url('../images/mission_bg.jpg') center/cover;
+    background: url('../images/mission_bg.png') center/cover;
     border-radius: 8px;
     padding: 24px;
     color: #ffffff;
