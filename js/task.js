@@ -13,40 +13,33 @@ const completedEl = document.getElementById("completed");
  */
 async function loadList() {
     try {
-        const res = await fetch(`${API_BASE}/tasks?user_id=${encodeURIComponent(userId)}`);
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        renderTasks(data.tasks || []);
+        const res = await fetch(`${API_BASE}/list?user_id=${encodeURIComponent(userId)}`);
+        if (!res.ok) throw new Error('API Error');
+        renderList(await res.json());
     } catch (e) {
         console.error("タスク取得エラー:", e);
-        [criticalEl, highEl, activeEl, completedEl].forEach(el => el.innerHTML = '');
+        renderList({ critical: [], high: [], active: [], completed: [] });
     }
 }
 
 /**
  * タスクリストをレンダリング
  */
-function renderTasks(tasks) {
+function renderList(payload) {
     criticalEl.innerHTML = '';
     highEl.innerHTML = '';
     activeEl.innerHTML = '';
     completedEl.innerHTML = '';
 
-    tasks.forEach(t => {
-        const isCompleted = t.status === 'completed';
-        const priority = t.priority_level || 'normal';
-        const card = createTaskCard(t, isCompleted, priority);
+    const critical = Array.isArray(payload.critical) ? payload.critical : [];
+    const high = Array.isArray(payload.high) ? payload.high : [];
+    const active = Array.isArray(payload.active) ? payload.active : [];
+    const completed = Array.isArray(payload.completed) ? payload.completed : [];
 
-        if (isCompleted) {
-            completedEl.appendChild(card);
-        } else if (priority === 'critical') {
-            criticalEl.appendChild(card);
-        } else if (priority === 'high') {
-            highEl.appendChild(card);
-        } else {
-            activeEl.appendChild(card);
-        }
-    });
+    critical.forEach(t => { t.priority_level = 'critical'; criticalEl.appendChild(createTaskCard(t, false, 'critical')); });
+    high.forEach(t => { t.priority_level = 'high'; highEl.appendChild(createTaskCard(t, false, 'high')); });
+    active.forEach(t => { t.priority_level = t.priority_level || 'normal'; activeEl.appendChild(createTaskCard(t, false, t.priority_level)); });
+    completed.forEach(t => completedEl.appendChild(createTaskCard(t, true, t.priority_level || 'normal')));
 }
 
 /**
@@ -64,23 +57,25 @@ function createTaskCard(t, isCompleted, priority) {
     // 左側アクション（完了/未完了）
     const left = document.createElement("div");
     left.className = "actions-left";
-    if (isCompleted) {
-        left.appendChild(mkBtn("↩ 戻す", () => {
+    if (!isCompleted) {
+        left.append(
+            mkBtn("完了", () => action("complete", t.id), "btn-complete"),
+            mkBtn("通知", () => openRemind(t), "btn-plus2h")
+        );
+    } else {
+        left.append(mkBtn("未完", () => {
             if (checkTaskLimit()) action("uncomplete", t.id);
         }, "btn-complete"));
-    } else {
-        left.appendChild(mkBtn("✓ 完了", () => action("complete", t.id), "btn-complete"));
     }
 
     // 右側アクション
     const right = document.createElement("div");
     right.className = "actions-right";
-    if (!isCompleted) {
-        right.appendChild(mkBtn("⏰+2h", () => action("remind_2h", t.id), "btn-plus2h"));
-        right.appendChild(mkBtn("📋", () => openDetail(t), "btn-detail"));
-        right.appendChild(mkBtn("⚡", () => openPriorityModal(t), "btn-priority"));
-    }
-    right.appendChild(mkBtn("🗑", () => action("delete", t.id), "btn-delete"));
+    right.append(
+        mkBtn("詳細", () => openDetail(t), "btn-detail"),
+        mkBtn("優先", () => openPriorityModal(t), "btn-priority"),
+        mkBtn("削除", () => action("delete", t.id), "btn-delete")
+    );
 
     rail.append(left, right);
 
@@ -92,10 +87,15 @@ function createTaskCard(t, isCompleted, priority) {
     leftBox.style.cssText = "display:flex;align-items:center;gap:10px;flex:1;min-width:0;";
 
     // 優先順位バッジ
-    if (priority !== 'normal') {
+    if (priority === 'critical') {
         const badge = document.createElement("span");
         badge.className = "priority-badge";
-        badge.textContent = priority === 'critical' ? '緊急' : '重要';
+        badge.textContent = "最重要";
+        leftBox.appendChild(badge);
+    } else if (priority === 'high') {
+        const badge = document.createElement("span");
+        badge.className = "priority-badge";
+        badge.textContent = "重要";
         leftBox.appendChild(badge);
     }
 
@@ -258,35 +258,40 @@ async function saveSortOrder() {
  * タスク追加
  */
 async function addTask() {
-    const input = document.getElementById("newTitle");
+    const input = document.getElementById('newTitle');
     const title = input.value.trim();
     if (!title) return;
 
-    // タスク枠制限チェック
     if (!checkTaskLimit()) return;
 
-    try {
-        await fetch(`${API_BASE}/tasks`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: userId, title })
-        });
-        input.value = "";
-        await loadList();
-    } catch (e) {
-        alert("タスク追加に失敗しました");
-    }
+    await action("create", null, { task_name: title });
+    input.value = "";
+}
+
+/**
+ * 現在の未完了タスク数を取得
+ */
+function getTodoCount() {
+    const criticalCount = criticalEl.querySelectorAll('.card:not(.completed)').length;
+    const highCount = highEl.querySelectorAll('.card:not(.completed)').length;
+    const activeCount = activeEl.querySelectorAll('.card:not(.completed)').length;
+    return criticalCount + highCount + activeCount;
 }
 
 /**
  * タスク枠制限チェック
  */
 function checkTaskLimit() {
-    if (!currentEntitlements) return true;
+    const taskLimit = currentEntitlements?.task_limit ?? 3;
+    const role = currentEntitlements?.role || 'user';
 
-    const activeCount = criticalEl.children.length + highEl.children.length + activeEl.children.length;
+    // developer/adminは制限なし
+    if (role === 'developer' || role === 'admin') {
+        return true;
+    }
 
-    if (activeCount >= currentEntitlements.task_limit) {
+    const currentCount = getTodoCount();
+    if (currentCount >= taskLimit) {
         showUpgradeModal('TODO枠');
         return false;
     }
